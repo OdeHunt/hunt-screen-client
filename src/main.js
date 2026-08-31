@@ -1,8 +1,21 @@
 import { io } from "socket.io-client";
+import { patchUrlMappings } from "@discord/embedded-app-sdk";
 import "./style.css";
 
 const SERVER_URL = "https://hunt-screen-server.onrender.com";
 const ROOM_ID = "hunt-screen-main";
+
+const isDiscordActivity =
+  window.location.hostname.endsWith(".discordsays.com");
+
+if (isDiscordActivity) {
+  patchUrlMappings([
+    {
+      prefix: "/socket",
+      target: "hunt-screen-server.onrender.com"
+    }
+  ]);
+}
 
 const socket = io(SERVER_URL, {
   transports: ["websocket"],
