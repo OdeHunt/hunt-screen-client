@@ -8,19 +8,33 @@ const ROOM_ID = "hunt-screen-main";
 const isDiscordActivity =
   window.location.hostname.endsWith(".discordsays.com");
 
+/*
+========================================
+DISCORD URL MAPPING
+========================================
+*/
+
 if (isDiscordActivity) {
   patchUrlMappings([
     {
-      prefix: "/socket",
+      prefix: "/hunt-socket",
       target: "hunt-screen-server.onrender.com"
     }
   ]);
 }
 
+/*
+========================================
+SOCKET.IO
+========================================
+*/
+
 const socket = io(
-  isDiscordActivity ? window.location.origin : SERVER_URL,
+  isDiscordActivity
+    ? window.location.origin
+    : SERVER_URL,
   {
-    path: "/socket",
+    path: "/hunt-socket",
     transports: ["websocket"]
   }
 );
@@ -29,295 +43,404 @@ let peer = null;
 let broadcasterId = null;
 let pendingCandidates = [];
 
+/*
+========================================
+INTERFACE
+========================================
+*/
+
 document.querySelector("#app").innerHTML = `
 
   <main class="hunt-screen">
 
+    <header class="header">
+      <div class="brand">HUNT</div>
+      <div class="brand-subtitle">SCREEN</div>
+    </header>
 
-<header class="header">
-  <div class="brand">HUNT</div>
-  <div class="brand-subtitle">SCREEN</div>
-</header>
+    <section class="viewer">
 
-<section class="viewer">
+      <div id="waiting" class="waiting">
+        <div class="live-dot"></div>
 
-  <div id="waiting" class="waiting">
-    <div class="live-dot"></div>
+        <h1>NENHUMA TRANSMISSÃO</h1>
 
-    <h1>NENHUMA TRANSMISSÃO</h1>
+        <p>
+          Quando alguém iniciar uma transmissão,
+          ela aparecerá aqui.
+        </p>
+      </div>
 
-    <p>
-      Quando alguém iniciar uma transmissão,
-      ela aparecerá aqui.
-    </p>
-  </div>
+      <video
+        id="remoteVideo"
+        autoplay
+        muted
+        playsinline
+        controls
+        class="remote-video hidden"
+      ></video>
 
-  <video
-    id="remoteVideo"
-    autoplay
-    muted
-    playsinline
-    controls
-    class="remote-video hidden"
-  ></video>
+      <button
+        id="playButton"
+        class="play-button hidden"
+        type="button"
+      >
+        ▶ ASSISTIR TRANSMISSÃO
+      </button>
 
-  <button
-    id="playButton"
-    class="play-button hidden"
-    type="button"
-  >
-    ▶ ASSISTIR TRANSMISSÃO
-  </button>
+    </section>
 
-</section>
+    <section class="controls">
 
-<section class="controls">
-  <div id="status" class="status">
-    CONECTANDO...
-  </div>
-</section>
+      <div id="status" class="status">
+        CONECTANDO...
+      </div>
 
+    </section>
 
   </main>
+
 `;
+
+/*
+========================================
+ELEMENTOS
+========================================
+*/
 
 const status = document.querySelector("#status");
 const waiting = document.querySelector("#waiting");
 const remoteVideo = document.querySelector("#remoteVideo");
 const playButton = document.querySelector("#playButton");
 
+/*
+========================================
+WEBRTC
+========================================
+*/
+
 const rtcConfig = {
-iceServers: [
-{
-urls: "stun:stun.l.google.com:19302"
-},
-{
-urls: "stun:stun1.l.google.com:19302"
-}
-]
+  iceServers: [
+    {
+      urls: "stun:stun.l.google.com:19302"
+    },
+    {
+      urls: "stun:stun1.l.google.com:19302"
+    }
+  ]
 };
+
+/*
+========================================
+SOCKET CONNECT
+========================================
+*/
 
 socket.on("connect", () => {
 
-console.log(
-"HUNT SERVER conectado:",
-socket.id
-);
+  console.log(
+    "HUNT SERVER conectado:",
+    socket.id
+  );
 
-status.textContent = "● ONLINE";
+  status.textContent = "● ONLINE";
 
-socket.emit(
-"join-room",
-ROOM_ID
-);
+  socket.emit(
+    "join-room",
+    ROOM_ID
+  );
 
 });
+
+/*
+========================================
+SOCKET ERROR
+========================================
+*/
 
 socket.on("connect_error", (error) => {
 
-console.error(
-"HUNT: erro de conexão:",
-error
-);
-
-status.textContent =
-"● ERRO DE CONEXÃO";
-
-});
-
-socket.on("stream-started", (data) => {
-
-console.log(
-"HUNT: transmissão disponível:",
-data
-);
-
-if (
-!data ||
-!data.broadcasterId
-) {
-return;
-}
-
-broadcasterId =
-data.broadcasterId;
-
-status.textContent =
-"● TRANSMISSÃO DISPONÍVEL";
-
-});
-
-socket.on("webrtc-offer", async (data) => {
-
-console.log(
-"HUNT: OFFER recebida:",
-data
-);
-
-if (
-!data ||
-!data.sender ||
-!data.offer
-) {
-console.warn(
-"HUNT: OFFER inválida"
-);
-
-
-return;
-
-
-}
-
-if (peer) {
-peer.close();
-peer = null;
-}
-
-pendingCandidates = [];
-
-const currentPeer =
-new RTCPeerConnection(
-rtcConfig
-);
-
-peer = currentPeer;
-
-currentPeer.ontrack = (event) => {
-
-
-console.log(
-  "HUNT: VÍDEO RECEBIDO"
-);
-
-if (
-  event.streams &&
-  event.streams[0]
-) {
-
-  remoteVideo.srcObject =
-    event.streams[0];
-
-  waiting.classList.add(
-    "hidden"
-  );
-
-  remoteVideo.classList.remove(
-    "hidden"
-  );
-
-  playButton.classList.remove(
-    "hidden"
+  console.error(
+    "HUNT: erro de conexão:",
+    error
   );
 
   status.textContent =
-    "🔴 AO VIVO";
+    "● ERRO DE CONEXÃO";
 
-  remoteVideo.muted = true;
+});
 
-  remoteVideo
-    .play()
-    .then(() => {
+/*
+========================================
+TRANSMISSÃO INICIADA
+========================================
+*/
 
-      console.log(
-        "HUNT: vídeo reproduzindo"
-      );
-
-    })
-    .catch((error) => {
-
-      console.warn(
-        "HUNT: autoplay bloqueado:",
-        error
-      );
-
-    });
-
-}
-
-
-};
-
-currentPeer.onconnectionstatechange =
-() => {
-
+socket.on("stream-started", (data) => {
 
   console.log(
-    "HUNT: estado WebRTC:",
-    currentPeer.connectionState
+    "HUNT: transmissão disponível:",
+    data
   );
 
   if (
-    currentPeer.connectionState ===
-    "connected"
+    !data ||
+    !data.broadcasterId
+  ) {
+    return;
+  }
+
+  broadcasterId =
+    data.broadcasterId;
+
+  status.textContent =
+    "● TRANSMISSÃO DISPONÍVEL";
+
+});
+
+/*
+========================================
+WEBRTC OFFER
+========================================
+*/
+
+socket.on("webrtc-offer", async (data) => {
+
+  console.log(
+    "HUNT: OFFER recebida:",
+    data
+  );
+
+  if (
+    !data ||
+    !data.sender ||
+    !data.offer
   ) {
 
-    status.textContent =
-      "🔴 AO VIVO";
+    console.warn(
+      "HUNT: OFFER inválida"
+    );
+
+    return;
+  }
+
+  if (peer) {
+
+    peer.close();
+    peer = null;
 
   }
 
-  if (
-    currentPeer.connectionState ===
-    "failed"
-  ) {
+  pendingCandidates = [];
 
-    status.textContent =
-      "● CONEXÃO PERDIDA";
+  const currentPeer =
+    new RTCPeerConnection(
+      rtcConfig
+    );
 
-  }
+  peer = currentPeer;
 
-};
+  /*
+  ======================================
+  VÍDEO RECEBIDO
+  ======================================
+  */
 
+  currentPeer.ontrack = (event) => {
 
-currentPeer.onicecandidate =
-(event) => {
+    console.log(
+      "HUNT: VÍDEO RECEBIDO"
+    );
 
+    if (
+      event.streams &&
+      event.streams[0]
+    ) {
 
-  if (
-    event.candidate
-  ) {
+      remoteVideo.srcObject =
+        event.streams[0];
+
+      waiting.classList.add(
+        "hidden"
+      );
+
+      remoteVideo.classList.remove(
+        "hidden"
+      );
+
+      playButton.classList.remove(
+        "hidden"
+      );
+
+      status.textContent =
+        "🔴 AO VIVO";
+
+      remoteVideo.muted = true;
+
+      remoteVideo
+        .play()
+        .then(() => {
+
+          console.log(
+            "HUNT: vídeo reproduzindo"
+          );
+
+        })
+        .catch((error) => {
+
+          console.warn(
+            "HUNT: autoplay bloqueado:",
+            error
+          );
+
+        });
+
+    }
+
+  };
+
+  /*
+  ======================================
+  ESTADO WEBRTC
+  ======================================
+  */
+
+  currentPeer.onconnectionstatechange =
+    () => {
+
+      console.log(
+        "HUNT: estado WebRTC:",
+        currentPeer.connectionState
+      );
+
+      if (
+        currentPeer.connectionState ===
+        "connected"
+      ) {
+
+        status.textContent =
+          "🔴 AO VIVO";
+
+      }
+
+      if (
+        currentPeer.connectionState ===
+        "failed"
+      ) {
+
+        status.textContent =
+          "● CONEXÃO PERDIDA";
+
+      }
+
+    };
+
+  /*
+  ======================================
+  ICE
+  ======================================
+  */
+
+  currentPeer.onicecandidate =
+    (event) => {
+
+      if (
+        event.candidate
+      ) {
+
+        socket.emit(
+          "webrtc-ice-candidate",
+          {
+            target:
+              data.sender,
+
+            candidate:
+              event.candidate
+          }
+        );
+
+        console.log(
+          "HUNT: ICE enviado"
+        );
+
+      }
+
+    };
+
+  /*
+  ======================================
+  APLICAR OFFER
+  ======================================
+  */
+
+  try {
+
+    await currentPeer.setRemoteDescription(
+      data.offer
+    );
+
+    console.log(
+      "HUNT: OFFER aplicada"
+    );
+
+    /*
+    ====================================
+    ICE PENDENTE
+    ====================================
+    */
+
+    for (
+      const candidate
+      of pendingCandidates
+    ) {
+
+      try {
+
+        await currentPeer.addIceCandidate(
+          candidate
+        );
+
+      }
+
+      catch (error) {
+
+        console.error(
+          "HUNT: erro ICE pendente:",
+          error
+        );
+
+      }
+
+    }
+
+    pendingCandidates = [];
+
+    /*
+    ====================================
+    CRIAR ANSWER
+    ====================================
+    */
+
+    const answer =
+      await currentPeer.createAnswer();
+
+    await currentPeer.setLocalDescription(
+      answer
+    );
 
     socket.emit(
-      "webrtc-ice-candidate",
+      "webrtc-answer",
       {
         target:
           data.sender,
 
-        candidate:
-          event.candidate
+        answer:
+          answer
       }
     );
 
     console.log(
-      "HUNT: ICE enviado"
-    );
-
-  }
-
-};
-
-
-try {
-
-
-await currentPeer.setRemoteDescription(
-  data.offer
-);
-
-console.log(
-  "HUNT: OFFER aplicada"
-);
-
-for (
-  const candidate
-  of pendingCandidates
-) {
-
-  try {
-
-    await currentPeer.addIceCandidate(
-      candidate
+      "HUNT: ANSWER enviada"
     );
 
   }
@@ -325,198 +448,183 @@ for (
   catch (error) {
 
     console.error(
-      "HUNT: erro ICE pendente:",
+      "HUNT: erro WebRTC:",
       error
     );
 
   }
 
-}
+});
 
-pendingCandidates = [];
+/*
+========================================
+ICE RECEBIDO
+========================================
+*/
 
-const answer =
-  await currentPeer.createAnswer();
+socket.on(
+  "webrtc-ice-candidate",
+  async (data) => {
 
-await currentPeer.setLocalDescription(
-  answer
-);
+    console.log(
+      "HUNT: ICE recebido"
+    );
 
-socket.emit(
-  "webrtc-answer",
-  {
-    target:
-      data.sender,
+    if (
+      !data ||
+      !data.candidate
+    ) {
 
-    answer:
-      answer
+      return;
+
+    }
+
+    if (
+      !peer ||
+      !peer.remoteDescription
+    ) {
+
+      pendingCandidates.push(
+        data.candidate
+      );
+
+      console.log(
+        "HUNT: ICE guardado"
+      );
+
+      return;
+
+    }
+
+    try {
+
+      await peer.addIceCandidate(
+        data.candidate
+      );
+
+      console.log(
+        "HUNT: ICE aplicado"
+      );
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "HUNT: erro ICE:",
+        error
+      );
+
+    }
+
   }
 );
 
-console.log(
-  "HUNT: ANSWER enviada"
-);
-
- }
-
-catch (error) {
-
-
-console.error(
-  "HUNT: erro WebRTC:",
-  error
-);
-
-
-}
-
-});
-
-socket.on(
-"webrtc-ice-candidate",
-async (data) => {
-
-
-console.log(
-  "HUNT: ICE recebido"
-);
-
-if (
-  !data ||
-  !data.candidate
-) {
-  return;
-}
-
-if (
-  !peer ||
-  !peer.remoteDescription
-) {
-
-  pendingCandidates.push(
-    data.candidate
-  );
-
-  console.log(
-    "HUNT: ICE guardado"
-  );
-
-  return;
-
-}
-
-try {
-
-  await peer.addIceCandidate(
-    data.candidate
-  );
-
-  console.log(
-    "HUNT: ICE aplicado"
-  );
-
-}
-
-catch (error) {
-
-  console.error(
-    "HUNT: erro ICE:",
-    error
-  );
-
-}
-
-
-}
-);
+/*
+========================================
+BOTÃO ASSISTIR
+========================================
+*/
 
 playButton.addEventListener(
-"click",
-async () => {
+  "click",
+  async () => {
 
+    try {
 
-try {
+      remoteVideo.muted = false;
 
-  remoteVideo.muted = false;
+      await remoteVideo.play();
 
-  await remoteVideo.play();
+      playButton.classList.add(
+        "hidden"
+      );
 
-  playButton.classList.add(
-    "hidden"
-  );
+      status.textContent =
+        "🔴 AO VIVO";
 
-  status.textContent =
-    "🔴 AO VIVO";
+    }
 
-}
+    catch (error) {
 
-catch (error) {
+      console.error(
+        "HUNT: erro ao reproduzir:",
+        error
+      );
 
-  console.error(
-    "HUNT: erro ao reproduzir:",
-    error
-  );
+    }
 
-}
-
-
-}
+  }
 );
+
+/*
+========================================
+TRANSMISSÃO ENCERRADA
+========================================
+*/
 
 socket.on(
-"stream-stopped",
-() => {
+  "stream-stopped",
+  () => {
 
+    console.log(
+      "HUNT: transmissão encerrada"
+    );
 
-console.log(
-  "HUNT: transmissão encerrada"
+    if (peer) {
+
+      peer.close();
+      peer = null;
+
+    }
+
+    pendingCandidates = [];
+
+    remoteVideo.srcObject = null;
+
+    remoteVideo.classList.add(
+      "hidden"
+    );
+
+    playButton.classList.add(
+      "hidden"
+    );
+
+    waiting.classList.remove(
+      "hidden"
+    );
+
+    broadcasterId = null;
+
+    status.textContent =
+      "● ONLINE";
+
+  }
 );
 
-if (peer) {
-
-  peer.close();
-  peer = null;
-
-}
-
-pendingCandidates = [];
-
-remoteVideo.srcObject = null;
-
-remoteVideo.classList.add(
-  "hidden"
-);
-
-playButton.classList.add(
-  "hidden"
-);
-
-waiting.classList.remove(
-  "hidden"
-);
-
-broadcasterId = null;
-
-status.textContent =
-  "● ONLINE";
-
-
-}
-);
+/*
+========================================
+SAÍDA
+========================================
+*/
 
 window.addEventListener(
-"beforeunload",
-() => {
+  "beforeunload",
+  () => {
 
+    if (peer) {
+      peer.close();
+    }
 
-if (peer) {
-  peer.close();
-}
-
-
-}
+  }
 );
 
+/*
+========================================
+SISTEMA CARREGADO
+========================================
+*/
+
 console.log(
-"HUNT: sistema do viewer carregado"
+  "HUNT: sistema do viewer carregado"
 );
