@@ -4,7 +4,10 @@ import "./style.css";
 const SERVER_URL = "https://hunt-screen-server.onrender.com";
 const ROOM_ID = "hunt-screen-main";
 
-const socket = io(SERVER_URL);
+const socket = io(SERVER_URL, {
+  transports: ["websocket"],
+  secure: true
+});
 
 let peer = null;
 let broadcasterId = null;
