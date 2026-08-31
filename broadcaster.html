@@ -1,0 +1,1184 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>HUNT SCREEN</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+
+      margin: 0;
+
+      min-height: 100vh;
+
+      background: #000;
+
+      color: #fff;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+    }
+
+
+    .container {
+
+      width: min(1000px, 92%);
+
+      text-align: center;
+
+    }
+
+
+    .logo {
+
+      color: #ff8c00;
+
+      font-size: 52px;
+
+      font-weight: 900;
+
+      letter-spacing: 10px;
+
+    }
+
+
+    .subtitle {
+
+      color: #666;
+
+      font-size: 13px;
+
+      letter-spacing: 8px;
+
+      margin-bottom: 30px;
+
+    }
+
+
+    .preview-box {
+
+      width: 100%;
+
+      background: #080808;
+
+      border: 1px solid #222;
+
+      border-radius: 10px;
+
+      overflow: hidden;
+
+    }
+
+
+    video {
+
+      width: 100%;
+
+      max-height: 560px;
+
+      display: block;
+
+      background: #000;
+
+    }
+
+
+    .controls {
+
+      margin-top: 20px;
+
+      display: flex;
+
+      justify-content: center;
+
+      gap: 10px;
+
+      flex-wrap: wrap;
+
+    }
+
+
+    button {
+
+      padding: 14px 24px;
+
+      border: 0;
+
+      border-radius: 7px;
+
+      background: #ff8c00;
+
+      color: #000;
+
+      font-weight: 900;
+
+      cursor: pointer;
+
+      font-size: 14px;
+
+    }
+
+
+    button:hover {
+
+      filter: brightness(1.15);
+
+    }
+
+
+    button:disabled {
+
+      opacity: 0.45;
+
+      cursor: not-allowed;
+
+    }
+
+
+    .stop {
+
+      background: #222;
+
+      color: #fff;
+
+      display: none;
+
+    }
+
+
+    .settings {
+
+      margin-top: 18px;
+
+      display: flex;
+
+      justify-content: center;
+
+      align-items: center;
+
+      gap: 10px;
+
+      flex-wrap: wrap;
+
+    }
+
+
+    select {
+
+      background: #111;
+
+      color: #fff;
+
+      border: 1px solid #333;
+
+      border-radius: 6px;
+
+      padding: 10px 14px;
+
+      outline: none;
+
+    }
+
+
+    .label {
+
+      color: #777;
+
+      font-size: 12px;
+
+    }
+
+
+    .status {
+
+      margin-top: 18px;
+
+      color: #777;
+
+      font-size: 12px;
+
+      letter-spacing: 2px;
+
+    }
+
+
+    .status.live {
+
+      color: #ff8c00;
+
+    }
+
+
+    .info {
+
+      margin-top: 20px;
+
+      color: #444;
+
+      font-size: 11px;
+
+      letter-spacing: 1px;
+
+    }
+
+
+    .error {
+
+      margin-top: 10px;
+
+      color: #ff5555;
+
+      font-size: 12px;
+
+      display: none;
+
+    }
+
+  </style>
+
+
+  <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+
+</head>
+
+
+<body>
+
+  <div class="container">
+
+
+    <div class="logo">
+      HUNT
+    </div>
+
+
+    <div class="subtitle">
+      SCREEN
+    </div>
+
+
+    <div class="preview-box">
+
+      <video
+        id="preview"
+        autoplay
+        muted
+        playsinline>
+      </video>
+
+    </div>
+
+
+    <div class="settings">
+
+      <span class="label">
+        QUALIDADE
+      </span>
+
+
+      <select id="quality">
+
+        <option value="720">
+          720p
+        </option>
+
+        <option value="1080" selected>
+          1080p
+        </option>
+
+        <option value="1440">
+          1440p
+        </option>
+
+      </select>
+
+
+      <span class="label">
+        FPS
+      </span>
+
+
+      <select id="fps">
+
+        <option value="30">
+          30 FPS
+        </option>
+
+        <option value="60" selected>
+          60 FPS
+        </option>
+
+      </select>
+
+    </div>
+
+
+    <div class="controls">
+
+      <button
+        id="chooseButton"
+        onclick="chooseScreen()">
+
+        📺 ESCOLHER TELA
+
+      </button>
+
+
+      <button
+        id="startButton"
+        onclick="startTransmission()"
+        style="display:none">
+
+        ▶ COMEÇAR TRANSMISSÃO
+
+      </button>
+
+
+      <button
+        id="stopButton"
+        class="stop"
+        onclick="stopTransmission()">
+
+        ⏹ PARAR TRANSMISSÃO
+
+      </button>
+
+    </div>
+
+
+    <div
+      id="status"
+      class="status">
+
+      CONECTANDO...
+
+    </div>
+
+
+    <div
+      id="error"
+      class="error">
+    </div>
+
+
+    <div class="info">
+
+      HUNT SCREEN • TRANSMISSÃO
+
+    </div>
+
+  </div>
+
+
+<script>
+
+/* =========================
+   CONFIGURAÇÃO
+========================= */
+
+const SERVER_URL = "https://hunt-screen-server.onrender.com";
+
+const ROOM_ID =
+  "hunt-screen-main";
+
+
+/* =========================
+   ELEMENTOS
+========================= */
+
+const preview =
+  document.getElementById("preview");
+
+const chooseButton =
+  document.getElementById("chooseButton");
+
+const startButton =
+  document.getElementById("startButton");
+
+const stopButton =
+  document.getElementById("stopButton");
+
+const status =
+  document.getElementById("status");
+
+const errorBox =
+  document.getElementById("error");
+
+const quality =
+  document.getElementById("quality");
+
+const fps =
+  document.getElementById("fps");
+
+
+/* =========================
+   VARIÁVEIS
+========================= */
+
+let socket = null;
+
+let screenStream = null;
+
+let transmitting = false;
+
+const peers = new Map();
+
+
+/* =========================
+   WEBRTC
+========================= */
+
+const rtcConfig = {
+
+  iceServers: [
+
+    {
+      urls:
+        "stun:stun.l.google.com:19302"
+    },
+
+    {
+      urls:
+        "stun:stun1.l.google.com:19302"
+    }
+
+  ]
+
+};
+
+
+/* =========================
+   SOCKET
+========================= */
+
+console.log(
+  "HUNT: conectando ao servidor..."
+);
+
+
+socket =
+  io(SERVER_URL);
+
+
+socket.on("connect", () => {
+
+  console.log(
+    "HUNT SERVER conectado:",
+    socket.id
+  );
+
+
+  status.textContent =
+    "● ONLINE";
+
+
+  socket.emit(
+    "join-room",
+    ROOM_ID
+  );
+
+});
+
+
+socket.on(
+  "connect_error",
+  error => {
+
+    console.error(
+      "HUNT: erro de conexão:",
+      error
+    );
+
+
+    status.textContent =
+      "● ERRO DE CONEXÃO";
+
+
+    showError(
+      "Não foi possível conectar ao servidor."
+    );
+
+  }
+);
+
+
+/* =========================
+   ESCOLHER TELA
+========================= */
+
+async function chooseScreen() {
+
+  hideError();
+
+
+  try {
+
+    const selectedFPS =
+      Number(fps.value);
+
+
+    screenStream =
+      await navigator.mediaDevices
+        .getDisplayMedia({
+
+          video: {
+
+            frameRate: {
+
+              ideal:
+                selectedFPS,
+
+              max:
+                selectedFPS
+
+            }
+
+          },
+
+          audio: true
+
+        });
+
+
+    preview.srcObject =
+      screenStream;
+
+
+    chooseButton.style.display =
+      "none";
+
+
+    startButton.style.display =
+      "inline-block";
+
+
+    stopButton.style.display =
+      "none";
+
+
+    status.textContent =
+      "● TELA SELECIONADA";
+
+
+    const track =
+      screenStream
+        .getVideoTracks()[0];
+
+
+    if (track) {
+
+      track.addEventListener(
+        "ended",
+        () => {
+
+          stopTransmission();
+
+        }
+      );
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "HUNT: erro ao capturar tela:",
+      error
+    );
+
+
+    showError(
+      "A captura da tela foi cancelada."
+    );
+
+  }
+
+}
+
+
+/* =========================
+   INICIAR
+========================= */
+
+function startTransmission() {
+
+  if (!screenStream) {
+
+    showError(
+      "Escolha uma tela primeiro."
+    );
+
+    return;
+
+  }
+
+
+  if (
+    !socket ||
+    !socket.connected
+  ) {
+
+    showError(
+      "Servidor não conectado."
+    );
+
+    return;
+
+  }
+
+
+  if (transmitting) {
+
+    return;
+
+  }
+
+
+  transmitting =
+    true;
+
+
+  status.textContent =
+    "🔴 TRANSMITINDO";
+
+
+  status.classList.add(
+    "live"
+  );
+
+
+  startButton.style.display =
+    "none";
+
+
+  stopButton.style.display =
+    "inline-block";
+
+
+  socket.emit(
+    "start-stream",
+    {
+      roomId:
+        ROOM_ID
+    }
+  );
+
+
+  console.log(
+    "HUNT: transmissão iniciada"
+  );
+
+}
+
+
+/* =========================
+   NOVO ESPECTADOR
+========================= */
+
+socket.on(
+  "user-joined",
+  async data => {
+
+    console.log(
+      "HUNT: novo espectador:",
+      data
+    );
+
+
+    if (
+      !transmitting
+    ) {
+
+      return;
+
+    }
+
+
+    if (
+      !data ||
+      !data.socketId
+    ) {
+
+      return;
+
+    }
+
+
+    await createOffer(
+      data.socketId
+    );
+
+  }
+);
+
+
+/* =========================
+   CRIAR PEER
+========================= */
+
+function createPeer(
+  viewerId
+) {
+
+  console.log(
+    "HUNT: criando PeerConnection:",
+    viewerId
+  );
+
+
+  const peer =
+    new RTCPeerConnection(
+      rtcConfig
+    );
+
+
+  /*
+   * ADICIONAR TELA
+   */
+
+  if (screenStream) {
+
+    screenStream
+      .getTracks()
+      .forEach(
+        track => {
+
+          peer.addTrack(
+            track,
+            screenStream
+          );
+
+        }
+      );
+
+  }
+
+
+  /*
+   * ICE
+   */
+
+  peer.onicecandidate =
+    event => {
+
+      if (
+        event.candidate
+      ) {
+
+        socket.emit(
+          "webrtc-ice-candidate",
+          {
+
+            target:
+              viewerId,
+
+            candidate:
+              event.candidate
+
+          }
+        );
+
+      }
+
+    };
+
+
+  peer.onconnectionstatechange =
+    () => {
+
+      console.log(
+        "HUNT: estado WebRTC:",
+        viewerId,
+        peer.connectionState
+      );
+
+
+      if (
+        peer.connectionState ===
+        "failed" ||
+
+        peer.connectionState ===
+        "closed" ||
+
+        peer.connectionState ===
+        "disconnected"
+      ) {
+
+        peers.delete(
+          viewerId
+        );
+
+      }
+
+    };
+
+
+  peers.set(
+    viewerId,
+    peer
+  );
+
+
+  return peer;
+
+}
+
+
+/* =========================
+   CRIAR OFFER
+========================= */
+
+async function createOffer(
+  viewerId
+) {
+
+  console.log(
+    "HUNT: criando OFFER para:",
+    viewerId
+  );
+
+
+  try {
+
+    const peer =
+      createPeer(
+        viewerId
+      );
+
+
+    const offer =
+      await peer.createOffer();
+
+
+    await peer.setLocalDescription(
+      offer
+    );
+
+
+    socket.emit(
+      "webrtc-offer",
+      {
+
+        target:
+          viewerId,
+
+        offer:
+          peer.localDescription
+
+      }
+    );
+
+
+    console.log(
+      "HUNT: OFFER enviada para:",
+      viewerId
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "HUNT: erro criando OFFER:",
+      error
+    );
+
+  }
+
+}
+
+
+/* =========================
+   RECEBER ANSWER
+========================= */
+
+socket.on(
+  "webrtc-answer",
+  async data => {
+
+    console.log(
+      "HUNT: ANSWER recebida:",
+      data
+    );
+
+
+    if (
+      !data ||
+      !data.sender ||
+      !data.answer
+    ) {
+
+      return;
+
+    }
+
+
+    const peer =
+      peers.get(
+        data.sender
+      );
+
+
+    if (!peer) {
+
+      console.warn(
+        "HUNT: Peer não encontrado:",
+        data.sender
+      );
+
+      return;
+
+    }
+
+
+    try {
+
+      await peer.setRemoteDescription(
+        data.answer
+      );
+
+
+      console.log(
+        "HUNT: ANSWER aplicada"
+      );
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "HUNT: erro aplicando ANSWER:",
+        error
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================
+   ICE
+========================= */
+
+socket.on(
+  "webrtc-ice-candidate",
+  async data => {
+
+    if (
+      !data ||
+      !data.sender ||
+      !data.candidate
+    ) {
+
+      return;
+
+    }
+
+
+    const peer =
+      peers.get(
+        data.sender
+      );
+
+
+    if (!peer) {
+
+      return;
+
+    }
+
+
+    try {
+
+      await peer.addIceCandidate(
+        data.candidate
+      );
+
+      console.log(
+        "HUNT: ICE aplicado:",
+        data.sender
+      );
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "HUNT: erro ICE:",
+        error
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================
+   PARAR
+========================= */
+
+function stopTransmission() {
+
+  console.log(
+    "HUNT: parando transmissão..."
+  );
+
+
+  if (screenStream) {
+
+    screenStream
+      .getTracks()
+      .forEach(
+        track => track.stop()
+      );
+
+  }
+
+
+  screenStream =
+    null;
+
+
+  preview.srcObject =
+    null;
+
+
+  transmitting =
+    false;
+
+
+  /*
+   * FECHAR PEERS
+   */
+
+  for (
+    const peer
+    of peers.values()
+  ) {
+
+    peer.close();
+
+  }
+
+
+  peers.clear();
+
+
+  /*
+   * AVISAR SERVER
+   */
+
+  if (
+    socket &&
+    socket.connected
+  ) {
+
+    socket.emit(
+      "stop-stream",
+      {
+        roomId:
+          ROOM_ID
+      }
+    );
+
+  }
+
+
+  resetInterface();
+
+}
+
+
+/* =========================
+   RESET
+========================= */
+
+function resetInterface() {
+
+  chooseButton.style.display =
+    "inline-block";
+
+
+  startButton.style.display =
+    "none";
+
+
+  stopButton.style.display =
+    "none";
+
+
+  status.textContent =
+    "● ONLINE";
+
+
+  status.classList.remove(
+    "live"
+  );
+
+}
+
+
+/* =========================
+   ERROS
+========================= */
+
+function showError(
+  message
+) {
+
+  errorBox.textContent =
+    message;
+
+
+  errorBox.style.display =
+    "block";
+
+}
+
+
+function hideError() {
+
+  errorBox.textContent =
+    "";
+
+
+  errorBox.style.display =
+    "none";
+
+}
+
+
+console.log(
+  "HUNT: broadcaster pronto"
+);
+
+</script>
+
+</body>
+
+</html>

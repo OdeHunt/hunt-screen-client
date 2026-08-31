@@ -1,0 +1,283 @@
+* {
+  box-sizing: border-box;
+  }
+
+html,
+body {
+margin: 0;
+padding: 0;
+width: 100%;
+min-height: 100%;
+}
+
+body {
+background: #000;
+color: #fff;
+font-family: Arial, Helvetica, sans-serif;
+}
+
+/* =========================
+CONTAINER PRINCIPAL
+========================= */
+
+.hunt-screen {
+min-height: 100vh;
+width: 100%;
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 40px 20px;
+}
+
+/* =========================
+HEADER
+========================= */
+
+.header {
+text-align: center;
+margin-bottom: 35px;
+}
+
+.brand {
+color: #ff8c00;
+font-size: 58px;
+font-weight: 900;
+letter-spacing: 12px;
+line-height: 1;
+}
+
+.brand-subtitle {
+margin-top: 8px;
+color: #666;
+font-size: 13px;
+font-weight: 700;
+letter-spacing: 9px;
+}
+
+/* =========================
+ÁREA DO PLAYER
+========================= */
+
+.viewer {
+position: relative;
+width: min(1100px, 95vw);
+min-height: 500px;
+
+background: #080808;
+border: 1px solid #222;
+border-radius: 12px;
+
+overflow: hidden;
+
+display: flex;
+align-items: center;
+justify-content: center;
+
+box-shadow:
+0 0 30px rgba(255, 140, 0, 0.05);
+}
+
+/* =========================
+TELA DE ESPERA
+========================= */
+
+.waiting {
+width: 100%;
+min-height: 500px;
+
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+
+text-align: center;
+padding: 30px;
+}
+
+.waiting.hidden {
+display: none;
+}
+
+.waiting h1 {
+margin: 20px 0 10px;
+
+color: #fff;
+
+font-size: 24px;
+font-weight: 900;
+letter-spacing: 3px;
+}
+
+.waiting p {
+margin: 0;
+
+max-width: 500px;
+
+color: #666;
+
+font-size: 13px;
+line-height: 1.6;
+}
+
+/* =========================
+BOLINHA AO VIVO
+========================= */
+
+.live-dot {
+width: 14px;
+height: 14px;
+
+background: #ff8c00;
+
+border-radius: 50%;
+
+box-shadow:
+0 0 10px #ff8c00,
+0 0 25px rgba(255, 140, 0, 0.5);
+
+animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+0% {
+transform: scale(1);
+opacity: 1;
+}
+
+50% {
+transform: scale(1.25);
+opacity: 0.6;
+}
+
+100% {
+transform: scale(1);
+opacity: 1;
+}
+}
+
+/* =========================
+VÍDEO
+========================= */
+
+.remote-video {
+width: 100%;
+height: auto;
+max-height: 80vh;
+
+display: block;
+
+background: #000;
+
+object-fit: contain;
+}
+
+.remote-video.hidden {
+display: none;
+}
+
+/* =========================
+BOTÃO ASSISTIR
+========================= */
+
+.play-button {
+position: absolute;
+
+left: 50%;
+bottom: 30px;
+
+transform: translateX(-50%);
+
+padding: 14px 25px;
+
+border: none;
+border-radius: 7px;
+
+background: #ff8c00;
+color: #000;
+
+font-size: 14px;
+font-weight: 900;
+
+cursor: pointer;
+
+transition:
+transform 0.2s,
+filter 0.2s;
+}
+
+.play-button:hover {
+filter: brightness(1.15);
+
+transform:
+translateX(-50%)
+scale(1.03);
+}
+
+.play-button.hidden {
+display: none;
+}
+
+/* =========================
+STATUS
+========================= */
+
+.controls {
+margin-top: 20px;
+
+display: flex;
+justify-content: center;
+align-items: center;
+}
+
+.status {
+color: #666;
+
+font-size: 12px;
+font-weight: 700;
+
+letter-spacing: 3px;
+}
+
+.status.live {
+color: #ff8c00;
+}
+
+/* =========================
+RESPONSIVO
+========================= */
+
+@media (max-width: 700px) {
+
+.hunt-screen {
+padding: 25px 12px;
+}
+
+.brand {
+font-size: 42px;
+letter-spacing: 8px;
+}
+
+.brand-subtitle {
+font-size: 10px;
+letter-spacing: 6px;
+}
+
+.viewer {
+width: 100%;
+min-height: 350px;
+}
+
+.waiting {
+min-height: 350px;
+}
+
+.waiting h1 {
+font-size: 18px;
+letter-spacing: 2px;
+}
+
+.waiting p {
+font-size: 12px;
+}
+
+}
