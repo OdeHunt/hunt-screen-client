@@ -18,6 +18,7 @@ if (isDiscordActivity) {
 }
 
 const socket = io(SERVER_URL, {
+  path: "/socket",
   transports: ["websocket"],
   secure: true
 });
