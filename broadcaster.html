@@ -168,6 +168,49 @@
     }
 
 
+    .back-container {
+
+      margin-top: 18px;
+
+      display: flex;
+
+      justify-content: center;
+
+    }
+
+
+    .back-button {
+
+      padding: 11px 20px;
+
+      border: 1px solid #333;
+
+      border-radius: 7px;
+
+      background: #111;
+
+      color: #fff;
+
+      font-weight: 900;
+
+      cursor: pointer;
+
+      font-size: 13px;
+
+    }
+
+
+    .back-button:hover {
+
+      background: #1c1c1c;
+
+      border-color: #555;
+
+      filter: none;
+
+    }
+
+
     .settings {
 
       margin-top: 18px;
@@ -368,6 +411,24 @@
     </div>
 
 
+    <!-- =========================
+         BOTÃO VOLTAR
+    ========================== -->
+
+    <div class="back-container">
+
+      <button
+        id="backButton"
+        class="back-button"
+        onclick="goBack()">
+
+        ← VOLTAR
+
+      </button>
+
+    </div>
+
+
     <div
       id="status"
       class="status">
@@ -398,7 +459,8 @@
    CONFIGURAÇÃO
 ========================= */
 
-const SERVER_URL = "https://hunt-screen-server.onrender.com";
+const SERVER_URL =
+  "https://hunt-screen-server.onrender.com";
 
 const ROOM_ID =
   "hunt-screen-main";
@@ -478,31 +540,59 @@ console.log(
 );
 
 
-socket = io(SERVER_URL, {
-  path: "/hunt-socket",
-  transports: ["websocket"]
-});
+socket = io(
+  SERVER_URL,
+  {
+    path: "/hunt-socket",
+
+    transports: [
+      "websocket"
+    ],
+
+    reconnection: true,
+
+    reconnectionAttempts:
+      Infinity,
+
+    reconnectionDelay:
+      1000,
+
+    reconnectionDelayMax:
+      5000
+  }
+);
 
 
-socket.on("connect", () => {
+/* =========================
+   CONECTADO
+========================= */
 
-  console.log(
-    "HUNT SERVER conectado:",
-    socket.id
-  );
+socket.on(
+  "connect",
+  () => {
+
+    console.log(
+      "HUNT SERVER conectado:",
+      socket.id
+    );
 
 
-  status.textContent =
-    "● ONLINE";
+    status.textContent =
+      "● ONLINE";
 
 
-  socket.emit(
-    "join-room",
-    ROOM_ID
-  );
+    socket.emit(
+      "join-room",
+      ROOM_ID
+    );
 
-});
+  }
+);
 
+
+/* =========================
+   ERRO SOCKET
+========================= */
 
 socket.on(
   "connect_error",
@@ -527,6 +617,31 @@ socket.on(
 
 
 /* =========================
+   DESCONECTADO
+========================= */
+
+socket.on(
+  "disconnect",
+  reason => {
+
+    console.warn(
+      "HUNT: servidor desconectado:",
+      reason
+    );
+
+
+    if (!transmitting) {
+
+      status.textContent =
+        "● DESCONECTADO";
+
+    }
+
+  }
+);
+
+
+/* =========================
    ESCOLHER TELA
 ========================= */
 
@@ -538,11 +653,14 @@ async function chooseScreen() {
   try {
 
     const selectedFPS =
-      Number(fps.value);
+      Number(
+        fps.value
+      );
 
 
     screenStream =
-      await navigator.mediaDevices
+      await navigator
+        .mediaDevices
         .getDisplayMedia({
 
           video: {
@@ -584,6 +702,11 @@ async function chooseScreen() {
       "● TELA SELECIONADA";
 
 
+    status.classList.remove(
+      "live"
+    );
+
+
     const track =
       screenStream
         .getVideoTracks()[0];
@@ -622,7 +745,7 @@ async function chooseScreen() {
 
 
 /* =========================
-   INICIAR
+   INICIAR TRANSMISSÃO
 ========================= */
 
 function startTransmission() {
@@ -710,9 +833,7 @@ socket.on(
     );
 
 
-    if (
-      !transmitting
-    ) {
+    if (!transmitting) {
 
       return;
 
@@ -807,6 +928,10 @@ function createPeer(
 
     };
 
+
+  /*
+   * ESTADO DA CONEXÃO
+   */
 
   peer.onconnectionstatechange =
     () => {
@@ -1020,6 +1145,7 @@ socket.on(
         data.candidate
       );
 
+
       console.log(
         "HUNT: ICE aplicado:",
         data.sender
@@ -1041,7 +1167,7 @@ socket.on(
 
 
 /* =========================
-   PARAR
+   PARAR TRANSMISSÃO
 ========================= */
 
 function stopTransmission() {
@@ -1083,7 +1209,20 @@ function stopTransmission() {
     of peers.values()
   ) {
 
-    peer.close();
+    try {
+
+      peer.close();
+
+    }
+
+    catch (error) {
+
+      console.warn(
+        "HUNT: erro fechando Peer:",
+        error
+      );
+
+    }
 
   }
 
@@ -1146,6 +1285,39 @@ function resetInterface() {
 
 
 /* =========================
+   BOTÃO VOLTAR
+========================= */
+
+function goBack() {
+
+  console.log(
+    "HUNT: voltando para a tela principal"
+  );
+
+
+  /*
+   * Se estiver transmitindo,
+   * encerra a transmissão antes
+   * de voltar.
+   */
+
+  if (transmitting) {
+
+    stopTransmission();
+
+  }
+
+
+  /*
+   * Voltar para a página principal.
+   */
+
+  window.location.href = "/";
+
+}
+
+
+/* =========================
    ERROS
 ========================= */
 
@@ -1174,6 +1346,10 @@ function hideError() {
 
 }
 
+
+/* =========================
+   FINAL
+========================= */
 
 console.log(
   "HUNT: broadcaster pronto"
