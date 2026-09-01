@@ -38,18 +38,24 @@ if (isDiscordActivity) {
   try {
 
     patchUrlMappings([
+
       {
-        prefix: "/hunt-socket",
+        prefix:
+          "/hunt-socket",
+
         target:
           "hunt-screen-server.onrender.com"
       }
+
     ]);
 
     console.log(
       "HUNT: URL Mapping configurado"
     );
 
-  } catch (error) {
+  }
+
+  catch (error) {
 
     console.warn(
       "HUNT: erro no patchUrlMappings:",
@@ -71,6 +77,7 @@ const socket =
       ? window.location.origin
       : SERVER_URL,
     {
+
       path:
         "/hunt-socket",
 
@@ -93,6 +100,7 @@ const socket =
 
       timeout:
         20000
+
     }
   );
 
@@ -172,7 +180,7 @@ console.log(
 
 
 /* ========================================
-   TELA INICIAL
+   TELA PRINCIPAL
 ======================================== */
 
 function showHome() {
@@ -285,7 +293,9 @@ function updateHomeStatus() {
     status.textContent =
       "● SERVIDOR ONLINE";
 
-  } else {
+  }
+
+  else {
 
     status.textContent =
       "● CONECTANDO...";
@@ -347,6 +357,7 @@ function startViewer() {
         id="viewerContainer"
         class="viewer-container">
 
+
         <div
           id="viewerMessage"
           class="viewer-message">
@@ -359,8 +370,11 @@ function startViewer() {
         <video
           id="remoteVideo"
           autoplay
-          playsinline>
+          playsinline
+          controls
+          preload="none">
         </video>
+
 
       </div>
 
@@ -437,6 +451,32 @@ function startViewer() {
   }
 
 
+  /*
+   * Configurações iniciais
+   * do player.
+   */
+
+  const video =
+    document.getElementById(
+      "remoteVideo"
+    );
+
+  if (video) {
+
+    /*
+     * Volume inicial.
+     * 1 = 100%
+     */
+
+    video.volume =
+      1;
+
+    video.muted =
+      false;
+
+  }
+
+
   updateViewerStatus();
 
 
@@ -451,7 +491,9 @@ function startViewer() {
       "HUNT: viewer entrou na sala"
     );
 
-  } else {
+  }
+
+  else {
 
     console.log(
       "HUNT: aguardando Socket.IO..."
@@ -483,7 +525,9 @@ function updateViewerStatus() {
     status.textContent =
       "● CONECTADO";
 
-  } else {
+  }
+
+  else {
 
     status.textContent =
       "● CONECTANDO...";
@@ -577,7 +621,9 @@ function closeViewer() {
 
       peer.close();
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       console.warn(
         "HUNT: erro fechando Peer:",
@@ -611,7 +657,9 @@ function closeViewer() {
 
       video.pause();
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       console.warn(
         "HUNT: erro pausando vídeo:",
@@ -709,6 +757,7 @@ socket.on(
     console.error(
       "HUNT: detalhes:",
       {
+
         message:
           error?.message,
 
@@ -720,6 +769,7 @@ socket.on(
 
         type:
           error?.type
+
       }
     );
 
@@ -799,7 +849,9 @@ function createViewerPeer() {
 
       peer.close();
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       console.warn(
         "HUNT: erro fechando Peer anterior:",
@@ -820,9 +872,6 @@ function createViewerPeer() {
 
   /*
    * PEGAR CONSTRUTOR NATIVO
-   *
-   * O teste feito dentro da Discord
-   * confirmou que isso funciona.
    */
 
   const RTC =
@@ -912,7 +961,9 @@ function createViewerPeer() {
       peer
     );
 
-  } catch (error) {
+  }
+
+  catch (error) {
 
     console.error(
       "HUNT: erro criando RTCPeerConnection:",
@@ -971,7 +1022,9 @@ function createViewerPeer() {
         video.srcObject =
           event.streams[0];
 
-      } else {
+      }
+
+      else {
 
         /*
          * Fallback.
@@ -991,7 +1044,9 @@ function createViewerPeer() {
             video.srcObject =
               stream;
 
-          } catch (error) {
+          }
+
+          catch (error) {
 
             console.error(
               "HUNT: erro criando MediaStream:",
@@ -1003,6 +1058,25 @@ function createViewerPeer() {
         }
 
       }
+
+
+      /*
+       * Volume normal.
+       */
+
+      video.volume =
+        1;
+
+
+      /*
+       * Não colocar muted aqui.
+       *
+       * Assim o controle de volume
+       * funciona normalmente.
+       */
+
+      video.muted =
+        false;
 
 
       video.play()
@@ -1019,7 +1093,7 @@ function createViewerPeer() {
           error => {
 
             console.warn(
-              "HUNT: autoplay bloqueado:",
+              "HUNT: reprodução automática bloqueada:",
               error
             );
 
@@ -1080,11 +1154,13 @@ function createViewerPeer() {
       socket.emit(
         "webrtc-ice-candidate",
         {
+
           target:
             broadcasterId,
 
           candidate:
             event.candidate
+
         }
       );
 
@@ -1317,7 +1393,9 @@ socket.on(
               candidate
             );
 
-          } catch (error) {
+          }
+
+          catch (error) {
 
             console.warn(
               "HUNT: erro ICE pendente:",
@@ -1380,7 +1458,9 @@ socket.on(
         "HUNT: ANSWER enviada"
       );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       console.error(
         "HUNT: erro processando OFFER:",
@@ -1478,7 +1558,9 @@ socket.on(
         "HUNT: ICE aplicado"
       );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       console.error(
         "HUNT: erro aplicando ICE:",
