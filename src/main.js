@@ -169,10 +169,6 @@ socket.on("connect_error", error => {
   });
 });
 
-  console.error(
-    "HUNT: erro de conexão:",
-    error
-  );
 
   status.textContent =
     "● ERRO DE CONEXÃO";
