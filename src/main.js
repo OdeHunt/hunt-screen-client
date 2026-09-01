@@ -440,7 +440,8 @@ function startViewer() {
           id="huntFullscreenButton"
           class="hunt-fullscreen-button"
           type="button"
-          title="Tela cheia">
+          title="Tela cheia"
+          aria-label="Entrar em tela cheia">
 
           ⛶
 
@@ -451,7 +452,8 @@ function startViewer() {
           id="huntExitFullscreenButton"
           class="hunt-exit-fullscreen-button"
           type="button"
-          title="Sair da tela cheia">
+          title="Sair da tela cheia"
+          aria-label="Sair da tela cheia">
 
           ✕
 
@@ -514,10 +516,6 @@ function startViewer() {
   `;
 
 
-  /* ======================================
-     ELEMENTOS
-  ====================================== */
-
   const refreshButton =
     document.getElementById(
       "refreshButton"
@@ -561,7 +559,7 @@ function startViewer() {
 
 
   /* ======================================
-     BOTÃO ATUALIZAR
+     ATUALIZAR
   ====================================== */
 
   if (refreshButton) {
@@ -575,16 +573,16 @@ function startViewer() {
 
 
   /* ======================================
-     BOTÃO VOLTAR
+     VOLTAR
   ====================================== */
 
   if (backButton) {
 
     backButton.addEventListener(
       "click",
-      () => {
+      async () => {
 
-        exitHuntFullscreen();
+        await exitHuntFullscreen();
 
         closeViewer();
 
@@ -671,7 +669,7 @@ function startViewer() {
 
 
   /* ======================================
-     CONFIGURAÇÃO INICIAL DO VÍDEO
+     VÍDEO
   ====================================== */
 
   const video =
@@ -712,7 +710,6 @@ function startViewer() {
       ROOM_ID
     );
 
-
     console.log(
       "HUNT: viewer entrou na sala"
     );
@@ -731,20 +728,20 @@ function startViewer() {
 
 
 /* ========================================
-   FULLSCREEN HUNT
+   FULLSCREEN
 ======================================== */
 
-function toggleHuntFullscreen() {
+async function toggleHuntFullscreen() {
 
   if (huntFullscreen) {
 
-    exitHuntFullscreen();
+    await exitHuntFullscreen();
 
   }
 
   else {
 
-    enterHuntFullscreen();
+    await enterHuntFullscreen();
 
   }
 
@@ -755,7 +752,7 @@ function toggleHuntFullscreen() {
    ENTRAR FULLSCREEN
 ======================================== */
 
-function enterHuntFullscreen() {
+async function enterHuntFullscreen() {
 
   const viewerScreen =
     document.getElementById(
@@ -772,6 +769,51 @@ function enterHuntFullscreen() {
     return;
   }
 
+
+  /*
+    Primeiro tentamos o fullscreen
+    real do navegador.
+  */
+
+  try {
+
+    if (
+      document.fullscreenElement !==
+      viewerScreen
+    ) {
+
+      if (
+        typeof viewerScreen.requestFullscreen ===
+        "function"
+      ) {
+
+        await viewerScreen.requestFullscreen();
+
+        console.log(
+          "HUNT: Fullscreen API ativada"
+        );
+
+      }
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.warn(
+      "HUNT: Fullscreen API não disponível ou bloqueada:",
+      error
+    );
+
+  }
+
+
+  /*
+    Ativa também o modo visual.
+    Isso funciona como fallback dentro
+    da Discord Activity.
+  */
 
   huntFullscreen =
     true;
@@ -806,7 +848,7 @@ function enterHuntFullscreen() {
    SAIR FULLSCREEN
 ======================================== */
 
-function exitHuntFullscreen() {
+async function exitHuntFullscreen() {
 
   const viewerScreen =
     document.getElementById(
@@ -818,6 +860,43 @@ function exitHuntFullscreen() {
       "viewerContainer"
     );
 
+
+  /*
+    Sai do fullscreen REAL.
+  */
+
+  try {
+
+    if (
+      document.fullscreenElement
+    ) {
+
+      if (
+        typeof document.exitFullscreen ===
+        "function"
+      ) {
+
+        await document.exitFullscreen();
+
+      }
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.warn(
+      "HUNT: erro saindo do fullscreen:",
+      error
+    );
+
+  }
+
+
+  /*
+    Remove o fallback visual.
+  */
 
   huntFullscreen =
     false;
@@ -857,6 +936,102 @@ function exitHuntFullscreen() {
 
 
 /* ========================================
+   FULLSCREEN REAL ALTERADO
+======================================== */
+
+document.addEventListener(
+  "fullscreenchange",
+  () => {
+
+    const viewerScreen =
+      document.getElementById(
+        "viewerScreen"
+      );
+
+    const container =
+      document.getElementById(
+        "viewerContainer"
+      );
+
+
+    /*
+      O usuário apertou ESC ou saiu pelo
+      controle do navegador.
+    */
+
+    if (
+      !document.fullscreenElement
+    ) {
+
+      if (huntFullscreen) {
+
+        huntFullscreen =
+          false;
+
+        document.body.classList.remove(
+          "hunt-fullscreen-active"
+        );
+
+        if (viewerScreen) {
+
+          viewerScreen.classList.remove(
+            "hunt-player-fullscreen"
+          );
+
+        }
+
+        if (container) {
+
+          container.classList.remove(
+            "hunt-fullscreen-container"
+          );
+
+        }
+
+        updateFullscreenButtons();
+
+      }
+
+    }
+
+    else {
+
+      /*
+        Fullscreen real confirmado.
+      */
+
+      huntFullscreen =
+        true;
+
+      document.body.classList.add(
+        "hunt-fullscreen-active"
+      );
+
+      if (viewerScreen) {
+
+        viewerScreen.classList.add(
+          "hunt-player-fullscreen"
+        );
+
+      }
+
+      if (container) {
+
+        container.classList.add(
+          "hunt-fullscreen-container"
+        );
+
+      }
+
+      updateFullscreenButtons();
+
+    }
+
+  }
+);
+
+
+/* ========================================
    BOTÕES FULLSCREEN
 ======================================== */
 
@@ -867,10 +1042,12 @@ function updateFullscreenButtons() {
       "fullscreenButton"
     );
 
+
   const enterButton =
     document.getElementById(
       "huntFullscreenButton"
     );
+
 
   const exitButton =
     document.getElementById(
@@ -916,14 +1093,14 @@ function updateFullscreenButtons() {
 
 document.addEventListener(
   "keydown",
-  event => {
+  async event => {
 
     if (
       event.key === "Escape" &&
       huntFullscreen
     ) {
 
-      exitHuntFullscreen();
+      await exitHuntFullscreen();
 
     }
 
@@ -932,7 +1109,7 @@ document.addEventListener(
 
 
 /* ========================================
-   ALTERAR MODO DO PLAYER
+   ALTERAR MODO
 ======================================== */
 
 function setPlayerMode(
