@@ -2,7 +2,6 @@ import { io } from "socket.io-client";
 import { patchUrlMappings } from "@discord/embedded-app-sdk";
 import "./style.css";
 
-
 /* ========================================
    CONFIGURAÇÃO
 ======================================== */
@@ -180,6 +179,14 @@ let currentPlayerMode =
 
 
 /* ========================================
+   FULLSCREEN HUNT
+======================================== */
+
+let huntFullscreen =
+  false;
+
+
+/* ========================================
    TELA PRINCIPAL
 ======================================== */
 
@@ -191,6 +198,12 @@ function showHome() {
 
   closeViewer();
 
+  huntFullscreen =
+    false;
+
+  document.body.classList.remove(
+    "hunt-fullscreen-active"
+  );
 
   app.innerHTML = `
 
@@ -204,7 +217,6 @@ function showHome() {
         SCREEN
       </div>
 
-
       <div class="hunt-menu">
 
         <button
@@ -215,7 +227,6 @@ function showHome() {
 
         </button>
 
-
         <button
           id="broadcastButton"
           class="hunt-button">
@@ -225,7 +236,6 @@ function showHome() {
         </button>
 
       </div>
-
 
       <div
         id="homeStatus"
@@ -321,7 +331,6 @@ function openBroadcaster() {
     "HUNT: abrindo broadcaster"
   );
 
-
   window.location.href =
     "/broadcaster.html";
 
@@ -345,6 +354,13 @@ function startViewer() {
 
 
   closeViewer();
+
+  huntFullscreen =
+    false;
+
+  document.body.classList.remove(
+    "hunt-fullscreen-active"
+  );
 
 
   app.innerHTML = `
@@ -420,6 +436,28 @@ function startViewer() {
         </video>
 
 
+        <button
+          id="huntFullscreenButton"
+          class="hunt-fullscreen-button"
+          type="button"
+          title="Tela cheia">
+
+          ⛶
+
+        </button>
+
+
+        <button
+          id="huntExitFullscreenButton"
+          class="hunt-exit-fullscreen-button"
+          type="button"
+          title="Sair da tela cheia">
+
+          ✕
+
+        </button>
+
+
       </div>
 
 
@@ -434,6 +472,15 @@ function startViewer() {
             class="hunt-button small-button">
 
             🔄 ATUALIZAR
+
+          </button>
+
+
+          <button
+            id="fullscreenButton"
+            class="hunt-button small-button fullscreen-control-button">
+
+            ⛶ TELA CHEIA
 
           </button>
 
@@ -495,6 +542,24 @@ function startViewer() {
     );
 
 
+  const fullscreenButton =
+    document.getElementById(
+      "fullscreenButton"
+    );
+
+
+  const huntFullscreenButton =
+    document.getElementById(
+      "huntFullscreenButton"
+    );
+
+
+  const huntExitFullscreenButton =
+    document.getElementById(
+      "huntExitFullscreenButton"
+    );
+
+
   /* ======================================
      BOTÃO ATUALIZAR
   ====================================== */
@@ -519,6 +584,8 @@ function startViewer() {
       "click",
       () => {
 
+        exitHuntFullscreen();
+
         closeViewer();
 
         showHome();
@@ -530,7 +597,7 @@ function startViewer() {
 
 
   /* ======================================
-     MODO WIDE
+     WIDE
   ====================================== */
 
   if (wideButton) {
@@ -550,7 +617,7 @@ function startViewer() {
 
 
   /* ======================================
-     MODO NORMAL
+     NORMAL
   ====================================== */
 
   if (normalButton) {
@@ -564,6 +631,40 @@ function startViewer() {
         );
 
       }
+    );
+
+  }
+
+
+  /* ======================================
+     FULLSCREEN
+  ====================================== */
+
+  if (fullscreenButton) {
+
+    fullscreenButton.addEventListener(
+      "click",
+      toggleHuntFullscreen
+    );
+
+  }
+
+
+  if (huntFullscreenButton) {
+
+    huntFullscreenButton.addEventListener(
+      "click",
+      toggleHuntFullscreen
+    );
+
+  }
+
+
+  if (huntExitFullscreenButton) {
+
+    huntExitFullscreenButton.addEventListener(
+      "click",
+      exitHuntFullscreen
     );
 
   }
@@ -594,6 +695,8 @@ function startViewer() {
     currentPlayerMode
   );
 
+
+  updateFullscreenButtons();
 
   updateViewerStatus();
 
@@ -628,12 +731,224 @@ function startViewer() {
 
 
 /* ========================================
+   FULLSCREEN HUNT
+======================================== */
+
+function toggleHuntFullscreen() {
+
+  if (huntFullscreen) {
+
+    exitHuntFullscreen();
+
+  }
+
+  else {
+
+    enterHuntFullscreen();
+
+  }
+
+}
+
+
+/* ========================================
+   ENTRAR FULLSCREEN
+======================================== */
+
+function enterHuntFullscreen() {
+
+  const viewerScreen =
+    document.getElementById(
+      "viewerScreen"
+    );
+
+  const container =
+    document.getElementById(
+      "viewerContainer"
+    );
+
+
+  if (!viewerScreen || !container) {
+    return;
+  }
+
+
+  huntFullscreen =
+    true;
+
+
+  document.body.classList.add(
+    "hunt-fullscreen-active"
+  );
+
+
+  viewerScreen.classList.add(
+    "hunt-player-fullscreen"
+  );
+
+
+  container.classList.add(
+    "hunt-fullscreen-container"
+  );
+
+
+  updateFullscreenButtons();
+
+
+  console.log(
+    "HUNT: fullscreen ativado"
+  );
+
+}
+
+
+/* ========================================
+   SAIR FULLSCREEN
+======================================== */
+
+function exitHuntFullscreen() {
+
+  const viewerScreen =
+    document.getElementById(
+      "viewerScreen"
+    );
+
+  const container =
+    document.getElementById(
+      "viewerContainer"
+    );
+
+
+  huntFullscreen =
+    false;
+
+
+  document.body.classList.remove(
+    "hunt-fullscreen-active"
+  );
+
+
+  if (viewerScreen) {
+
+    viewerScreen.classList.remove(
+      "hunt-player-fullscreen"
+    );
+
+  }
+
+
+  if (container) {
+
+    container.classList.remove(
+      "hunt-fullscreen-container"
+    );
+
+  }
+
+
+  updateFullscreenButtons();
+
+
+  console.log(
+    "HUNT: fullscreen desativado"
+  );
+
+}
+
+
+/* ========================================
+   BOTÕES FULLSCREEN
+======================================== */
+
+function updateFullscreenButtons() {
+
+  const fullscreenButton =
+    document.getElementById(
+      "fullscreenButton"
+    );
+
+  const enterButton =
+    document.getElementById(
+      "huntFullscreenButton"
+    );
+
+  const exitButton =
+    document.getElementById(
+      "huntExitFullscreenButton"
+    );
+
+
+  if (fullscreenButton) {
+
+    fullscreenButton.textContent =
+      huntFullscreen
+        ? "✕ SAIR DA TELA CHEIA"
+        : "⛶ TELA CHEIA";
+
+  }
+
+
+  if (enterButton) {
+
+    enterButton.style.display =
+      huntFullscreen
+        ? "none"
+        : "flex";
+
+  }
+
+
+  if (exitButton) {
+
+    exitButton.style.display =
+      huntFullscreen
+        ? "flex"
+        : "none";
+
+  }
+
+}
+
+
+/* ========================================
+   TECLA ESC
+======================================== */
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Escape" &&
+      huntFullscreen
+    ) {
+
+      exitHuntFullscreen();
+
+    }
+
+  }
+);
+
+
+/* ========================================
    ALTERAR MODO DO PLAYER
 ======================================== */
 
 function setPlayerMode(
   mode
 ) {
+
+  if (
+    mode !== "wide" &&
+    mode !== "normal"
+  ) {
+
+    mode =
+      "wide";
+
+  }
+
 
   currentPlayerMode =
     mode;
@@ -666,20 +981,6 @@ function setPlayerMode(
     "wide-mode",
     "normal-mode"
   );
-
-
-  if (
-    mode !== "wide" &&
-    mode !== "normal"
-  ) {
-
-    mode =
-      "wide";
-
-    currentPlayerMode =
-      "wide";
-
-  }
 
 
   container.classList.add(

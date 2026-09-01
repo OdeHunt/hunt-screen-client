@@ -102,6 +102,7 @@ select {
   font-size: 14px;
   font-weight: 900;
   cursor: pointer;
+
   transition:
     transform .15s ease,
     filter .15s ease,
@@ -150,11 +151,6 @@ select {
   padding: 0;
   background: #000;
 
-  /*
-    Permite que a página cresça
-    quando o conteúdo ultrapassar
-    a altura da janela.
-  */
   min-height: 100vh;
   height: auto;
 }
@@ -168,12 +164,16 @@ select {
   width: 100%;
   min-height: 54px;
   padding: 8px 18px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 15px;
+
   background: #0b0b0b;
   border-bottom: 1px solid #1c1c1c;
+
   flex-shrink: 0;
 }
 
@@ -216,7 +216,9 @@ select {
   display: flex;
   align-items: center;
   gap: 4px;
+
   padding: 3px;
+
   background: #151515;
   border: 1px solid #252525;
   border-radius: 7px;
@@ -225,13 +227,19 @@ select {
 .mode-button {
   border: 0;
   background: transparent;
+
   color: #666;
+
   padding: 7px 13px;
+
   border-radius: 5px;
+
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 1px;
+
   cursor: pointer;
+
   transition:
     background .15s ease,
     color .15s ease;
@@ -253,8 +261,11 @@ select {
 
 .viewer-container {
   position: relative;
+
   background: #000;
+
   overflow: hidden;
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -274,11 +285,14 @@ select {
 
 .viewer-container.wide-mode {
   width: 100%;
+
   height: calc(100vh - 54px);
+
   min-height: 0;
 
   border: 0;
   border-radius: 0;
+
   margin: 0;
 }
 
@@ -290,13 +304,11 @@ select {
 .viewer-container.wide-mode #remoteVideo {
   width: 100%;
   height: 100%;
+
   display: block;
+
   background: #000;
 
-  /*
-    COVER preenche completamente
-    a área do player.
-  */
   object-fit: cover;
 }
 
@@ -307,10 +319,13 @@ select {
 
 .viewer-container.normal-mode {
   width: min(1000px, 92vw);
+
   aspect-ratio: 16 / 9;
+
   margin-top: 35px;
 
   border: 1px solid #222;
+
   border-radius: 9px;
 
   box-shadow:
@@ -325,9 +340,11 @@ select {
 .viewer-container.normal-mode #remoteVideo {
   width: 100%;
   height: 100%;
+
   display: block;
 
   object-fit: contain;
+
   background: #000;
 }
 
@@ -338,25 +355,33 @@ select {
 
 #remoteVideo {
   display: block;
+
+  width: 100%;
+  height: 100%;
+
   background: #000;
+
   cursor: pointer;
 }
 
 
 /* ========================================
-   FULLSCREEN
+   FULLSCREEN NATIVO DO VÍDEO
 ======================================== */
 
 #remoteVideo:fullscreen {
   width: 100vw;
   height: 100vh;
+
   background: #000;
+
   object-fit: contain;
 }
 
 .viewer-container:fullscreen {
   width: 100vw;
   height: 100vh;
+
   margin: 0;
 
   border: 0;
@@ -366,7 +391,123 @@ select {
 .viewer-container:fullscreen #remoteVideo {
   width: 100%;
   height: 100%;
+
   object-fit: contain;
+}
+
+
+/* ========================================
+   FULLSCREEN HUNT
+======================================== */
+
+body.hunt-fullscreen-active {
+  overflow: hidden !important;
+  width: 100%;
+  height: 100%;
+}
+
+.viewer-screen.hunt-player-fullscreen {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 999999;
+
+  width: 100vw;
+  height: 100vh;
+
+  min-height: 100vh;
+
+  background: #000;
+}
+
+.viewer-screen.hunt-player-fullscreen .viewer-header {
+  display: none;
+}
+
+.viewer-screen.hunt-player-fullscreen .viewer-bottom {
+  display: none;
+}
+
+.viewer-container.hunt-fullscreen-container {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100vw;
+  height: 100vh;
+
+  margin: 0;
+
+  max-width: none;
+
+  border: 0;
+  border-radius: 0;
+
+  z-index: 999999;
+}
+
+.viewer-container.hunt-fullscreen-container #remoteVideo {
+  width: 100vw;
+  height: 100vh;
+
+  object-fit: cover;
+}
+
+
+/* ========================================
+   BOTÃO FULLSCREEN SOBRE O VÍDEO
+======================================== */
+
+.hunt-fullscreen-button,
+.hunt-exit-fullscreen-button {
+  position: absolute;
+
+  right: 18px;
+  bottom: 18px;
+
+  z-index: 20;
+
+  width: 44px;
+  height: 44px;
+
+  border: 1px solid rgba(255, 255, 255, .18);
+
+  border-radius: 7px;
+
+  background: rgba(0, 0, 0, .75);
+
+  color: #fff;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 22px;
+
+  cursor: pointer;
+
+  backdrop-filter: blur(5px);
+
+  transition:
+    background .15s ease,
+    transform .15s ease;
+}
+
+.hunt-fullscreen-button:hover,
+.hunt-exit-fullscreen-button:hover {
+  background: rgba(255, 140, 0, .9);
+
+  color: #000;
+
+  transform: scale(1.05);
+}
+
+.hunt-exit-fullscreen-button {
+  display: none;
+
+  font-size: 16px;
 }
 
 
@@ -376,11 +517,13 @@ select {
 
 .viewer-message {
   position: absolute;
+
   inset: 0;
 
   z-index: 5;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -389,7 +532,9 @@ select {
   background: rgba(0, 0, 0, .35);
 
   color: #666;
+
   font-size: 12px;
+
   letter-spacing: 2px;
 
   text-align: center;
@@ -408,15 +553,13 @@ select {
   padding: 10px 18px 15px;
 
   display: flex;
+
   flex-direction: column;
+
   align-items: center;
 
   background: #080808;
 
-  /*
-    Não deixa a parte inferior
-    ser cortada pela viewport.
-  */
   flex-shrink: 0;
 }
 
@@ -427,8 +570,10 @@ select {
 
 .viewer-controls {
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   gap: 8px;
 }
 
@@ -462,6 +607,7 @@ select {
   .viewer-controls {
     flex-wrap: wrap;
   }
+
 }
 
 
@@ -495,7 +641,9 @@ select {
 
   .viewer-header {
     min-height: 50px;
-    padding: 7px 9px;
+
+    padding:
+      7px 9px;
   }
 
   .viewer-mode-selector {
@@ -503,7 +651,9 @@ select {
   }
 
   .mode-button {
-    padding: 7px 11px;
+    padding:
+      7px 11px;
+
     font-size: 9px;
   }
 
@@ -512,11 +662,15 @@ select {
 
   .viewer-container.normal-mode {
     width: 100vw;
-    aspect-ratio: 16 / 9;
+
+    aspect-ratio:
+      16 / 9;
+
     margin-top: 18px;
 
     border-left: 0;
     border-right: 0;
+
     border-radius: 0;
   }
 
@@ -525,7 +679,10 @@ select {
 
   .viewer-container.wide-mode {
     width: 100vw;
-    height: calc(100vh - 50px);
+
+    height:
+      calc(100vh - 50px);
+
     margin: 0;
   }
 
@@ -537,7 +694,8 @@ select {
   /* PARTE INFERIOR */
 
   .viewer-bottom {
-    padding: 8px 10px 12px;
+    padding:
+      8px 10px 12px;
   }
 
   .viewer-controls {
@@ -548,6 +706,36 @@ select {
     flex: 1;
     min-width: 0;
   }
+
+
+  /* FULLSCREEN */
+
+  .viewer-screen.hunt-player-fullscreen {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .viewer-container.hunt-fullscreen-container {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .viewer-container.hunt-fullscreen-container #remoteVideo {
+    width: 100vw;
+    height: 100vh;
+
+    object-fit: cover;
+  }
+
+  .hunt-fullscreen-button,
+  .hunt-exit-fullscreen-button {
+    right: 12px;
+    bottom: 12px;
+
+    width: 42px;
+    height: 42px;
+  }
+
 }
 
 
@@ -558,7 +746,8 @@ select {
 @media (max-width: 900px) and (orientation: landscape) {
 
   .viewer-container.wide-mode {
-    height: calc(100vh - 46px);
+    height:
+      calc(100vh - 46px);
   }
 
   .viewer-header {
@@ -566,6 +755,34 @@ select {
   }
 
   .viewer-bottom {
-    padding: 5px 10px;
+    padding:
+      5px 10px;
   }
+
+}
+
+
+/* ========================================
+   FULLSCREEN EM CELULAR DEITADO
+======================================== */
+
+@media (max-width: 900px) and (orientation: landscape) {
+
+  .viewer-screen.hunt-player-fullscreen {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .viewer-container.hunt-fullscreen-container {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .viewer-container.hunt-fullscreen-container #remoteVideo {
+    width: 100vw;
+    height: 100vh;
+
+    object-fit: cover;
+  }
+
 }
