@@ -158,7 +158,16 @@ SOCKET ERROR
 ========================================
 */
 
-socket.on("connect_error", (error) => {
+socket.on("connect_error", error => {
+  console.error("HUNT: erro de conexão:", error);
+
+  console.error("HUNT: detalhes do erro:", {
+    message: error.message,
+    description: error.description,
+    context: error.context,
+    type: error.type
+  });
+});
 
   console.error(
     "HUNT: erro de conexão:",
@@ -168,7 +177,7 @@ socket.on("connect_error", (error) => {
   status.textContent =
     "● ERRO DE CONEXÃO";
 
-});
+;
 
 /*
 ========================================
