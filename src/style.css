@@ -6,16 +6,15 @@ html,
 body,
 #app {
   margin: 0;
-  padding: 0;
   width: 100%;
   min-width: 100%;
-  height: 100%;
   min-height: 100%;
   background: #000;
 }
 
 html {
-  background: #000;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 body {
@@ -23,7 +22,8 @@ body {
   background: #000;
   color: #fff;
   font-family: Arial, Helvetica, sans-serif;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 button,
@@ -38,7 +38,6 @@ select {
 
 .hunt-screen {
   width: 100%;
-  height: 100%;
   min-height: 100vh;
   background: #000;
   display: flex;
@@ -150,9 +149,14 @@ select {
   justify-content: flex-start;
   padding: 0;
   background: #000;
-  width: 100%;
-  height: 100vh;
+
+  /*
+    Permite que a página cresça
+    quando o conteúdo ultrapassar
+    a altura da janela.
+  */
   min-height: 100vh;
+  height: auto;
 }
 
 
@@ -163,7 +167,6 @@ select {
 .viewer-header {
   width: 100%;
   min-height: 54px;
-  height: 54px;
   padding: 8px 18px;
   display: flex;
   align-items: center;
@@ -172,7 +175,6 @@ select {
   background: #0b0b0b;
   border-bottom: 1px solid #1c1c1c;
   flex-shrink: 0;
-  z-index: 10;
 }
 
 
@@ -256,6 +258,12 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
+
+  transition:
+    width .25s ease,
+    height .25s ease,
+    max-width .25s ease;
+
   flex-shrink: 0;
 }
 
@@ -268,10 +276,10 @@ select {
   width: 100%;
   height: calc(100vh - 54px);
   min-height: 0;
-  margin: 0;
-  padding: 0;
+
   border: 0;
   border-radius: 0;
+  margin: 0;
 }
 
 
@@ -280,21 +288,14 @@ select {
 ======================================== */
 
 .viewer-container.wide-mode #remoteVideo {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
-  min-width: 100%;
-  min-height: 100%;
   display: block;
-  margin: 0;
-  padding: 0;
-  border: 0;
   background: #000;
 
   /*
-     COVER faz o vídeo ocupar
-     absolutamente toda a área.
+    COVER preenche completamente
+    a área do player.
   */
   object-fit: cover;
 }
@@ -308,8 +309,10 @@ select {
   width: min(1000px, 92vw);
   aspect-ratio: 16 / 9;
   margin-top: 35px;
+
   border: 1px solid #222;
   border-radius: 9px;
+
   box-shadow:
     0 15px 50px rgba(0, 0, 0, .45);
 }
@@ -323,8 +326,9 @@ select {
   width: 100%;
   height: 100%;
   display: block;
-  background: #000;
+
   object-fit: contain;
+  background: #000;
 }
 
 
@@ -354,6 +358,7 @@ select {
   width: 100vw;
   height: 100vh;
   margin: 0;
+
   border: 0;
   border-radius: 0;
 }
@@ -372,16 +377,23 @@ select {
 .viewer-message {
   position: absolute;
   inset: 0;
+
   z-index: 5;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   padding: 30px;
+
   background: rgba(0, 0, 0, .35);
+
   color: #666;
   font-size: 12px;
   letter-spacing: 2px;
+
   text-align: center;
+
   pointer-events: none;
 }
 
@@ -392,11 +404,19 @@ select {
 
 .viewer-bottom {
   width: 100%;
+
   padding: 10px 18px 15px;
+
   display: flex;
   flex-direction: column;
   align-items: center;
+
   background: #080808;
+
+  /*
+    Não deixa a parte inferior
+    ser cortada pela viewport.
+  */
   flex-shrink: 0;
 }
 
@@ -442,7 +462,6 @@ select {
   .viewer-controls {
     flex-wrap: wrap;
   }
-
 }
 
 
@@ -476,7 +495,6 @@ select {
 
   .viewer-header {
     min-height: 50px;
-    height: 50px;
     padding: 7px 9px;
   }
 
@@ -496,6 +514,7 @@ select {
     width: 100vw;
     aspect-ratio: 16 / 9;
     margin-top: 18px;
+
     border-left: 0;
     border-right: 0;
     border-radius: 0;
@@ -508,17 +527,14 @@ select {
     width: 100vw;
     height: calc(100vh - 50px);
     margin: 0;
-    padding: 0;
   }
 
   .viewer-container.wide-mode #remoteVideo {
-    width: 100%;
-    height: 100%;
-    min-width: 100%;
-    min-height: 100%;
     object-fit: cover;
   }
 
+
+  /* PARTE INFERIOR */
 
   .viewer-bottom {
     padding: 8px 10px 12px;
@@ -532,7 +548,6 @@ select {
     flex: 1;
     min-width: 0;
   }
-
 }
 
 
@@ -542,51 +557,15 @@ select {
 
 @media (max-width: 900px) and (orientation: landscape) {
 
+  .viewer-container.wide-mode {
+    height: calc(100vh - 46px);
+  }
+
   .viewer-header {
     min-height: 46px;
-    height: 46px;
-  }
-
-  .viewer-container.wide-mode {
-    width: 100vw;
-    height: calc(100vh - 46px);
-    margin: 0;
-    padding: 0;
-  }
-
-  .viewer-container.wide-mode #remoteVideo {
-    width: 100%;
-    height: 100%;
-    min-width: 100%;
-    min-height: 100%;
-    object-fit: cover;
   }
 
   .viewer-bottom {
     padding: 5px 10px;
   }
-
-}
-
-
-/* ========================================
-   DISPOSITIVOS COM ALTURA PEQUENA
-======================================== */
-
-@media (max-height: 500px) and (orientation: landscape) {
-
-  .viewer-header {
-    min-height: 42px;
-    height: 42px;
-    padding: 5px 10px;
-  }
-
-  .viewer-container.wide-mode {
-    height: calc(100vh - 42px);
-  }
-
-  .viewer-bottom {
-    display: none;
-  }
-
 }
