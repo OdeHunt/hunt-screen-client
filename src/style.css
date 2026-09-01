@@ -2,43 +2,25 @@
   box-sizing: border-box;
 }
 
-
 html,
 body,
 #app {
-
   margin: 0;
-
   width: 100%;
-
   min-height: 100%;
-
   background: #000;
-
 }
-
 
 body {
-
   min-height: 100vh;
-
   background: #000;
-
   color: #fff;
-
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-
+  font-family: Arial, Helvetica, sans-serif;
 }
-
 
 button,
 select {
-
   font-family: inherit;
-
 }
 
 
@@ -47,25 +29,17 @@ select {
 ======================================== */
 
 .hunt-screen {
-
   width: 100%;
-
   min-height: 100vh;
 
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
-
   justify-content: center;
 
-  padding:
-    30px
-    20px;
+  padding: 30px 20px;
 
   background: #000;
-
 }
 
 
@@ -74,27 +48,19 @@ select {
 ======================================== */
 
 .hunt-logo {
-
   color: #ff8c00;
 
-  font-size:
-    clamp(
-      42px,
-      8vw,
-      70px
-    );
+  font-size: clamp(42px, 8vw, 70px);
 
   font-weight: 900;
 
   letter-spacing: 12px;
 
   line-height: 1;
-
 }
 
 
 .hunt-subtitle {
-
   margin-top: 10px;
 
   color: #555;
@@ -102,7 +68,6 @@ select {
   font-size: 13px;
 
   letter-spacing: 9px;
-
 }
 
 
@@ -111,12 +76,7 @@ select {
 ======================================== */
 
 .hunt-menu {
-
-  width:
-    min(
-      500px,
-      90%
-    );
+  width: min(500px, 90%);
 
   margin-top: 45px;
 
@@ -125,7 +85,6 @@ select {
   flex-direction: column;
 
   gap: 14px;
-
 }
 
 
@@ -134,12 +93,9 @@ select {
 ======================================== */
 
 .hunt-button {
-
   width: 100%;
 
-  padding:
-    16px
-    24px;
+  padding: 16px 24px;
 
   border: 0;
 
@@ -159,37 +115,27 @@ select {
     transform 0.15s ease,
     filter 0.15s ease,
     opacity 0.15s ease;
-
 }
 
 
 .hunt-button:hover {
-
   filter: brightness(1.15);
 
-  transform:
-    translateY(-1px);
-
+  transform: translateY(-1px);
 }
 
 
 .hunt-button:active {
-
-  transform:
-    translateY(0);
-
+  transform: translateY(0);
 }
 
 
 .hunt-button.secondary {
-
   background: #1a1a1a;
 
   color: #fff;
 
-  border:
-    1px solid #333;
-
+  border: 1px solid #333;
 }
 
 
@@ -198,7 +144,6 @@ select {
 ======================================== */
 
 .hunt-status {
-
   margin-top: 25px;
 
   color: #666;
@@ -208,7 +153,6 @@ select {
   letter-spacing: 2px;
 
   text-align: center;
-
 }
 
 
@@ -219,21 +163,17 @@ select {
 .viewer-container {
 
   /*
-   * Antes era muito largo.
-   *
-   * Agora temos uma área 4:3,
-   * deixando o player visualmente
-   * mais quadrado.
+   * Tamanho parecido com um
+   * player de vídeo do YouTube.
    */
 
-  width:
-    min(
-      850px,
-      92vw
-    );
+  width: min(900px, 90vw);
 
-  aspect-ratio:
-    4 / 3;
+  /*
+   * Proporção 16:9.
+   */
+
+  aspect-ratio: 16 / 9;
 
   margin-top: 35px;
 
@@ -241,10 +181,9 @@ select {
 
   background: #080808;
 
-  border:
-    1px solid #222;
+  border: 1px solid #222;
 
-  border-radius: 12px;
+  border-radius: 10px;
 
   overflow: hidden;
 
@@ -255,19 +194,12 @@ select {
   justify-content: center;
 
   box-shadow:
-    0 0 0 1px #111,
-    0 15px 50px rgba(
-      0,
-      0,
-      0,
-      0.6
-    );
-
+    0 10px 40px rgba(0, 0, 0, 0.45);
 }
 
 
 /* ========================================
-   VIDEO
+   VÍDEO
 ======================================== */
 
 #remoteVideo {
@@ -281,34 +213,37 @@ select {
   background: #000;
 
   /*
-   * Mantém a imagem inteira.
-   *
-   * Se a transmissão for 16:9,
-   * ela ficará centralizada dentro
-   * do player 4:3 sem ser cortada.
+   * Mantém a proporção original
+   * da transmissão.
    */
 
   object-fit: contain;
 
+  /*
+   * Permite os controles nativos
+   * do navegador.
+   */
+
+  cursor: pointer;
 }
 
 
 /*
- * O navegador cria automaticamente
- * os controles abaixo porque o elemento
- * possui "controls".
- *
- * Isso fornece:
- *
- * ▶ Play
- * 🔊 Volume
- * 🔇 Mudo
- * ⏱ Barra
- * ⛶ Fullscreen
- *
- * sem precisarmos recriar um player
- * manualmente.
+ * Garantir que o vídeo continue
+ * ocupando corretamente o player
+ * quando entrar em fullscreen.
  */
+
+#remoteVideo:fullscreen {
+
+  width: 100vw;
+
+  height: 100vh;
+
+  object-fit: contain;
+
+  background: #000;
+}
 
 
 /* ========================================
@@ -340,7 +275,16 @@ select {
   z-index: 2;
 
   pointer-events: none;
+}
 
+
+/*
+ * Quando existe vídeo,
+ * a mensagem fica por trás dele.
+ */
+
+#remoteVideo:not([src=""]) {
+  z-index: 1;
 }
 
 
@@ -350,11 +294,7 @@ select {
 
 .viewer-controls {
 
-  width:
-    min(
-      850px,
-      92vw
-    );
+  width: min(900px, 90vw);
 
   margin-top: 18px;
 
@@ -365,7 +305,6 @@ select {
   gap: 10px;
 
   flex-wrap: wrap;
-
 }
 
 
@@ -374,21 +313,58 @@ select {
   width: auto;
 
   min-width: 190px;
-
 }
+
+
+/* ========================================
+   PLAYER NATIVO
+======================================== */
+
+/*
+ * O navegador controla automaticamente:
+ *
+ * ▶ Play / Pause
+ * 🔊 Volume
+ * ⏱ Barra de progresso
+ * ⛶ Fullscreen
+ *
+ * através de:
+ *
+ * controls
+ *
+ * no elemento <video>.
+ */
 
 
 /* ========================================
    RESPONSIVO
 ======================================== */
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
+
+  .viewer-container {
+
+    width: 94vw;
+
+    margin-top: 30px;
+
+  }
+
+
+  .viewer-controls {
+
+    width: 94vw;
+
+  }
+
+}
+
+
+@media (max-width: 600px) {
 
   .hunt-screen {
 
-    padding:
-      20px
-      14px;
+    padding: 20px 14px;
 
   }
 
@@ -418,21 +394,22 @@ select {
   }
 
 
+  /*
+   * Player continua 16:9
+   * no celular.
+   */
+
   .viewer-container {
 
     width: 100%;
 
-    /*
-     * Mantém o player mais quadrado
-     * também no celular.
-     */
+    aspect-ratio: 16 / 9;
 
-    aspect-ratio:
-      4 / 3;
+    min-height: 0;
 
     margin-top: 25px;
 
-    border-radius: 9px;
+    border-radius: 8px;
 
   }
 
@@ -450,22 +427,76 @@ select {
 
     width: 100%;
 
+    min-width: 0;
+
   }
 
 }
 
 
 /* ========================================
-   TELAS MUITO PEQUENAS
+   FULLSCREEN DO CONTAINER
 ======================================== */
 
-@media (max-width: 420px) {
+.viewer-container:fullscreen {
 
-  .viewer-container {
+  width: 100vw;
 
-    aspect-ratio:
-      1 / 1;
+  height: 100vh;
 
-  }
+  aspect-ratio: auto;
+
+  border: none;
+
+  border-radius: 0;
+
+  margin: 0;
+
+  background: #000;
+
+}
+
+
+.viewer-container:fullscreen #remoteVideo {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: contain;
+
+}
+
+
+/* ========================================
+   FULLSCREEN WEBKIT
+======================================== */
+
+.viewer-container:-webkit-full-screen {
+
+  width: 100vw;
+
+  height: 100vh;
+
+  aspect-ratio: auto;
+
+  border: none;
+
+  border-radius: 0;
+
+  margin: 0;
+
+  background: #000;
+
+}
+
+
+.viewer-container:-webkit-full-screen #remoteVideo {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: contain;
 
 }
