@@ -1,10 +1,454 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  background: #000;
+}
+
+html {
+  background: #000;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #000;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+button,
+select {
+  font-family: inherit;
+}
+
 /* ========================================
-   BOTÃO FULLSCREEN DENTRO DO PLAYER
+   TELA PRINCIPAL
+======================================== */
+
+.hunt-screen {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #000;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ========================================
+   HOME
+======================================== */
+
+.home-screen {
+  justify-content: center;
+  padding: 30px 20px;
+}
+
+/* ========================================
+   LOGO
+======================================== */
+
+.hunt-logo {
+  color: #ff8c00;
+  font-size: clamp(42px, 8vw, 70px);
+  font-weight: 900;
+  letter-spacing: 12px;
+  line-height: 1;
+
+  text-shadow:
+    0 0 10px rgba(255, 140, 0, 0.15);
+}
+
+.hunt-subtitle {
+  margin-top: 10px;
+
+  color: #555;
+
+  font-size: 13px;
+  letter-spacing: 9px;
+  font-weight: 700;
+}
+
+/* ========================================
+   MENU
+======================================== */
+
+.hunt-menu {
+  width: min(500px, 90%);
+  margin-top: 45px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ========================================
+   BOTÕES
+======================================== */
+
+.hunt-button {
+  appearance: none;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: #ff8c00;
+  color: #000;
+
+  padding: 14px 22px;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.hunt-button:hover {
+  filter: brightness(1.12);
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 18px rgba(255, 140, 0, 0.15);
+}
+
+.hunt-button:active {
+  transform: translateY(0);
+
+  box-shadow: none;
+}
+
+.hunt-button.secondary {
+  background: #171717;
+  color: #fff;
+
+  border: 1px solid #292929;
+
+  box-shadow: none;
+}
+
+.hunt-button.secondary:hover {
+  background: #202020;
+  border-color: #383838;
+
+  filter: none;
+}
+
+.small-button {
+  min-width: 130px;
+}
+
+/* ========================================
+   STATUS
+======================================== */
+
+.hunt-status {
+  margin-top: 15px;
+
+  color: #666;
+
+  font-size: 10px;
+  letter-spacing: 2px;
+
+  text-align: center;
+
+  user-select: none;
+}
+
+/* ========================================
+   VIEWER
+======================================== */
+
+.viewer-screen {
+  width: 100%;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  justify-content: flex-start;
+
+  padding: 0;
+
+  background: #000;
+}
+
+/* ========================================
+   HEADER
+======================================== */
+
+.viewer-header {
+  width: 100%;
+  min-height: 54px;
+
+  padding: 8px 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  background: #0b0b0b;
+
+  border-bottom: 1px solid #1c1c1c;
+
+  flex-shrink: 0;
+
+  z-index: 20;
+}
+
+/* ========================================
+   MARCA
+======================================== */
+
+.viewer-brand {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  white-space: nowrap;
+
+  user-select: none;
+}
+
+.viewer-logo {
+  color: #ff8c00;
+
+  font-size: 18px;
+  font-weight: 900;
+
+  letter-spacing: 4px;
+}
+
+.viewer-brand-divider {
+  color: #333;
+
+  font-size: 18px;
+}
+
+.viewer-brand-screen {
+  color: #666;
+
+  font-size: 10px;
+
+  letter-spacing: 3px;
+}
+
+/* ========================================
+   SELETOR DE MODO
+======================================== */
+
+.viewer-mode-selector {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+
+  padding: 3px;
+
+  background: #151515;
+
+  border: 1px solid #252525;
+
+  border-radius: 7px;
+
+  flex-shrink: 0;
+}
+
+.mode-button {
+  appearance: none;
+
+  border: 0;
+
+  background: transparent;
+  color: #666;
+
+  padding: 7px 13px;
+
+  border-radius: 5px;
+
+  font-size: 10px;
+  font-weight: 900;
+
+  letter-spacing: 1px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.mode-button:hover {
+  color: #aaa;
+}
+
+.mode-button:active {
+  transform: scale(0.97);
+}
+
+.mode-button.active {
+  background: #ff8c00;
+  color: #000;
+}
+
+/* ========================================
+   CONTAINER DO VÍDEO
+======================================== */
+
+.viewer-container {
+  position: relative;
+
+  width: 100%;
+
+  background: #000;
+
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    width 0.25s ease,
+    height 0.25s ease,
+    max-width 0.25s ease;
+
+  flex-shrink: 0;
+}
+
+/* ========================================
+   WIDE
+======================================== */
+
+.viewer-container.wide-mode {
+  width: 100%;
+
+  height: calc(100vh - 54px);
+  height: calc(100dvh - 54px);
+
+  min-height: 0;
+
+  margin: 0;
+
+  border: 0;
+  border-radius: 0;
+
+  background: #000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========================================
+   VÍDEO WIDE
+
+   NÃO ESTICA
+   NÃO DISTORCE
+   NÃO CORTA
+======================================== */
+
+.viewer-container.wide-mode #remoteVideo {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  background: #000;
+
+  object-fit: contain;
+  object-position: center center;
+}
+
+/* ========================================
+   NORMAL
+======================================== */
+
+.viewer-container.normal-mode {
+  width: min(1000px, 92vw);
+
+  aspect-ratio: 16 / 9;
+
+  margin-top: 35px;
+
+  border: 1px solid #222;
+
+  border-radius: 9px;
+
+  box-shadow:
+    0 15px 50px rgba(0, 0, 0, 0.45);
+
+  background: #000;
+}
+
+/* ========================================
+   VÍDEO NORMAL
+======================================== */
+
+.viewer-container.normal-mode #remoteVideo {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  background: #000;
+
+  object-fit: contain;
+  object-position: center center;
+}
+
+/* ========================================
+   VÍDEO
+======================================== */
+
+#remoteVideo {
+  display: block;
+
+  background: #000;
+
+  cursor: pointer;
+
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* ========================================
+   CONTROLES NATIVOS DO VÍDEO
+======================================== */
+
+#remoteVideo::-webkit-media-controls-panel {
+  background-color: rgba(0, 0, 0, 0.85);
+}
+
+#remoteVideo::-webkit-media-controls {
+  z-index: 30;
+}
+
+/* ========================================
+   BOTÃO FULLSCREEN DENTRO DO VÍDEO
 ======================================== */
 
 .hunt-fullscreen-button,
 .hunt-exit-fullscreen-button {
-
   position: absolute;
 
   right: 14px;
@@ -13,310 +457,216 @@
   width: 42px;
   height: 42px;
 
-  border: 1px solid rgba(255, 140, 0, .45);
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
 
   border-radius: 8px;
 
-  background: rgba(10, 10, 10, .88);
+  background: rgba(10, 10, 10, 0.88);
 
-  color: #ff8c00;
+  color: #fff;
 
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 700;
 
   line-height: 1;
 
   cursor: pointer;
 
-  z-index: 20;
+  z-index: 15;
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  box-shadow:
+    0 5px 20px rgba(0, 0, 0, 0.4);
 
   transition:
-    transform .15s ease,
-    background .15s ease,
-    color .15s ease,
-    border-color .15s ease,
-    opacity .15s ease;
-
-  backdrop-filter: blur(6px);
-
-  -webkit-backdrop-filter: blur(6px);
-
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
 }
-
 
 .hunt-fullscreen-button:hover,
 .hunt-exit-fullscreen-button:hover {
-
   background: #ff8c00;
 
   color: #000;
 
   border-color: #ff8c00;
 
-  transform: scale(1.06);
-
+  transform: scale(1.05);
 }
-
 
 .hunt-fullscreen-button:active,
 .hunt-exit-fullscreen-button:active {
-
-  transform: scale(.96);
-
+  transform: scale(0.96);
 }
 
-
 /* ========================================
-   SAIR FULLSCREEN
+   BOTÃO SAIR FULLSCREEN
 ======================================== */
 
 .hunt-exit-fullscreen-button {
-
   display: none;
 
+  font-size: 18px;
 }
-
 
 /* ========================================
-   FULLSCREEN VISUAL HUNT
+   MENSAGEM
 ======================================== */
 
-.hunt-player-fullscreen {
+.viewer-message {
+  position: absolute;
 
-  position: fixed !important;
+  inset: 0;
 
-  inset: 0 !important;
+  z-index: 5;
 
-  width: 100vw !important;
+  display: flex;
 
-  width: 100dvw !important;
+  align-items: center;
+  justify-content: center;
 
-  height: 100vh !important;
+  padding: 30px;
 
-  height: 100dvh !important;
+  background: rgba(0, 0, 0, 0.35);
 
-  min-width: 100vw !important;
+  color: #666;
 
-  min-height: 100vh !important;
+  font-size: 12px;
 
-  min-height: 100dvh !important;
+  letter-spacing: 2px;
 
-  margin: 0 !important;
+  text-align: center;
 
-  padding: 0 !important;
+  pointer-events: none;
 
-  background: #000 !important;
-
-  z-index: 999999 !important;
-
+  user-select: none;
 }
 
+/* ========================================
+   PARTE INFERIOR
+======================================== */
+
+.viewer-bottom {
+  width: 100%;
+
+  padding: 10px 18px 15px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  background: #080808;
+
+  flex-shrink: 0;
+
+  border-top: 1px solid #111;
+}
+
+/* ========================================
+   CONTROLES
+======================================== */
+
+.viewer-controls {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+}
+
+/* ========================================
+   FULLSCREEN HUNT
+
+   Modo usado pelo main.js
+
+   NÃO depende do fullscreen
+   nativo do navegador.
+
+======================================== */
+
+body.hunt-fullscreen-active {
+  overflow: hidden;
+
+  width: 100%;
+  height: 100%;
+
+  min-height: 100%;
+
+  background: #000;
+}
+
+body.hunt-fullscreen-active #app {
+  width: 100%;
+  height: 100%;
+
+  min-height: 100%;
+
+  background: #000;
+}
+
+/* ========================================
+   VIEWER EM FULLSCREEN
+======================================== */
+
+.viewer-screen.hunt-player-fullscreen {
+  position: fixed;
+
+  inset: 0;
+
+  width: 100vw;
+  width: 100dvw;
+
+  height: 100vh;
+  height: 100dvh;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  z-index: 99999;
+
+  background: #000;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
 
 /* ========================================
    HEADER NO FULLSCREEN
 ======================================== */
 
-.hunt-player-fullscreen .viewer-header {
+.viewer-screen.hunt-player-fullscreen .viewer-header {
+  flex-shrink: 0;
 
-  position: absolute;
-
-  top: 0;
-  left: 0;
-
-  z-index: 30;
-
-  background: rgba(11, 11, 11, .92);
-
-  backdrop-filter: blur(8px);
-
-  -webkit-backdrop-filter: blur(8px);
-
+  min-height: 54px;
 }
-
 
 /* ========================================
    CONTAINER FULLSCREEN
 ======================================== */
 
-.hunt-player-fullscreen
-.hunt-fullscreen-container {
-
-  width: 100% !important;
-
-  width: 100dvw !important;
-
-  height: 100% !important;
-
-  height: 100dvh !important;
-
-  margin: 0 !important;
-
-  padding: 0 !important;
-
-  border: 0 !important;
-
-  border-radius: 0 !important;
-
-  background: #000 !important;
-
-}
-
-
-/* ========================================
-   VÍDEO NO FULLSCREEN
-======================================== */
-
-.hunt-player-fullscreen
-#remoteVideo {
-
-  width: 100% !important;
-
-  height: 100% !important;
-
-  max-width: none !important;
-
-  max-height: none !important;
-
-  object-fit: contain !important;
-
-  object-position: center center !important;
-
-  background: #000;
-
-}
-
-
-/* ========================================
-   WIDE FULLSCREEN
-======================================== */
-
-.hunt-player-fullscreen
-.viewer-container.wide-mode
-#remoteVideo {
-
-  object-fit: contain !important;
-
-}
-
-
-/* ========================================
-   NORMAL FULLSCREEN
-======================================== */
-
-.hunt-player-fullscreen
-.viewer-container.normal-mode
-#remoteVideo {
-
-  object-fit: contain !important;
-
-}
-
-
-/* ========================================
-   MENSAGEM FULLSCREEN
-======================================== */
-
-.hunt-player-fullscreen
-.viewer-message {
-
-  z-index: 15;
-
-}
-
-
-/* ========================================
-   CONTROLES INFERIORES
-======================================== */
-
-.hunt-player-fullscreen
-.viewer-bottom {
-
-  position: absolute;
-
-  left: 0;
-  bottom: 0;
-
-  z-index: 30;
-
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, .92),
-    rgba(0, 0, 0, .45),
-    transparent
-  );
-
-  pointer-events: none;
-
-}
-
-
-.hunt-player-fullscreen
-.viewer-bottom
-.viewer-controls {
-
-  pointer-events: auto;
-
-}
-
-
-/* ========================================
-   BOTÃO FULLSCREEN NO MODO FULLSCREEN
-======================================== */
-
-.hunt-player-fullscreen
-.hunt-fullscreen-button {
-
-  display: none !important;
-
-}
-
-
-.hunt-player-fullscreen
-.hunt-exit-fullscreen-button {
-
-  display: flex;
-
-}
-
-
-/* ========================================
-   FULLSCREEN REAL DO NAVEGADOR
-======================================== */
-
-#viewerScreen:fullscreen {
-
-  width: 100vw;
-
-  width: 100dvw;
-
-  height: 100vh;
-
-  height: 100dvh;
-
-  margin: 0;
-
-  padding: 0;
-
-  background: #000;
-
-}
-
-
-/* ========================================
-   FULLSCREEN REAL - CONTAINER
-======================================== */
-
-#viewerScreen:fullscreen
-.viewer-container {
+.viewer-container.hunt-fullscreen-container {
+  position: relative;
 
   width: 100%;
 
-  height: 100%;
+  height: calc(100vh - 54px);
+  height: calc(100dvh - 54px);
+
+  min-height: 0;
 
   margin: 0;
 
@@ -324,30 +674,150 @@
 
   border-radius: 0;
 
+  background: #000;
+
+  flex: 1 1 auto;
+
+  overflow: hidden;
 }
 
-
 /* ========================================
-   FULLSCREEN REAL - VÍDEO
+   VÍDEO FULLSCREEN
+
+   Mantém proporção original
 ======================================== */
 
-#viewerScreen:fullscreen
-#remoteVideo {
-
+.viewer-container.hunt-fullscreen-container #remoteVideo {
   width: 100%;
-
   height: 100%;
 
-  max-width: none;
+  max-width: 100%;
+  max-height: 100%;
 
-  max-height: none;
-
-  object-fit: contain;
+  display: block;
 
   background: #000;
 
+  object-fit: contain;
+  object-position: center center;
 }
 
+/* ========================================
+   ESCONDER PARTE INFERIOR
+   DURANTE FULLSCREEN
+======================================== */
+
+.viewer-screen.hunt-player-fullscreen .viewer-bottom {
+  display: none;
+}
+
+/* ========================================
+   FULLSCREEN NATIVO DO VÍDEO
+======================================== */
+
+#remoteVideo:fullscreen {
+  width: 100vw;
+  height: 100vh;
+
+  width: 100dvw;
+  height: 100dvh;
+
+  background: #000;
+
+  object-fit: contain;
+  object-position: center center;
+}
+
+/* ========================================
+   FULLSCREEN NATIVO DO CONTAINER
+======================================== */
+
+.viewer-container:fullscreen {
+  width: 100vw;
+  height: 100vh;
+
+  width: 100dvw;
+  height: 100dvh;
+
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: 0;
+
+  background: #000;
+}
+
+.viewer-container:fullscreen #remoteVideo {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  object-position: center center;
+}
+
+/* ========================================
+   WEBKIT FULLSCREEN
+======================================== */
+
+#remoteVideo:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+
+  background: #000;
+
+  object-fit: contain;
+}
+
+.viewer-container:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+
+  margin: 0;
+
+  border: 0;
+  border-radius: 0;
+
+  background: #000;
+}
+
+.viewer-container:-webkit-full-screen #remoteVideo {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+/* ========================================
+   RESPONSIVO
+======================================== */
+
+@media (max-width: 900px) {
+
+  .viewer-header {
+    padding: 8px 12px;
+  }
+
+  .viewer-brand-screen {
+    display: none;
+  }
+
+  .viewer-brand-divider {
+    display: none;
+  }
+
+  .viewer-logo {
+    font-size: 15px;
+  }
+
+  .viewer-container.normal-mode {
+    width: 94vw;
+  }
+
+  .viewer-controls {
+    flex-wrap: wrap;
+  }
+}
 
 /* ========================================
    CELULAR
@@ -355,45 +825,290 @@
 
 @media (max-width: 600px) {
 
-  .hunt-fullscreen-button,
-  .hunt-exit-fullscreen-button {
-
-    right: 10px;
-
-    bottom: 10px;
-
-    width: 40px;
-
-    height: 40px;
-
-    font-size: 18px;
-
+  .home-screen {
+    padding: 20px 14px;
   }
 
-}
+  .hunt-logo {
+    font-size: 42px;
+    letter-spacing: 8px;
+  }
 
+  .hunt-subtitle {
+    font-size: 11px;
+    letter-spacing: 6px;
+  }
+
+  .hunt-menu {
+    width: 100%;
+    margin-top: 35px;
+  }
+
+  /* HEADER */
+
+  .viewer-header {
+    min-height: 50px;
+
+    padding: 7px 9px;
+
+    gap: 8px;
+  }
+
+  .viewer-mode-selector {
+    gap: 2px;
+  }
+
+  .mode-button {
+    padding: 7px 11px;
+
+    font-size: 9px;
+  }
+
+  /* NORMAL */
+
+  .viewer-container.normal-mode {
+    width: 100vw;
+
+    aspect-ratio: 16 / 9;
+
+    margin-top: 18px;
+
+    border-left: 0;
+    border-right: 0;
+
+    border-radius: 0;
+  }
+
+  /* WIDE */
+
+  .viewer-container.wide-mode {
+    width: 100vw;
+
+    height: calc(100vh - 50px);
+    height: calc(100dvh - 50px);
+
+    margin: 0;
+  }
+
+  .viewer-container.wide-mode #remoteVideo {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+
+    object-position: center center;
+  }
+
+  /* BOTÃO FULLSCREEN */
+
+  .hunt-fullscreen-button,
+  .hunt-exit-fullscreen-button {
+    width: 40px;
+    height: 40px;
+
+    right: 10px;
+    bottom: 10px;
+
+    border-radius: 7px;
+
+    font-size: 20px;
+  }
+
+  /* PARTE INFERIOR */
+
+  .viewer-bottom {
+    padding: 8px 10px 12px;
+  }
+
+  .viewer-controls {
+    width: 100%;
+  }
+
+  .small-button {
+    flex: 1;
+
+    min-width: 0;
+  }
+
+  /* FULLSCREEN */
+
+  .viewer-screen.hunt-player-fullscreen .viewer-header {
+    min-height: 50px;
+
+    padding: 7px 9px;
+  }
+
+  .viewer-container.hunt-fullscreen-container {
+    height: calc(100dvh - 50px);
+  }
+}
 
 /* ========================================
    CELULAR DEITADO
 ======================================== */
 
-@media (
-  max-width: 900px
-) and (
-  orientation: landscape
-) {
+@media (max-width: 900px) and (orientation: landscape) {
+
+  .viewer-header {
+    min-height: 46px;
+  }
+
+  .viewer-container.wide-mode {
+    height: calc(100vh - 46px);
+    height: calc(100dvh - 46px);
+  }
+
+  .viewer-container.wide-mode #remoteVideo {
+    object-fit: contain;
+  }
+
+  .viewer-bottom {
+    padding: 5px 10px;
+  }
+
+  /* FULLSCREEN */
+
+  .viewer-screen.hunt-player-fullscreen .viewer-header {
+    min-height: 46px;
+
+    padding: 5px 10px;
+  }
+
+  .viewer-container.hunt-fullscreen-container {
+    height: calc(100dvh - 46px);
+  }
 
   .hunt-fullscreen-button,
   .hunt-exit-fullscreen-button {
-
-    right: 9px;
-
-    bottom: 9px;
-
     width: 38px;
-
     height: 38px;
 
+    right: 10px;
+    bottom: 10px;
+  }
+}
+
+/* ========================================
+   TELA CHEIA / ACTIVITY
+======================================== */
+
+@media (display-mode: fullscreen) {
+
+  html,
+  body,
+  #app {
+    width: 100%;
+    height: 100%;
+
+    min-width: 100%;
+    min-height: 100%;
+
+    margin: 0;
+    padding: 0;
+
+    background: #000;
   }
 
+  body {
+    overflow: hidden;
+  }
+
+  .viewer-screen {
+    width: 100%;
+    height: 100%;
+
+    min-height: 100%;
+
+    background: #000;
+  }
+
+  .viewer-container.wide-mode {
+    width: 100%;
+
+    height: calc(100% - 54px);
+
+    margin: 0;
+  }
+
+  .viewer-container.wide-mode #remoteVideo {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+
+    object-position: center center;
+  }
+}
+
+/* ========================================
+   FULLSCREEN HUNT + ACTIVITY
+======================================== */
+
+body.hunt-fullscreen-active
+.viewer-screen.hunt-player-fullscreen
+.viewer-container.hunt-fullscreen-container {
+  flex: 1 1 auto;
+
+  width: 100%;
+
+  min-height: 0;
+}
+
+body.hunt-fullscreen-active
+.viewer-screen.hunt-player-fullscreen
+.viewer-container.hunt-fullscreen-container
+#remoteVideo {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  object-position: center center;
+}
+
+/* ========================================
+   SEGURANÇA CONTRA SCROLL NO FULLSCREEN
+======================================== */
+
+body.hunt-fullscreen-active,
+body.hunt-fullscreen-active html {
+  overflow: hidden !important;
+}
+
+/* ========================================
+   SELEÇÃO
+======================================== */
+
+.hunt-button,
+.mode-button,
+.hunt-fullscreen-button,
+.hunt-exit-fullscreen-button {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ========================================
+   FOCO
+======================================== */
+
+.hunt-button:focus-visible,
+.mode-button:focus-visible,
+.hunt-fullscreen-button:focus-visible,
+.hunt-exit-fullscreen-button:focus-visible {
+  outline: 2px solid #ff8c00;
+  outline-offset: 2px;
+}
+
+/* ========================================
+   REDUÇÃO DE MOVIMENTO
+======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .hunt-button,
+  .mode-button,
+  .hunt-fullscreen-button,
+  .hunt-exit-fullscreen-button,
+  .viewer-container {
+    transition: none;
+  }
 }
