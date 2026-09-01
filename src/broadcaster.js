@@ -14,13 +14,6 @@ const ROOM_ID =
   "hunt-screen-main";
 
 
-/*
- * ID da aplicação Discord.
- *
- * É o ID que aparece no seu domínio:
- *
- * 1542940402733162496.discordsays.com
- */
 const DISCORD_CLIENT_ID =
   "1542940402733162496";
 
@@ -80,19 +73,87 @@ const fps =
    VARIÁVEIS
 ========================================================= */
 
-let socket = null;
+let socket =
+  null;
 
-let screenStream = null;
+let screenStream =
+  null;
 
-let transmitting = false;
+let transmitting =
+  false;
 
 
 /*
  * Cada espectador possui
  * seu próprio PeerConnection.
  */
+
 const peers =
   new Map();
+
+
+/* =========================================================
+   CONFIGURAÇÃO DAS QUALIDADES
+========================================================= */
+
+const QUALITY_CONFIG = {
+
+  360: {
+
+    width:
+      640,
+
+    height:
+      360,
+
+    bitrate:
+      1000000
+
+  },
+
+
+  480: {
+
+    width:
+      854,
+
+    height:
+      480,
+
+    bitrate:
+      2000000
+
+  },
+
+
+  720: {
+
+    width:
+      1280,
+
+    height:
+      720,
+
+    bitrate:
+      4000000
+
+  },
+
+
+  1080: {
+
+    width:
+      1920,
+
+    height:
+      1080,
+
+    bitrate:
+      8000000
+
+  }
+
+};
 
 
 /* =========================================================
@@ -174,29 +235,37 @@ function hideError() {
 
 
 /* =========================================================
-   DISCORD URL MAPPING
+   OBTER CONFIGURAÇÃO ATUAL
 ========================================================= */
 
-/*
- * O Discord bloqueia conexões externas
- * diretamente dentro da Activity.
- *
- * O URL Mapping criado no Developer Portal é:
- *
- * /hunt-socket
- *
- * ->
- *
- * hunt-screen-server.onrender.com
- *
- *
- * O patchUrlMappings modifica WebSocket,
- * fetch e XMLHttpRequest para passar
- * pelo proxy da Activity.
- *
- * Isso precisa acontecer ANTES
- * de inicializar o Socket.IO.
- */
+function getSelectedQuality() {
+
+  const selected =
+    Number(
+      quality.value
+    );
+
+
+  return (
+    QUALITY_CONFIG[selected] ||
+    QUALITY_CONFIG[1080]
+  );
+
+}
+
+
+function getSelectedFPS() {
+
+  return Number(
+    fps.value
+  );
+
+}
+
+
+/* =========================================================
+   DISCORD URL MAPPING
+========================================================= */
 
 function setupDiscordNetworking() {
 
@@ -265,20 +334,6 @@ function connectSocket() {
   );
 
 
-  /*
-   * Fora do Discord:
-   *
-   * https://hunt-screen-server.onrender.com
-   *
-   *
-   * Dentro do Discord:
-   *
-   * https://ID.discordsays.com
-   *
-   * O patchUrlMappings vai redirecionar
-   * /hunt-socket para o Render.
-   */
-
   const socketURL =
     isDiscordActivity
       ? window.location.origin
@@ -291,38 +346,31 @@ function connectSocket() {
   );
 
 
-  socket = io(
-    socketURL,
-    {
+  socket =
+    io(
+      socketURL,
+      {
 
-      path:
-        "/hunt-socket",
+        path:
+          "/hunt-socket",
 
-      /*
-       * O Discord atualmente suporta
-       * WebSocket para networking das Activities.
-       *
-       * Mantemos somente WebSocket para evitar
-       * problemas de fallback do Socket.IO.
-       */
+        transports:
+          ["websocket"],
 
-      transports:
-        ["websocket"],
+        reconnection:
+          true,
 
-      reconnection:
-        true,
+        reconnectionAttempts:
+          Infinity,
 
-      reconnectionAttempts:
-        Infinity,
+        reconnectionDelay:
+          1000,
 
-      reconnectionDelay:
-        1000,
+        reconnectionDelayMax:
+          5000
 
-      reconnectionDelayMax:
-        5000
-
-    }
-  );
+      }
+    );
 
 
   socket.on(
@@ -423,10 +471,9 @@ function connectSocket() {
   );
 
 
-  /*
-   * O servidor avisa quando um espectador
-   * entra na sala.
-   */
+  /* =======================================================
+     NOVO ESPECTADOR
+  ======================================================= */
 
   socket.on(
     "user-joined",
@@ -463,9 +510,9 @@ function connectSocket() {
   );
 
 
-  /*
-   * Resposta do espectador.
-   */
+  /* =======================================================
+     ANSWER
+  ======================================================= */
 
   socket.on(
     "webrtc-answer",
@@ -532,9 +579,9 @@ function connectSocket() {
   );
 
 
-  /*
-   * ICE recebido.
-   */
+  /* =======================================================
+     ICE
+  ======================================================= */
 
   socket.on(
     "webrtc-ice-candidate",
@@ -599,6 +646,452 @@ function connectSocket() {
 
 
 /* =========================================================
+   APLICAR QUALIDADE NA CAPTURA
+========================================================= */
+
+async function applyVideoConstraints() {
+
+  if (!screenStream) {
+
+    return false;
+
+  }
+
+
+  const videoTrack =
+    screenStream.getVideoTracks()[0];
+
+
+  if (!videoTrack) {
+
+    console.warn(
+      "HUNT: nenhuma faixa de vídeo encontrada."
+    );
+
+    return false;
+
+  }
+
+
+  const selectedQuality =
+    getSelectedQuality();
+
+  const selectedFPS =
+    getSelectedFPS();
+
+
+  console.log(
+    "HUNT: aplicando qualidade:",
+    {
+
+      width:
+        selectedQuality.width,
+
+      height:
+        selectedQuality.height,
+
+      fps:
+        selectedFPS
+
+    }
+  );
+
+
+  try {
+
+    await videoTrack.applyConstraints({
+
+      width: {
+
+        min:
+          320,
+
+        ideal:
+          selectedQuality.width,
+
+        max:
+          selectedQuality.width
+
+      },
+
+      height: {
+
+        min:
+          180,
+
+        ideal:
+          selectedQuality.height,
+
+        max:
+          selectedQuality.height
+
+      },
+
+      frameRate: {
+
+        min:
+          15,
+
+        ideal:
+          selectedFPS,
+
+        max:
+          selectedFPS
+
+      }
+
+    });
+
+
+    const settings =
+      videoTrack.getSettings();
+
+
+    console.log(
+      "HUNT: qualidade REAL da captura:",
+      {
+
+        width:
+          settings.width,
+
+        height:
+          settings.height,
+
+        frameRate:
+          settings.frameRate
+
+      }
+    );
+
+
+    return true;
+
+  }
+
+  catch (error) {
+
+    console.warn(
+      "HUNT: não foi possível aplicar exatamente a qualidade:",
+      error
+    );
+
+
+    /*
+     * Algumas fontes de captura não aceitam
+     * todas as restrições.
+     *
+     * Tentamos uma versão mais flexível.
+     */
+
+    try {
+
+      await videoTrack.applyConstraints({
+
+        width:
+          selectedQuality.width,
+
+        height:
+          selectedQuality.height,
+
+        frameRate:
+          selectedFPS
+
+      });
+
+
+      const settings =
+        videoTrack.getSettings();
+
+
+      console.log(
+        "HUNT: qualidade aplicada com fallback:",
+        settings
+      );
+
+
+      return true;
+
+    }
+
+    catch (fallbackError) {
+
+      console.error(
+        "HUNT: erro aplicando qualidade:",
+        fallbackError
+      );
+
+
+      showError(
+        "Não foi possível alterar a qualidade desta captura."
+      );
+
+
+      return false;
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   APLICAR BITRATE NOS PEERS
+========================================================= */
+
+async function applyBitrateToPeer(
+  peer
+) {
+
+  if (!peer) {
+
+    return;
+
+  }
+
+
+  const selectedQuality =
+    getSelectedQuality();
+
+
+  const senders =
+    peer.getSenders();
+
+
+  for (
+    const sender
+    of senders
+  ) {
+
+    if (
+      !sender.track ||
+      sender.track.kind !==
+        "video"
+    ) {
+
+      continue;
+
+    }
+
+
+    try {
+
+      const parameters =
+        sender.getParameters();
+
+
+      if (
+        !parameters.encodings ||
+        parameters.encodings.length === 0
+      ) {
+
+        parameters.encodings = [
+          {}
+        ];
+
+      }
+
+
+      for (
+        const encoding
+        of parameters.encodings
+      ) {
+
+        encoding.maxBitrate =
+          selectedQuality.bitrate;
+
+      }
+
+
+      await sender.setParameters(
+        parameters
+      );
+
+
+      console.log(
+        "HUNT: bitrate aplicado:",
+        selectedQuality.bitrate
+      );
+
+    }
+
+    catch (error) {
+
+      console.warn(
+        "HUNT: não foi possível aplicar bitrate:",
+        error
+      );
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   APLICAR BITRATE EM TODOS OS ESPECTADORES
+========================================================= */
+
+async function applyBitrateToAllPeers() {
+
+  for (
+    const peer
+    of peers.values()
+  ) {
+
+    await applyBitrateToPeer(
+      peer
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   ALTERAR QUALIDADE
+========================================================= */
+
+async function changeQuality() {
+
+  hideError();
+
+
+  const selectedQuality =
+    getSelectedQuality();
+
+
+  console.log(
+    "HUNT: qualidade selecionada:",
+    {
+
+      resolution:
+        `${selectedQuality.width}x${selectedQuality.height}`,
+
+      bitrate:
+        selectedQuality.bitrate
+
+    }
+  );
+
+
+  /*
+   * Se ainda não escolheu a tela,
+   * apenas guardamos a preferência.
+   */
+
+  if (!screenStream) {
+
+    console.log(
+      "HUNT: qualidade será aplicada quando a tela for selecionada."
+    );
+
+    return;
+
+  }
+
+
+  /*
+   * Aplicar resolução/FPS
+   * diretamente no track.
+   */
+
+  const success =
+    await applyVideoConstraints();
+
+
+  if (!success) {
+
+    return;
+
+  }
+
+
+  /*
+   * Atualizar bitrate
+   * de todos os espectadores.
+   */
+
+  await applyBitrateToAllPeers();
+
+
+  const settings =
+    screenStream
+      .getVideoTracks()[0]
+      ?.getSettings();
+
+
+  console.log(
+    "HUNT: transmissão atualizada:",
+    {
+
+      configurado:
+        `${selectedQuality.width}x${selectedQuality.height}`,
+
+      real:
+        settings
+          ? `${settings.width}x${settings.height}`
+          : "desconhecido",
+
+      fps:
+        settings?.frameRate
+
+    }
+  );
+
+
+  if (transmitting) {
+
+    setStatus(
+      `🔴 TRANSMITINDO • ${quality.value}p`,
+      true
+    );
+
+  }
+  else {
+
+    setStatus(
+      `● TELA SELECIONADA • ${quality.value}p`
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   ALTERAR FPS
+========================================================= */
+
+async function changeFPS() {
+
+  hideError();
+
+
+  if (!screenStream) {
+
+    return;
+
+  }
+
+
+  await applyVideoConstraints();
+
+
+  if (transmitting) {
+
+    setStatus(
+      `🔴 TRANSMITINDO • ${quality.value}p • ${fps.value} FPS`,
+      true
+    );
+
+  }
+
+}
+
+
+/* =========================================================
    ESCOLHER TELA
 ========================================================= */
 
@@ -623,22 +1116,27 @@ async function chooseScreen() {
 
   try {
 
-    const selectedFPS =
-      Number(
-        fps.value
-      );
-
-
     const selectedQuality =
-      Number(
-        quality.value
-      );
+      getSelectedQuality();
+
+    const selectedFPS =
+      getSelectedFPS();
 
 
     console.log(
       "HUNT: solicitando captura:",
-      selectedQuality,
-      selectedFPS
+      {
+
+        width:
+          selectedQuality.width,
+
+        height:
+          selectedQuality.height,
+
+        fps:
+          selectedFPS
+
+      }
     );
 
 
@@ -650,18 +1148,20 @@ async function chooseScreen() {
           width: {
 
             ideal:
-              selectedQuality
+              selectedQuality.width,
+
+            max:
+              selectedQuality.width
 
           },
 
           height: {
 
             ideal:
-              Math.round(
-                selectedQuality *
-                9 /
-                16
-              )
+              selectedQuality.height,
+
+            max:
+              selectedQuality.height
 
           },
 
@@ -677,7 +1177,8 @@ async function chooseScreen() {
 
         },
 
-        audio: true
+        audio:
+          true
 
       });
 
@@ -709,14 +1210,13 @@ async function chooseScreen() {
     );
 
 
-    setStatus(
-      "● TELA SELECIONADA"
-    );
+    /*
+     * Agora garantimos que o track
+     * tente realmente assumir a qualidade
+     * selecionada.
+     */
 
-
-    console.log(
-      "HUNT: tela selecionada."
-    );
+    await applyVideoConstraints();
 
 
     const videoTrack =
@@ -724,6 +1224,30 @@ async function chooseScreen() {
 
 
     if (videoTrack) {
+
+      const settings =
+        videoTrack.getSettings();
+
+
+      console.log(
+        "HUNT: captura REAL iniciada:",
+        {
+
+          width:
+            settings.width,
+
+          height:
+            settings.height,
+
+          fps:
+            settings.frameRate,
+
+          displaySurface:
+            settings.displaySurface
+
+        }
+      );
+
 
       videoTrack.addEventListener(
         "ended",
@@ -741,6 +1265,16 @@ async function chooseScreen() {
 
     }
 
+
+    setStatus(
+      `● TELA SELECIONADA • ${quality.value}p`
+    );
+
+
+    console.log(
+      "HUNT: tela selecionada."
+    );
+
   }
 
   catch (error) {
@@ -749,6 +1283,10 @@ async function chooseScreen() {
       "HUNT: erro ao capturar tela:",
       error
     );
+
+
+    screenStream =
+      null;
 
 
     showError(
@@ -806,7 +1344,7 @@ function startTransmission() {
 
 
   setStatus(
-    "🔴 TRANSMITINDO",
+    `🔴 TRANSMITINDO • ${quality.value}p • ${fps.value} FPS`,
     true
   );
 
@@ -838,7 +1376,16 @@ function startTransmission() {
 
 
   console.log(
-    "HUNT: transmissão iniciada."
+    "HUNT: transmissão iniciada:",
+    {
+
+      quality:
+        quality.value,
+
+      fps:
+        fps.value
+
+    }
   );
 
 }
@@ -859,12 +1406,10 @@ function createPeer(
 
 
   /*
-   * Usamos explicitamente
-   * window.RTCPeerConnection.
+   * IMPORTANTE:
    *
-   * Isso evita o problema anterior:
-   *
-   * RTCPeerConnection is not a constructor
+   * Mantemos exatamente o acesso
+   * que já foi confirmado como funcional.
    */
 
   const PeerConnection =
@@ -999,6 +1544,17 @@ function createPeer(
   );
 
 
+  /*
+   * Aplicar bitrate
+   *
+   * Depois que os tracks foram adicionados.
+   */
+
+  applyBitrateToPeer(
+    peer
+  );
+
+
   return peer;
 
 }
@@ -1019,6 +1575,39 @@ async function createOffer(
 
 
   try {
+
+    /*
+     * Se já existe um Peer para esse
+     * espectador, fechamos o anterior.
+     */
+
+    const existingPeer =
+      peers.get(
+        viewerId
+      );
+
+
+    if (existingPeer) {
+
+      try {
+
+        existingPeer.close();
+
+      }
+
+      catch {
+
+        // ignorar
+
+      }
+
+
+      peers.delete(
+        viewerId
+      );
+
+    }
+
 
     const peer =
       createPeer(
@@ -1218,10 +1807,12 @@ function goBack() {
   );
 
 
-  /*
-   * Dentro da Activity, voltar para
-   * a página principal do cliente.
-   */
+  if (transmitting) {
+
+    stopTransmission();
+
+  }
+
 
   window.location.href =
     "/";
@@ -1230,7 +1821,7 @@ function goBack() {
 
 
 /* =========================================================
-   BOTÕES
+   EVENTOS
 ========================================================= */
 
 chooseButton.addEventListener(
@@ -1257,6 +1848,29 @@ backButton.addEventListener(
 );
 
 
+/*
+ * QUALIDADE
+ *
+ * Pode ser alterada antes OU durante
+ * a transmissão.
+ */
+
+quality.addEventListener(
+  "change",
+  changeQuality
+);
+
+
+/*
+ * FPS
+ */
+
+fps.addEventListener(
+  "change",
+  changeFPS
+);
+
+
 /* =========================================================
    INICIALIZAÇÃO
 ========================================================= */
@@ -1273,13 +1887,6 @@ async function initialize() {
   );
 
 
-  /*
-   * Primeiro configura o proxy
-   * do Discord.
-   *
-   * Depois inicializa Socket.IO.
-   */
-
   setupDiscordNetworking();
 
 
@@ -1292,9 +1899,5 @@ async function initialize() {
 
 }
 
-
-/* =========================================================
-   INICIAR
-========================================================= */
 
 initialize();
