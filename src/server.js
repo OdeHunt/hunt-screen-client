@@ -6,6 +6,7 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
+  path: "/hunt-socket",
   cors: {
     origin: "*",
     methods: ["GET", "POST"]

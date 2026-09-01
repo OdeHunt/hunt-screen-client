@@ -478,8 +478,10 @@ console.log(
 );
 
 
-socket =
-  io(SERVER_URL);
+socket = io(SERVER_URL, {
+  path: "/hunt-socket",
+  transports: ["websocket"]
+});
 
 
 socket.on("connect", () => {
