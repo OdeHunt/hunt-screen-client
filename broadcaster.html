@@ -12,19 +12,13 @@
 
   <title>HUNT SCREEN</title>
 
-  <!-- Discord Embedded App SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.0.0/output/index.js"></script>
-
-  <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
-
 
   <style>
 
     * {
       box-sizing: border-box;
     }
-
 
     body {
 
@@ -49,7 +43,6 @@
 
     }
 
-
     .container {
 
       width: min(1000px, 92%);
@@ -57,7 +50,6 @@
       text-align: center;
 
     }
-
 
     .logo {
 
@@ -71,7 +63,6 @@
 
     }
 
-
     .subtitle {
 
       color: #666;
@@ -83,7 +74,6 @@
       margin-bottom: 30px;
 
     }
-
 
     .preview-box {
 
@@ -107,7 +97,6 @@
 
     }
 
-
     video {
 
       width: 100%;
@@ -120,7 +109,6 @@
 
     }
 
-
     .empty-preview {
 
       color: #333;
@@ -132,7 +120,6 @@
       padding: 100px 20px;
 
     }
-
 
     .controls {
 
@@ -147,7 +134,6 @@
       flex-wrap: wrap;
 
     }
-
 
     button {
 
@@ -169,13 +155,11 @@
 
     }
 
-
     button:hover {
 
       filter: brightness(1.15);
 
     }
-
 
     button:disabled {
 
@@ -184,7 +168,6 @@
       cursor: not-allowed;
 
     }
-
 
     .stop {
 
@@ -196,7 +179,6 @@
 
     }
 
-
     .back-container {
 
       margin-top: 18px;
@@ -206,7 +188,6 @@
       justify-content: center;
 
     }
-
 
     .back-button {
 
@@ -228,7 +209,6 @@
 
     }
 
-
     .back-button:hover {
 
       background: #1c1c1c;
@@ -238,7 +218,6 @@
       filter: none;
 
     }
-
 
     .settings {
 
@@ -256,7 +235,6 @@
 
     }
 
-
     select {
 
       background: #111;
@@ -273,7 +251,6 @@
 
     }
 
-
     .label {
 
       color: #777;
@@ -281,7 +258,6 @@
       font-size: 12px;
 
     }
-
 
     .status {
 
@@ -295,13 +271,11 @@
 
     }
 
-
     .status.live {
 
       color: #ff8c00;
 
     }
-
 
     .info {
 
@@ -314,7 +288,6 @@
       letter-spacing: 1px;
 
     }
-
 
     .error {
 
@@ -418,10 +391,7 @@
 
     <div class="controls">
 
-
-      <button
-        id="chooseButton"
-        onclick="chooseScreen()">
+      <button id="chooseButton">
 
         📺 ESCOLHER TELA
 
@@ -430,7 +400,6 @@
 
       <button
         id="startButton"
-        onclick="startTransmission()"
         style="display:none">
 
         ▶ COMEÇAR TRANSMISSÃO
@@ -440,25 +409,20 @@
 
       <button
         id="stopButton"
-        class="stop"
-        onclick="stopTransmission()">
+        class="stop">
 
         ⏹ PARAR TRANSMISSÃO
 
       </button>
 
-
     </div>
 
-
-    <!-- BOTÃO VOLTAR -->
 
     <div class="back-container">
 
       <button
         id="backButton"
-        class="back-button"
-        onclick="goBack()">
+        class="back-button">
 
         ← VOLTAR
 
@@ -533,6 +497,11 @@ const stopButton =
     "stopButton"
   );
 
+const backButton =
+  document.getElementById(
+    "backButton"
+  );
+
 const status =
   document.getElementById(
     "status"
@@ -552,6 +521,35 @@ const fps =
   document.getElementById(
     "fps"
   );
+
+
+/* ==================================================
+   EVENTOS DOS BOTÕES
+
+   IMPORTANTE:
+   Nada de onclick no HTML.
+   Isso evita bloqueio da CSP do Discord.
+================================================== */
+
+chooseButton.addEventListener(
+  "click",
+  chooseScreen
+);
+
+startButton.addEventListener(
+  "click",
+  startTransmission
+);
+
+stopButton.addEventListener(
+  "click",
+  stopTransmission
+);
+
+backButton.addEventListener(
+  "click",
+  goBack
+);
 
 
 /* ==================================================
@@ -608,7 +606,7 @@ console.log(
 
 
 /* ==================================================
-   CONFIGURAR DISCORD PROXY
+   DISCORD URL MAPPING
 ================================================== */
 
 async function setupDiscord() {
@@ -625,20 +623,24 @@ async function setupDiscord() {
 
 
   console.log(
-    "HUNT: configurando Discord Activity..."
+    "HUNT: configurando Discord..."
   );
 
 
   try {
 
     /*
-     * O Discord encaminha /hunt-socket
-     * para nosso servidor.
+     * O Discord Activity possui um proxy
+     * para URLs externas.
+     *
+     * O /hunt-socket será encaminhado
+     * para o servidor HUNT.
      */
 
     if (
       window.DiscordSDK &&
-      window.DiscordSDK.patchUrlMappings
+      typeof window.DiscordSDK.patchUrlMappings ===
+        "function"
     ) {
 
       window.DiscordSDK.patchUrlMappings([
@@ -655,6 +657,7 @@ async function setupDiscord() {
 
       ]);
 
+
       console.log(
         "HUNT: URL Mapping configurado"
       );
@@ -664,7 +667,7 @@ async function setupDiscord() {
     else {
 
       console.warn(
-        "HUNT: patchUrlMappings não encontrado"
+        "HUNT: DiscordSDK.patchUrlMappings não disponível"
       );
 
     }
@@ -674,7 +677,7 @@ async function setupDiscord() {
   catch (error) {
 
     console.error(
-      "HUNT: erro Discord:",
+      "HUNT: erro no Discord URL Mapping:",
       error
     );
 
@@ -684,7 +687,7 @@ async function setupDiscord() {
 
 
 /* ==================================================
-   INICIAR SOCKET
+   CONECTAR SOCKET
 ================================================== */
 
 async function connectSocket() {
@@ -698,15 +701,16 @@ async function connectSocket() {
 
 
   /*
-   * No navegador normal:
+   * Navegador normal:
    *
    * https://hunt-screen-server.onrender.com
    *
-   * No Discord:
+   *
+   * Discord:
    *
    * https://xxxx.discordsays.com
    *
-   * usando o proxy /hunt-socket.
+   * usando /hunt-socket
    */
 
   const socketURL =
@@ -729,6 +733,16 @@ async function connectSocket() {
         path:
           "/hunt-socket",
 
+        /*
+         * Começamos com polling.
+         *
+         * Depois o Socket.IO tenta
+         * atualizar para WebSocket.
+         *
+         * Isso é mais compatível com
+         * o proxy do Discord.
+         */
+
         transports:
           [
             "polling",
@@ -745,14 +759,17 @@ async function connectSocket() {
           1000,
 
         reconnectionDelayMax:
-          5000
+          5000,
+
+        timeout:
+          20000
 
       }
     );
 
 
   /* ==================================================
-     CONNECT
+     CONECTADO
   ================================================== */
 
   socket.on(
@@ -787,7 +804,7 @@ async function connectSocket() {
 
 
   /* ==================================================
-     CONNECT ERROR
+     ERRO
   ================================================== */
 
   socket.on(
@@ -801,7 +818,7 @@ async function connectSocket() {
 
 
       console.error(
-        "HUNT: detalhes:",
+        "HUNT: detalhes do erro:",
         {
 
           message:
@@ -833,7 +850,7 @@ async function connectSocket() {
 
 
   /* ==================================================
-     DISCONNECT
+     DESCONECTADO
   ================================================== */
 
   socket.on(
@@ -955,7 +972,7 @@ async function connectSocket() {
       catch (error) {
 
         console.error(
-          "HUNT: erro ANSWER:",
+          "HUNT: erro aplicando ANSWER:",
           error
         );
 
@@ -1136,7 +1153,7 @@ async function chooseScreen() {
   catch (error) {
 
     console.error(
-      "HUNT: erro captura:",
+      "HUNT: erro ao capturar tela:",
       error
     );
 
@@ -1241,15 +1258,39 @@ function createPeer(
   );
 
 
+  /*
+   * Verificação importante.
+   */
+
+  if (
+    typeof RTCPeerConnection !==
+    "function"
+  ) {
+
+    console.error(
+      "HUNT: RTCPeerConnection não está disponível."
+    );
+
+
+    showError(
+      "WebRTC não está disponível neste ambiente."
+    );
+
+
+    return null;
+
+  }
+
+
   const peer =
     new RTCPeerConnection(
       rtcConfig
     );
 
 
-  /*
-   * ADICIONAR TELA
-   */
+  /* ==================================================
+     ADICIONAR TELA
+  ================================================== */
 
   if (screenStream) {
 
@@ -1269,9 +1310,9 @@ function createPeer(
   }
 
 
-  /*
-   * ICE
-   */
+  /* ==================================================
+     ICE
+  ================================================== */
 
   peer.onicecandidate =
     event => {
@@ -1300,9 +1341,9 @@ function createPeer(
     };
 
 
-  /*
-   * ESTADO
-   */
+  /* ==================================================
+     ESTADO
+  ================================================== */
 
   peer.onconnectionstatechange =
     () => {
@@ -1367,6 +1408,13 @@ async function createOffer(
       );
 
 
+    if (!peer) {
+
+      return;
+
+    }
+
+
     const offer =
       await peer.createOffer();
 
@@ -1400,7 +1448,7 @@ async function createOffer(
   catch (error) {
 
     console.error(
-      "HUNT: erro OFFER:",
+      "HUNT: erro criando OFFER:",
       error
     );
 
@@ -1436,6 +1484,7 @@ function stopTransmission() {
           catch (error) {
 
             console.warn(
+              "HUNT: erro parando track:",
               error
             );
 
@@ -1463,9 +1512,9 @@ function stopTransmission() {
     false;
 
 
-  /*
-   * FECHAR PEERS
-   */
+  /* ==================================================
+     FECHAR PEERS
+  ================================================== */
 
   for (
     const peer
@@ -1481,6 +1530,7 @@ function stopTransmission() {
     catch (error) {
 
       console.warn(
+        "HUNT: erro fechando peer:",
         error
       );
 
@@ -1492,9 +1542,9 @@ function stopTransmission() {
   peers.clear();
 
 
-  /*
-   * AVISAR SERVIDOR
-   */
+  /* ==================================================
+     AVISAR SERVIDOR
+  ================================================== */
 
   if (
     socket &&
@@ -1559,6 +1609,11 @@ function goBack() {
   );
 
 
+  /*
+   * Se estiver transmitindo,
+   * encerra antes de voltar.
+   */
+
   if (transmitting) {
 
     stopTransmission();
@@ -1567,7 +1622,8 @@ function goBack() {
 
 
   /*
-   * Volta para a tela principal
+   * Volta para a página inicial
+   * do HUNT SCREEN.
    */
 
   window.location.href =
