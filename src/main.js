@@ -128,6 +128,7 @@ const app =
     "app"
   );
 
+
 if (!app) {
 
   console.error(
@@ -138,7 +139,7 @@ if (!app) {
 
 
 /* ========================================
-   CONFIGURAÇÃO RTC
+   RTC
 ======================================== */
 
 const rtcConfig = {
@@ -160,23 +161,22 @@ const rtcConfig = {
 };
 
 
-/* ========================================
-   TESTE WEBRTC
-======================================== */
-
 console.log(
   "HUNT: verificando WebRTC..."
 );
 
 console.log(
-  "HUNT: window.RTCPeerConnection:",
+  "HUNT: RTCPeerConnection:",
   window.RTCPeerConnection
 );
 
-console.log(
-  "HUNT: typeof:",
-  typeof window.RTCPeerConnection
-);
+
+/* ========================================
+   MODO DO PLAYER
+======================================== */
+
+let currentPlayerMode =
+  "wide";
 
 
 /* ========================================
@@ -191,9 +191,10 @@ function showHome() {
 
   closeViewer();
 
+
   app.innerHTML = `
 
-    <div class="hunt-screen">
+    <div class="hunt-screen home-screen">
 
       <div class="hunt-logo">
         HUNT
@@ -202,6 +203,7 @@ function showHome() {
       <div class="hunt-subtitle">
         SCREEN
       </div>
+
 
       <div class="hunt-menu">
 
@@ -213,6 +215,7 @@ function showHome() {
 
         </button>
 
+
         <button
           id="broadcastButton"
           class="hunt-button">
@@ -222,6 +225,7 @@ function showHome() {
         </button>
 
       </div>
+
 
       <div
         id="homeStatus"
@@ -240,6 +244,7 @@ function showHome() {
     document.getElementById(
       "viewerButton"
     );
+
 
   const broadcastButton =
     document.getElementById(
@@ -283,6 +288,7 @@ function updateHomeStatus() {
       "homeStatus"
     );
 
+
   if (!status) {
     return;
   }
@@ -315,6 +321,7 @@ function openBroadcaster() {
     "HUNT: abrindo broadcaster"
   );
 
+
   window.location.href =
     "/broadcaster.html";
 
@@ -342,20 +349,66 @@ function startViewer() {
 
   app.innerHTML = `
 
-    <div class="hunt-screen">
+    <div
+      class="hunt-screen viewer-screen"
+      id="viewerScreen">
 
-      <div class="hunt-logo">
-        HUNT
-      </div>
 
-      <div class="hunt-subtitle">
-        SCREEN
+      <div class="viewer-header">
+
+        <div class="viewer-brand">
+
+          <span class="viewer-logo">
+            HUNT
+          </span>
+
+          <span class="viewer-brand-divider">
+            /
+          </span>
+
+          <span class="viewer-brand-screen">
+            SCREEN
+          </span>
+
+        </div>
+
+
+        <div class="viewer-mode-selector">
+
+          <button
+            id="wideModeButton"
+            class="mode-button active">
+
+            WIDE
+
+          </button>
+
+
+          <button
+            id="normalModeButton"
+            class="mode-button">
+
+            NORMAL
+
+          </button>
+
+
+          <button
+            id="smartModeButton"
+            class="mode-button">
+
+            SMART
+
+          </button>
+
+        </div>
+
       </div>
 
 
       <div
         id="viewerContainer"
-        class="viewer-container">
+        class="viewer-container wide-mode">
 
 
         <div
@@ -379,33 +432,41 @@ function startViewer() {
       </div>
 
 
-      <div class="viewer-controls">
-
-        <button
-          id="refreshButton"
-          class="hunt-button">
-
-          🔄 ATUALIZAR TRANSMISSÃO
-
-        </button>
+      <div class="viewer-bottom">
 
 
-        <button
-          id="backButton"
-          class="hunt-button secondary">
-
-          ← VOLTAR
-
-        </button>
-
-      </div>
+        <div class="viewer-controls">
 
 
-      <div
-        id="viewerStatus"
-        class="hunt-status">
+          <button
+            id="refreshButton"
+            class="hunt-button small-button">
 
-        CONECTANDO...
+            🔄 ATUALIZAR
+
+          </button>
+
+
+          <button
+            id="backButton"
+            class="hunt-button secondary small-button">
+
+            ← VOLTAR
+
+          </button>
+
+
+        </div>
+
+
+        <div
+          id="viewerStatus"
+          class="hunt-status">
+
+          CONECTANDO...
+
+        </div>
+
 
       </div>
 
@@ -414,16 +475,43 @@ function startViewer() {
   `;
 
 
+  /* ======================================
+     ELEMENTOS
+  ====================================== */
+
   const refreshButton =
     document.getElementById(
       "refreshButton"
     );
+
 
   const backButton =
     document.getElementById(
       "backButton"
     );
 
+
+  const wideButton =
+    document.getElementById(
+      "wideModeButton"
+    );
+
+
+  const normalButton =
+    document.getElementById(
+      "normalModeButton"
+    );
+
+
+  const smartButton =
+    document.getElementById(
+      "smartModeButton"
+    );
+
+
+  /* ======================================
+     BOTÃO ATUALIZAR
+  ====================================== */
 
   if (refreshButton) {
 
@@ -434,6 +522,10 @@ function startViewer() {
 
   }
 
+
+  /* ======================================
+     BOTÃO VOLTAR
+  ====================================== */
 
   if (backButton) {
 
@@ -451,22 +543,69 @@ function startViewer() {
   }
 
 
-  /*
-   * Configurações iniciais
-   * do player.
-   */
+  /* ======================================
+     MODOS
+  ====================================== */
+
+  if (wideButton) {
+
+    wideButton.addEventListener(
+      "click",
+      () => {
+
+        setPlayerMode(
+          "wide"
+        );
+
+      }
+    );
+
+  }
+
+
+  if (normalButton) {
+
+    normalButton.addEventListener(
+      "click",
+      () => {
+
+        setPlayerMode(
+          "normal"
+        );
+
+      }
+    );
+
+  }
+
+
+  if (smartButton) {
+
+    smartButton.addEventListener(
+      "click",
+      () => {
+
+        setPlayerMode(
+          "smart"
+        );
+
+      }
+    );
+
+  }
+
+
+  /* ======================================
+     CONFIGURAÇÃO INICIAL DO VÍDEO
+  ====================================== */
 
   const video =
     document.getElementById(
       "remoteVideo"
     );
 
-  if (video) {
 
-    /*
-     * Volume inicial.
-     * 1 = 100%
-     */
+  if (video) {
 
     video.volume =
       1;
@@ -477,8 +616,17 @@ function startViewer() {
   }
 
 
+  setPlayerMode(
+    currentPlayerMode
+  );
+
+
   updateViewerStatus();
 
+
+  /* ======================================
+     ENTRAR NA SALA
+  ====================================== */
 
   if (socket.connected) {
 
@@ -486,6 +634,7 @@ function startViewer() {
       "join-room",
       ROOM_ID
     );
+
 
     console.log(
       "HUNT: viewer entrou na sala"
@@ -505,6 +654,97 @@ function startViewer() {
 
 
 /* ========================================
+   ALTERAR MODO DO PLAYER
+======================================== */
+
+function setPlayerMode(
+  mode
+) {
+
+  currentPlayerMode =
+    mode;
+
+
+  const container =
+    document.getElementById(
+      "viewerContainer"
+    );
+
+
+  const wideButton =
+    document.getElementById(
+      "wideModeButton"
+    );
+
+
+  const normalButton =
+    document.getElementById(
+      "normalModeButton"
+    );
+
+
+  const smartButton =
+    document.getElementById(
+      "smartModeButton"
+    );
+
+
+  if (!container) {
+    return;
+  }
+
+
+  container.classList.remove(
+    "wide-mode",
+    "normal-mode",
+    "smart-mode"
+  );
+
+
+  container.classList.add(
+    `${mode}-mode`
+  );
+
+
+  if (wideButton) {
+
+    wideButton.classList.toggle(
+      "active",
+      mode === "wide"
+    );
+
+  }
+
+
+  if (normalButton) {
+
+    normalButton.classList.toggle(
+      "active",
+      mode === "normal"
+    );
+
+  }
+
+
+  if (smartButton) {
+
+    smartButton.classList.toggle(
+      "active",
+      mode === "smart"
+    );
+
+  }
+
+
+  console.log(
+    "HUNT: modo do player:",
+    mode
+  );
+
+}
+
+
+/* ========================================
    STATUS VIEWER
 ======================================== */
 
@@ -514,6 +754,7 @@ function updateViewerStatus() {
     document.getElementById(
       "viewerStatus"
     );
+
 
   if (!status) {
     return;
@@ -556,6 +797,7 @@ function refreshViewer() {
       "viewerMessage"
     );
 
+
   if (message) {
 
     message.textContent =
@@ -571,6 +813,7 @@ function refreshViewer() {
     document.getElementById(
       "viewerStatus"
     );
+
 
   if (status) {
 
@@ -659,12 +902,9 @@ function closeViewer() {
 
     }
 
-    catch (error) {
+    catch {
 
-      console.warn(
-        "HUNT: erro pausando vídeo:",
-        error
-      );
+      // ignorar
 
     }
 
@@ -754,26 +994,6 @@ socket.on(
     );
 
 
-    console.error(
-      "HUNT: detalhes:",
-      {
-
-        message:
-          error?.message,
-
-        description:
-          error?.description,
-
-        context:
-          error?.context,
-
-        type:
-          error?.type
-
-      }
-    );
-
-
     updateHomeStatus();
 
     updateViewerStatus();
@@ -829,7 +1049,7 @@ socket.on(
 
 
 /* ========================================
-   CRIAR PEER DO VIEWER
+   CRIAR PEER
 ======================================== */
 
 function createViewerPeer() {
@@ -839,10 +1059,6 @@ function createViewerPeer() {
   );
 
 
-  /*
-   * Fechar Peer anterior.
-   */
-
   if (peer) {
 
     try {
@@ -851,12 +1067,9 @@ function createViewerPeer() {
 
     }
 
-    catch (error) {
+    catch {
 
-      console.warn(
-        "HUNT: erro fechando Peer anterior:",
-        error
-      );
+      // ignorar
 
     }
 
@@ -870,40 +1083,14 @@ function createViewerPeer() {
     [];
 
 
-  /*
-   * PEGAR CONSTRUTOR NATIVO
-   */
-
   const RTC =
     window.RTCPeerConnection;
 
-
-  console.log(
-    "HUNT: RTC no momento da criação:",
-    RTC
-  );
-
-
-  console.log(
-    "HUNT: typeof RTC:",
-    typeof RTC
-  );
-
-
-  /*
-   * Fallback para webkit.
-   */
 
   const RTCCtor =
     typeof RTC === "function"
       ? RTC
       : window.webkitRTCPeerConnection;
-
-
-  console.log(
-    "HUNT: construtor final:",
-    RTCCtor
-  );
 
 
   if (
@@ -913,24 +1100,6 @@ function createViewerPeer() {
 
     console.error(
       "HUNT: RTCPeerConnection não disponível."
-    );
-
-
-    console.error(
-      "HUNT: window.RTCPeerConnection =",
-      window.RTCPeerConnection
-    );
-
-
-    console.error(
-      "HUNT: globalThis.RTCPeerConnection =",
-      globalThis.RTCPeerConnection
-    );
-
-
-    console.error(
-      "HUNT: typeof RTCPeerConnection =",
-      typeof RTCPeerConnection
     );
 
 
@@ -944,10 +1113,6 @@ function createViewerPeer() {
   }
 
 
-  /*
-   * Criar Peer.
-   */
-
   try {
 
     peer =
@@ -955,18 +1120,12 @@ function createViewerPeer() {
         rtcConfig
       );
 
-
-    console.log(
-      "HUNT: RTCPeerConnection criado:",
-      peer
-    );
-
   }
 
   catch (error) {
 
     console.error(
-      "HUNT: erro criando RTCPeerConnection:",
+      "HUNT: erro criando Peer:",
       error
     );
 
@@ -986,7 +1145,7 @@ function createViewerPeer() {
 
 
   /* ======================================
-     TRACK RECEBIDO
+     TRACK
   ====================================== */
 
   peer.ontrack =
@@ -1004,13 +1163,7 @@ function createViewerPeer() {
 
 
       if (!video) {
-
-        console.warn(
-          "HUNT: vídeo não encontrado"
-        );
-
         return;
-
       }
 
 
@@ -1025,10 +1178,6 @@ function createViewerPeer() {
       }
 
       else {
-
-        /*
-         * Fallback.
-         */
 
         if (!video.srcObject) {
 
@@ -1049,7 +1198,7 @@ function createViewerPeer() {
           catch (error) {
 
             console.error(
-              "HUNT: erro criando MediaStream:",
+              "HUNT: erro MediaStream:",
               error
             );
 
@@ -1060,20 +1209,8 @@ function createViewerPeer() {
       }
 
 
-      /*
-       * Volume normal.
-       */
-
       video.volume =
         1;
-
-
-      /*
-       * Não colocar muted aqui.
-       *
-       * Assim o controle de volume
-       * funciona normalmente.
-       */
 
       video.muted =
         false;
@@ -1093,7 +1230,7 @@ function createViewerPeer() {
           error => {
 
             console.warn(
-              "HUNT: reprodução automática bloqueada:",
+              "HUNT: autoplay bloqueado:",
               error
             );
 
@@ -1123,28 +1260,16 @@ function createViewerPeer() {
 
 
   /* ======================================
-     ICE ENVIADO
+     ICE
   ====================================== */
 
   peer.onicecandidate =
     event => {
 
       if (
-        !event.candidate
-      ) {
-
-        return;
-
-      }
-
-
-      if (
+        !event.candidate ||
         !broadcasterId
       ) {
-
-        console.warn(
-          "HUNT: ICE sem broadcasterId"
-        );
 
         return;
 
@@ -1164,16 +1289,11 @@ function createViewerPeer() {
         }
       );
 
-
-      console.log(
-        "HUNT: ICE enviado"
-      );
-
     };
 
 
   /* ======================================
-     ESTADO DA CONEXÃO
+     CONNECTION STATE
   ====================================== */
 
   peer.onconnectionstatechange =
@@ -1253,7 +1373,7 @@ function createViewerPeer() {
 
 
   /* ======================================
-     ESTADO ICE
+     ICE STATE
   ====================================== */
 
   peer.oniceconnectionstatechange =
@@ -1275,7 +1395,7 @@ function createViewerPeer() {
 
 
 /* ========================================
-   OFFER RECEBIDA
+   OFFER
 ======================================== */
 
 socket.on(
@@ -1294,18 +1414,10 @@ socket.on(
       !data.offer
     ) {
 
-      console.warn(
-        "HUNT: OFFER inválida"
-      );
-
       return;
 
     }
 
-
-    /*
-     * Garantir que estamos no Viewer.
-     */
 
     const video =
       document.getElementById(
@@ -1314,23 +1426,13 @@ socket.on(
 
 
     if (!video) {
-
-      console.log(
-        "HUNT: OFFER ignorada: não estamos no viewer."
-      );
-
       return;
-
     }
 
 
     broadcasterId =
       data.sender;
 
-
-    /*
-     * Criar Peer se necessário.
-     */
 
     if (!peer) {
 
@@ -1340,47 +1442,21 @@ socket.on(
 
 
     if (!peer) {
-
-      console.error(
-        "HUNT: não foi possível criar Peer."
-      );
-
       return;
-
     }
 
 
     try {
-
-      /*
-       * Aplicar OFFER.
-       */
 
       await peer.setRemoteDescription(
         data.offer
       );
 
 
-      console.log(
-        "HUNT: OFFER aplicada"
-      );
-
-
-      /*
-       * Aplicar ICE pendente.
-       */
-
       if (
         pendingCandidates.length >
         0
       ) {
-
-        console.log(
-          "HUNT: aplicando",
-          pendingCandidates.length,
-          "ICE pendentes"
-        );
-
 
         for (
           const candidate
@@ -1413,32 +1489,14 @@ socket.on(
       }
 
 
-      /*
-       * Criar ANSWER.
-       */
-
       const answer =
         await peer.createAnswer();
-
-
-      console.log(
-        "HUNT: ANSWER criada"
-      );
 
 
       await peer.setLocalDescription(
         answer
       );
 
-
-      console.log(
-        "HUNT: descrição local configurada"
-      );
-
-
-      /*
-       * Enviar ANSWER.
-       */
 
       socket.emit(
         "webrtc-answer",
@@ -1486,12 +1544,6 @@ socket.on(
   "webrtc-ice-candidate",
   async data => {
 
-    console.log(
-      "HUNT: ICE recebido:",
-      data
-    );
-
-
     if (
       !data ||
       !data.sender ||
@@ -1503,30 +1555,16 @@ socket.on(
     }
 
 
-    /*
-     * Ainda não existe Peer.
-     */
-
     if (!peer) {
 
       pendingCandidates.push(
         data.candidate
       );
 
-
-      console.log(
-        "HUNT: ICE guardado: Peer ainda não existe"
-      );
-
-
       return;
 
     }
 
-
-    /*
-     * Ainda não existe OFFER.
-     */
 
     if (
       !peer.remoteDescription
@@ -1535,12 +1573,6 @@ socket.on(
       pendingCandidates.push(
         data.candidate
       );
-
-
-      console.log(
-        "HUNT: ICE guardado: aguardando OFFER"
-      );
-
 
       return;
 
@@ -1551,11 +1583,6 @@ socket.on(
 
       await peer.addIceCandidate(
         data.candidate
-      );
-
-
-      console.log(
-        "HUNT: ICE aplicado"
       );
 
     }

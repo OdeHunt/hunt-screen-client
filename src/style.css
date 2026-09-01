@@ -2,21 +2,37 @@
   box-sizing: border-box;
 }
 
+
 html,
 body,
 #app {
   margin: 0;
+
   width: 100%;
+  min-width: 100%;
+
   min-height: 100%;
+
   background: #000;
 }
 
+
 body {
+
   min-height: 100vh;
+
   background: #000;
+
   color: #fff;
-  font-family: Arial, Helvetica, sans-serif;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  overflow-x: hidden;
 }
+
 
 button,
 select {
@@ -29,17 +45,33 @@ select {
 ======================================== */
 
 .hunt-screen {
+
   width: 100%;
+
   min-height: 100vh;
 
+  background: #000;
+
   display: flex;
+
   flex-direction: column;
+
   align-items: center;
+
+}
+
+
+/* ========================================
+   HOME
+======================================== */
+
+.home-screen {
+
   justify-content: center;
 
-  padding: 30px 20px;
+  padding:
+    30px 20px;
 
-  background: #000;
 }
 
 
@@ -48,9 +80,15 @@ select {
 ======================================== */
 
 .hunt-logo {
+
   color: #ff8c00;
 
-  font-size: clamp(42px, 8vw, 70px);
+  font-size:
+    clamp(
+      42px,
+      8vw,
+      70px
+    );
 
   font-weight: 900;
 
@@ -61,6 +99,7 @@ select {
 
 
 .hunt-subtitle {
+
   margin-top: 10px;
 
   color: #555;
@@ -68,6 +107,7 @@ select {
   font-size: 13px;
 
   letter-spacing: 9px;
+
 }
 
 
@@ -76,7 +116,12 @@ select {
 ======================================== */
 
 .hunt-menu {
-  width: min(500px, 90%);
+
+  width:
+    min(
+      500px,
+      90%
+    );
 
   margin-top: 45px;
 
@@ -85,6 +130,7 @@ select {
   flex-direction: column;
 
   gap: 14px;
+
 }
 
 
@@ -93,49 +139,65 @@ select {
 ======================================== */
 
 .hunt-button {
-  width: 100%;
-
-  padding: 16px 24px;
 
   border: 0;
 
-  border-radius: 8px;
+  border-radius: 7px;
 
   background: #ff8c00;
 
   color: #000;
 
-  font-size: 15px;
+  padding:
+    14px 22px;
+
+  font-size: 14px;
 
   font-weight: 900;
 
   cursor: pointer;
 
   transition:
-    transform 0.15s ease,
-    filter 0.15s ease,
-    opacity 0.15s ease;
+    transform .15s ease,
+    filter .15s ease,
+    background .15s ease;
 }
 
 
 .hunt-button:hover {
-  filter: brightness(1.15);
 
-  transform: translateY(-1px);
+  filter: brightness(1.12);
+
+  transform:
+    translateY(-1px);
+
 }
 
 
 .hunt-button:active {
-  transform: translateY(0);
+
+  transform:
+    translateY(0);
+
 }
 
 
 .hunt-button.secondary {
-  background: #1a1a1a;
+
+  background: #171717;
 
   color: #fff;
 
-  border: 1px solid #333;
+  border:
+    1px solid #292929;
+
+}
+
+
+.small-button {
+
+  min-width: 130px;
+
 }
 
 
@@ -144,15 +206,17 @@ select {
 ======================================== */
 
 .hunt-status {
-  margin-top: 25px;
+
+  margin-top: 15px;
 
   color: #666;
 
-  font-size: 11px;
+  font-size: 10px;
 
   letter-spacing: 2px;
 
   text-align: center;
+
 }
 
 
@@ -160,30 +224,175 @@ select {
    VIEWER
 ======================================== */
 
+.viewer-screen {
+
+  justify-content:
+    flex-start;
+
+  padding: 0;
+
+  background: #000;
+
+}
+
+
+/* ========================================
+   HEADER DO VIEWER
+======================================== */
+
+.viewer-header {
+
+  width: 100%;
+
+  min-height: 54px;
+
+  padding:
+    8px 18px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content:
+    space-between;
+
+  gap: 15px;
+
+  background:
+    #0b0b0b;
+
+  border-bottom:
+    1px solid #1c1c1c;
+
+}
+
+
+/* ========================================
+   MARCA
+======================================== */
+
+.viewer-brand {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  white-space: nowrap;
+
+}
+
+
+.viewer-logo {
+
+  color: #ff8c00;
+
+  font-size: 18px;
+
+  font-weight: 900;
+
+  letter-spacing: 4px;
+
+}
+
+
+.viewer-brand-divider {
+
+  color: #333;
+
+  font-size: 18px;
+
+}
+
+
+.viewer-brand-screen {
+
+  color: #666;
+
+  font-size: 10px;
+
+  letter-spacing: 3px;
+
+}
+
+
+/* ========================================
+   SELETOR DE MODO
+======================================== */
+
+.viewer-mode-selector {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 4px;
+
+  padding: 3px;
+
+  background: #151515;
+
+  border:
+    1px solid #252525;
+
+  border-radius: 7px;
+
+}
+
+
+.mode-button {
+
+  border: 0;
+
+  background: transparent;
+
+  color: #666;
+
+  padding:
+    7px 13px;
+
+  border-radius: 5px;
+
+  font-size: 10px;
+
+  font-weight: 900;
+
+  letter-spacing: 1px;
+
+  cursor: pointer;
+
+  transition:
+    background .15s ease,
+    color .15s ease;
+}
+
+
+.mode-button:hover {
+
+  color: #aaa;
+
+}
+
+
+.mode-button.active {
+
+  background: #ff8c00;
+
+  color: #000;
+
+}
+
+
+/* ========================================
+   CONTAINER DO VÍDEO
+======================================== */
+
 .viewer-container {
-
-  /*
-   * Tamanho parecido com um
-   * player de vídeo do YouTube.
-   */
-
-  width: min(900px, 90vw);
-
-  /*
-   * Proporção 16:9.
-   */
-
-  aspect-ratio: 16 / 9;
-
-  margin-top: 35px;
 
   position: relative;
 
-  background: #080808;
-
-  border: 1px solid #222;
-
-  border-radius: 10px;
+  background: #000;
 
   overflow: hidden;
 
@@ -193,8 +402,169 @@ select {
 
   justify-content: center;
 
+  transition:
+    width .25s ease,
+    height .25s ease,
+    max-width .25s ease;
+
+}
+
+
+/* ========================================
+   WIDE
+======================================== */
+
+/*
+   WIDE:
+
+   Ocupa praticamente todo o espaço
+   disponível da Activity.
+
+   É o modo inspirado na imagem
+   que você mandou.
+*/
+
+.viewer-container.wide-mode {
+
+  width: 100%;
+
+  height:
+    calc(
+      100vh - 54px
+    );
+
+  min-height: 0;
+
+  border: 0;
+
+  border-radius: 0;
+
+}
+
+
+/* ========================================
+   VÍDEO WIDE
+======================================== */
+
+.viewer-container.wide-mode
+#remoteVideo {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: contain;
+
+  background: #000;
+
+}
+
+
+/* ========================================
+   NORMAL
+======================================== */
+
+/*
+   Player parecido com YouTube.
+
+   16:9.
+
+   Máximo de aproximadamente
+   1000px de largura.
+*/
+
+.viewer-container.normal-mode {
+
+  width:
+    min(
+      1000px,
+      92vw
+    );
+
+  aspect-ratio:
+    16 / 9;
+
+  margin-top: 35px;
+
+  border:
+    1px solid #222;
+
+  border-radius: 9px;
+
   box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.45);
+    0 15px 50px
+    rgba(
+      0,
+      0,
+      0,
+      .45
+    );
+
+}
+
+
+/* ========================================
+   VÍDEO NORMAL
+======================================== */
+
+.viewer-container.normal-mode
+#remoteVideo {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: contain;
+
+  background: #000;
+
+}
+
+
+/* ========================================
+   SMART
+======================================== */
+
+/*
+   Smart foi pensado para celular.
+
+   Usa quase toda a largura,
+   mas mantém uma proporção
+   confortável.
+*/
+
+.viewer-container.smart-mode {
+
+  width: 96vw;
+
+  aspect-ratio:
+    16 / 10;
+
+  margin-top: 25px;
+
+  border:
+    1px solid #202020;
+
+  border-radius: 8px;
+
+}
+
+
+/* ========================================
+   VÍDEO SMART
+======================================== */
+
+.viewer-container.smart-mode
+#remoteVideo {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: contain;
+
+  background: #000;
+
 }
 
 
@@ -204,35 +574,18 @@ select {
 
 #remoteVideo {
 
-  width: 100%;
-
-  height: 100%;
-
   display: block;
 
   background: #000;
 
-  /*
-   * Mantém a proporção original
-   * da transmissão.
-   */
-
-  object-fit: contain;
-
-  /*
-   * Permite os controles nativos
-   * do navegador.
-   */
-
   cursor: pointer;
+
 }
 
 
-/*
- * Garantir que o vídeo continue
- * ocupando corretamente o player
- * quando entrar em fullscreen.
- */
+/* ========================================
+   FULLSCREEN
+======================================== */
 
 #remoteVideo:fullscreen {
 
@@ -240,14 +593,42 @@ select {
 
   height: 100vh;
 
+  background: #000;
+
   object-fit: contain;
 
-  background: #000;
+}
+
+
+.viewer-container:fullscreen {
+
+  width: 100vw;
+
+  height: 100vh;
+
+  margin: 0;
+
+  border: 0;
+
+  border-radius: 0;
+
+}
+
+
+.viewer-container:fullscreen
+#remoteVideo {
+
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: contain;
+
 }
 
 
 /* ========================================
-   MENSAGEM DO VIEWER
+   MENSAGEM
 ======================================== */
 
 .viewer-message {
@@ -255,6 +636,8 @@ select {
   position: absolute;
 
   inset: 0;
+
+  z-index: 5;
 
   display: flex;
 
@@ -264,76 +647,77 @@ select {
 
   padding: 30px;
 
+  background:
+    rgba(
+      0,
+      0,
+      0,
+      .35
+    );
+
   color: #666;
 
-  font-size: 13px;
+  font-size: 12px;
 
   letter-spacing: 2px;
 
   text-align: center;
 
-  z-index: 2;
-
   pointer-events: none;
-}
 
-
-/*
- * Quando existe vídeo,
- * a mensagem fica por trás dele.
- */
-
-#remoteVideo:not([src=""]) {
-  z-index: 1;
 }
 
 
 /* ========================================
-   CONTROLES DO VIEWER
+   PARTE INFERIOR
+======================================== */
+
+.viewer-bottom {
+
+  width: 100%;
+
+  padding:
+    10px 18px 15px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  background: #000;
+
+}
+
+
+/* ========================================
+   CONTROLES
 ======================================== */
 
 .viewer-controls {
 
-  width: min(900px, 90vw);
-
-  margin-top: 18px;
-
   display: flex;
+
+  align-items: center;
 
   justify-content: center;
 
-  gap: 10px;
+  gap: 8px;
 
-  flex-wrap: wrap;
-}
-
-
-.viewer-controls .hunt-button {
-
-  width: auto;
-
-  min-width: 190px;
 }
 
 
 /* ========================================
-   PLAYER NATIVO
+   WIDE — CONTROLES DISCRETOS
 ======================================== */
 
-/*
- * O navegador controla automaticamente:
- *
- * ▶ Play / Pause
- * 🔊 Volume
- * ⏱ Barra de progresso
- * ⛶ Fullscreen
- *
- * através de:
- *
- * controls
- *
- * no elemento <video>.
- */
+.viewer-screen
+.viewer-bottom {
+
+  background:
+    #080808;
+
+}
 
 
 /* ========================================
@@ -342,29 +726,61 @@ select {
 
 @media (max-width: 900px) {
 
-  .viewer-container {
+  .viewer-header {
+
+    padding:
+      8px 12px;
+
+  }
+
+
+  .viewer-brand-screen {
+
+    display: none;
+
+  }
+
+
+  .viewer-brand-divider {
+
+    display: none;
+
+  }
+
+
+  .viewer-logo {
+
+    font-size: 15px;
+
+  }
+
+
+  .viewer-container.normal-mode {
 
     width: 94vw;
-
-    margin-top: 30px;
 
   }
 
 
   .viewer-controls {
 
-    width: 94vw;
+    flex-wrap: wrap;
 
   }
 
 }
 
 
+/* ========================================
+   CELULAR
+======================================== */
+
 @media (max-width: 600px) {
 
-  .hunt-screen {
+  .home-screen {
 
-    padding: 20px 14px;
+    padding:
+      20px 14px;
 
   }
 
@@ -389,27 +805,100 @@ select {
 
   .hunt-menu {
 
+    width: 100%;
+
     margin-top: 35px;
 
   }
 
 
-  /*
-   * Player continua 16:9
-   * no celular.
-   */
+  /* HEADER */
 
-  .viewer-container {
+  .viewer-header {
 
-    width: 100%;
+    min-height: 50px;
 
-    aspect-ratio: 16 / 9;
+    padding:
+      7px 9px;
 
-    min-height: 0;
+  }
 
-    margin-top: 25px;
 
-    border-radius: 8px;
+  .viewer-mode-selector {
+
+    gap: 2px;
+
+  }
+
+
+  .mode-button {
+
+    padding:
+      7px 9px;
+
+    font-size: 9px;
+
+  }
+
+
+  /* SMART */
+
+  .viewer-container.smart-mode {
+
+    width: 100vw;
+
+    aspect-ratio:
+      16 / 10;
+
+    margin-top: 18px;
+
+    border-left: 0;
+
+    border-right: 0;
+
+    border-radius: 0;
+
+  }
+
+
+  /* NORMAL */
+
+  .viewer-container.normal-mode {
+
+    width: 100vw;
+
+    aspect-ratio:
+      16 / 9;
+
+    margin-top: 18px;
+
+    border-left: 0;
+
+    border-right: 0;
+
+    border-radius: 0;
+
+  }
+
+
+  /* WIDE */
+
+  .viewer-container.wide-mode {
+
+    width: 100vw;
+
+    height:
+      calc(
+        100vh - 50px
+      );
+
+  }
+
+
+  .viewer-bottom {
+
+    padding:
+      8px 10px 12px;
 
   }
 
@@ -418,14 +907,12 @@ select {
 
     width: 100%;
 
-    flex-direction: column;
-
   }
 
 
-  .viewer-controls .hunt-button {
+  .small-button {
 
-    width: 100%;
+    flex: 1;
 
     min-width: 0;
 
@@ -435,68 +922,37 @@ select {
 
 
 /* ========================================
-   FULLSCREEN DO CONTAINER
+   CELULAR DEITADO
 ======================================== */
 
-.viewer-container:fullscreen {
+@media (
+  max-width: 900px
+) and (
+  orientation: landscape
+) {
 
-  width: 100vw;
+  .viewer-container.wide-mode {
 
-  height: 100vh;
+    height:
+      calc(
+        100vh - 50px
+      );
 
-  aspect-ratio: auto;
-
-  border: none;
-
-  border-radius: 0;
-
-  margin: 0;
-
-  background: #000;
-
-}
+  }
 
 
-.viewer-container:fullscreen #remoteVideo {
+  .viewer-header {
 
-  width: 100%;
+    min-height: 46px;
 
-  height: 100%;
-
-  object-fit: contain;
-
-}
+  }
 
 
-/* ========================================
-   FULLSCREEN WEBKIT
-======================================== */
+  .viewer-bottom {
 
-.viewer-container:-webkit-full-screen {
+    padding:
+      5px 10px;
 
-  width: 100vw;
-
-  height: 100vh;
-
-  aspect-ratio: auto;
-
-  border: none;
-
-  border-radius: 0;
-
-  margin: 0;
-
-  background: #000;
-
-}
-
-
-.viewer-container:-webkit-full-screen #remoteVideo {
-
-  width: 100%;
-
-  height: 100%;
-
-  object-fit: contain;
+  }
 
 }
