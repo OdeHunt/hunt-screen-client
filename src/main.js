@@ -2,6 +2,7 @@ import { io } from "socket.io-client";
 import { patchUrlMappings } from "@discord/embedded-app-sdk";
 import "./style.css";
 
+
 /* ========================================
    CONFIGURAÇÃO
 ======================================== */
@@ -12,8 +13,15 @@ const SERVER_URL =
 const ROOM_ID =
   "hunt-screen-main";
 
+
+/* ========================================
+   DISCORD ACTIVITY
+======================================== */
+
 const isDiscordActivity =
-  window.location.hostname.endsWith(".discordsays.com");
+  window.location.hostname.endsWith(
+    ".discordsays.com"
+  );
 
 console.log(
   "HUNT: Discord Activity:",
@@ -32,7 +40,8 @@ if (isDiscordActivity) {
     patchUrlMappings([
       {
         prefix: "/hunt-socket",
-        target: "hunt-screen-server.onrender.com"
+        target:
+          "hunt-screen-server.onrender.com"
       }
     ]);
 
@@ -56,46 +65,50 @@ if (isDiscordActivity) {
    SOCKET.IO
 ======================================== */
 
-const socket = io(
-  isDiscordActivity
-    ? window.location.origin
-    : SERVER_URL,
-  {
-    path: "/hunt-socket",
+const socket =
+  io(
+    isDiscordActivity
+      ? window.location.origin
+      : SERVER_URL,
+    {
+      path:
+        "/hunt-socket",
 
-    transports: [
-      "polling",
-      "websocket"
-    ],
+      transports: [
+        "polling",
+        "websocket"
+      ],
 
-    reconnection: true,
+      reconnection:
+        true,
 
-    reconnectionAttempts:
-      Infinity,
+      reconnectionAttempts:
+        Infinity,
 
-    reconnectionDelay:
-      1000,
+      reconnectionDelay:
+        1000,
 
-    reconnectionDelayMax:
-      5000,
+      reconnectionDelayMax:
+        5000,
 
-    timeout:
-      20000
-  }
-);
+      timeout:
+        20000
+    }
+  );
 
 
 /* ========================================
-   VARIÁVEIS
+   WEBRTC
 ======================================== */
 
-let peer = null;
+let peer =
+  null;
 
-let broadcasterId = null;
+let broadcasterId =
+  null;
 
-let pendingCandidates = [];
-
-let viewerActive = false;
+let pendingCandidates =
+  [];
 
 
 /* ========================================
@@ -103,20 +116,21 @@ let viewerActive = false;
 ======================================== */
 
 const app =
-  document.getElementById("app");
-
+  document.getElementById(
+    "app"
+  );
 
 if (!app) {
 
   console.error(
-    "HUNT: #app não encontrado."
+    "HUNT: elemento #app não encontrado."
   );
 
 }
 
 
 /* ========================================
-   WEBRTC
+   CONFIGURAÇÃO RTC
 ======================================== */
 
 const rtcConfig = {
@@ -139,72 +153,22 @@ const rtcConfig = {
 
 
 /* ========================================
-   OBTER RTC
+   TESTE WEBRTC
 ======================================== */
 
-function getNativeRTCPeerConnection() {
+console.log(
+  "HUNT: verificando WebRTC..."
+);
 
-  console.log(
-    "HUNT: verificando RTCPeerConnection..."
-  );
+console.log(
+  "HUNT: window.RTCPeerConnection:",
+  window.RTCPeerConnection
+);
 
-
-  const RTC =
-    window.RTCPeerConnection;
-
-
-  if (
-    typeof RTC !==
-    "function"
-  ) {
-
-    console.error(
-      "HUNT: window.RTCPeerConnection não é uma função:",
-      RTC
-    );
-
-
-    return null;
-
-  }
-
-
-  /*
-   * Teste real da API.
-   *
-   * Isso evita continuar usando
-   * uma referência inválida.
-   */
-
-  try {
-
-    const testPeer =
-      new RTC();
-
-
-    testPeer.close();
-
-
-    console.log(
-      "HUNT: RTCPeerConnection validado."
-    );
-
-
-    return RTC;
-
-  } catch (error) {
-
-    console.error(
-      "HUNT: RTCPeerConnection existe, mas não pôde ser criado:",
-      error
-    );
-
-
-    return null;
-
-  }
-
-}
+console.log(
+  "HUNT: typeof:",
+  typeof window.RTCPeerConnection
+);
 
 
 /* ========================================
@@ -213,12 +177,11 @@ function getNativeRTCPeerConnection() {
 
 function showHome() {
 
-  viewerActive =
-    false;
-
+  if (!app) {
+    return;
+  }
 
   closeViewer();
-
 
   app.innerHTML = `
 
@@ -232,7 +195,6 @@ function showHome() {
         SCREEN
       </div>
 
-
       <div class="hunt-menu">
 
         <button
@@ -243,7 +205,6 @@ function showHome() {
 
         </button>
 
-
         <button
           id="broadcastButton"
           class="hunt-button">
@@ -253,7 +214,6 @@ function showHome() {
         </button>
 
       </div>
-
 
       <div
         id="homeStatus"
@@ -272,7 +232,6 @@ function showHome() {
     document.getElementById(
       "viewerButton"
     );
-
 
   const broadcastButton =
     document.getElementById(
@@ -316,7 +275,6 @@ function updateHomeStatus() {
       "homeStatus"
     );
 
-
   if (!status) {
     return;
   }
@@ -344,9 +302,8 @@ function updateHomeStatus() {
 function openBroadcaster() {
 
   console.log(
-    "HUNT: abrindo broadcaster..."
+    "HUNT: abrindo broadcaster"
   );
-
 
   window.location.href =
     "/broadcaster.html";
@@ -355,18 +312,19 @@ function openBroadcaster() {
 
 
 /* ========================================
-   TELA DO ESPECTADOR
+   INICIAR VIEWER
 ======================================== */
 
 function startViewer() {
 
   console.log(
-    "HUNT: entrando como espectador..."
+    "HUNT: entrando como espectador"
   );
 
 
-  viewerActive =
-    true;
+  if (!app) {
+    return;
+  }
 
 
   closeViewer();
@@ -389,7 +347,6 @@ function startViewer() {
         id="viewerContainer"
         class="viewer-container">
 
-
         <div
           id="viewerMessage"
           class="viewer-message">
@@ -405,13 +362,10 @@ function startViewer() {
           playsinline>
         </video>
 
-
       </div>
 
 
-      <div
-        class="viewer-controls">
-
+      <div class="viewer-controls">
 
         <button
           id="refreshButton"
@@ -429,7 +383,6 @@ function startViewer() {
           ← VOLTAR
 
         </button>
-
 
       </div>
 
@@ -451,7 +404,6 @@ function startViewer() {
     document.getElementById(
       "refreshButton"
     );
-
 
   const backButton =
     document.getElementById(
@@ -475,9 +427,6 @@ function startViewer() {
       "click",
       () => {
 
-        viewerActive =
-          false;
-
         closeViewer();
 
         showHome();
@@ -493,43 +442,22 @@ function startViewer() {
 
   if (socket.connected) {
 
-    joinRoom();
-
-  }
-
-}
-
-
-/* ========================================
-   ENTRAR NA SALA
-======================================== */
-
-function joinRoom() {
-
-  if (
-    !socket ||
-    !socket.connected
-  ) {
-
-    console.warn(
-      "HUNT: Socket ainda não conectado."
+    socket.emit(
+      "join-room",
+      ROOM_ID
     );
 
-    return;
+    console.log(
+      "HUNT: viewer entrou na sala"
+    );
+
+  } else {
+
+    console.log(
+      "HUNT: aguardando Socket.IO..."
+    );
 
   }
-
-
-  console.log(
-    "HUNT: entrando na sala:",
-    ROOM_ID
-  );
-
-
-  socket.emit(
-    "join-room",
-    ROOM_ID
-  );
 
 }
 
@@ -544,7 +472,6 @@ function updateViewerStatus() {
     document.getElementById(
       "viewerStatus"
     );
-
 
   if (!status) {
     return;
@@ -567,19 +494,14 @@ function updateViewerStatus() {
 
 
 /* ========================================
-   ATUALIZAR TRANSMISSÃO
+   ATUALIZAR VIEWER
 ======================================== */
 
 function refreshViewer() {
 
   console.log(
-    "HUNT: atualizando transmissão..."
+    "HUNT: atualizando transmissão"
   );
-
-
-  if (!viewerActive) {
-    return;
-  }
 
 
   closeViewer();
@@ -589,7 +511,6 @@ function refreshViewer() {
     document.getElementById(
       "viewerMessage"
     );
-
 
   if (message) {
 
@@ -607,7 +528,6 @@ function refreshViewer() {
       "viewerStatus"
     );
 
-
   if (status) {
 
     status.textContent =
@@ -618,12 +538,9 @@ function refreshViewer() {
 
   if (socket.connected) {
 
-    joinRoom();
-
-  } else {
-
-    console.warn(
-      "HUNT: Socket desconectado."
+    socket.emit(
+      "join-room",
+      ROOM_ID
     );
 
   }
@@ -638,7 +555,7 @@ function refreshViewer() {
 function closeViewer() {
 
   console.log(
-    "HUNT: fechando Peer..."
+    "HUNT: fechando viewer"
   );
 
 
@@ -675,10 +592,8 @@ function closeViewer() {
   peer =
     null;
 
-
   broadcasterId =
     null;
-
 
   pendingCandidates =
     [];
@@ -733,9 +648,21 @@ socket.on(
     updateViewerStatus();
 
 
-    if (viewerActive) {
+    if (
+      document.getElementById(
+        "remoteVideo"
+      )
+    ) {
 
-      joinRoom();
+      socket.emit(
+        "join-room",
+        ROOM_ID
+      );
+
+
+      console.log(
+        "HUNT: viewer entrou na sala após conexão"
+      );
 
     }
 
@@ -774,7 +701,7 @@ socket.on(
   error => {
 
     console.error(
-      "HUNT: erro Socket.IO:",
+      "HUNT: erro de conexão:",
       error
     );
 
@@ -806,7 +733,7 @@ socket.on(
 
 
 /* ========================================
-   STREAM STARTED
+   TRANSMISSÃO DISPONÍVEL
 ======================================== */
 
 socket.on(
@@ -820,25 +747,12 @@ socket.on(
 
 
     if (
-      !viewerActive
-    ) {
-
-      console.log(
-        "HUNT: transmissão ignorada; não estamos no viewer."
-      );
-
-      return;
-
-    }
-
-
-    if (
       !data ||
       !data.broadcasterId
     ) {
 
       console.warn(
-        "HUNT: broadcasterId ausente."
+        "HUNT: broadcasterId não recebido"
       );
 
       return;
@@ -850,20 +764,22 @@ socket.on(
       data.broadcasterId;
 
 
-    console.log(
-      "HUNT: broadcaster:",
-      broadcasterId
-    );
+    if (
+      document.getElementById(
+        "remoteVideo"
+      )
+    ) {
 
+      createViewerPeer();
 
-    createViewerPeer();
+    }
 
   }
 );
 
 
 /* ========================================
-   CRIAR PEER
+   CRIAR PEER DO VIEWER
 ======================================== */
 
 function createViewerPeer() {
@@ -873,16 +789,9 @@ function createViewerPeer() {
   );
 
 
-  if (!viewerActive) {
-
-    console.warn(
-      "HUNT: viewer não está ativo."
-    );
-
-    return;
-
-  }
-
+  /*
+   * Fechar Peer anterior.
+   */
 
   if (peer) {
 
@@ -905,28 +814,79 @@ function createViewerPeer() {
   peer =
     null;
 
-
   pendingCandidates =
     [];
 
 
   /*
-   * Pegar diretamente a API nativa.
+   * PEGAR CONSTRUTOR NATIVO
+   *
+   * O teste feito dentro da Discord
+   * confirmou que isso funciona.
    */
 
   const RTC =
-    getNativeRTCPeerConnection();
+    window.RTCPeerConnection;
 
 
-  if (!RTC) {
+  console.log(
+    "HUNT: RTC no momento da criação:",
+    RTC
+  );
+
+
+  console.log(
+    "HUNT: typeof RTC:",
+    typeof RTC
+  );
+
+
+  /*
+   * Fallback para webkit.
+   */
+
+  const RTCCtor =
+    typeof RTC === "function"
+      ? RTC
+      : window.webkitRTCPeerConnection;
+
+
+  console.log(
+    "HUNT: construtor final:",
+    RTCCtor
+  );
+
+
+  if (
+    typeof RTCCtor !==
+    "function"
+  ) {
 
     console.error(
       "HUNT: RTCPeerConnection não disponível."
     );
 
 
+    console.error(
+      "HUNT: window.RTCPeerConnection =",
+      window.RTCPeerConnection
+    );
+
+
+    console.error(
+      "HUNT: globalThis.RTCPeerConnection =",
+      globalThis.RTCPeerConnection
+    );
+
+
+    console.error(
+      "HUNT: typeof RTCPeerConnection =",
+      typeof RTCPeerConnection
+    );
+
+
     showViewerMessage(
-      "WEBRTC NÃO ESTÁ DISPONÍVEL NESTE AMBIENTE"
+      "WEBRTC NÃO ESTÁ DISPONÍVEL"
     );
 
 
@@ -935,16 +895,20 @@ function createViewerPeer() {
   }
 
 
+  /*
+   * Criar Peer.
+   */
+
   try {
 
     peer =
-      new RTC(
+      new RTCCtor(
         rtcConfig
       );
 
 
     console.log(
-      "HUNT: Peer criado com sucesso:",
+      "HUNT: RTCPeerConnection criado:",
       peer
     );
 
@@ -961,7 +925,7 @@ function createViewerPeer() {
 
 
     showViewerMessage(
-      "ERRO AO CRIAR CONEXÃO WEBRTC"
+      "ERRO AO INICIAR WEBRTC"
     );
 
 
@@ -971,15 +935,14 @@ function createViewerPeer() {
 
 
   /* ======================================
-     TRACK
+     TRACK RECEBIDO
   ====================================== */
 
   peer.ontrack =
     event => {
 
       console.log(
-        "HUNT: VÍDEO RECEBIDO:",
-        event
+        "HUNT: VÍDEO RECEBIDO"
       );
 
 
@@ -992,7 +955,7 @@ function createViewerPeer() {
       if (!video) {
 
         console.warn(
-          "HUNT: remoteVideo não encontrado."
+          "HUNT: vídeo não encontrado"
         );
 
         return;
@@ -1002,7 +965,7 @@ function createViewerPeer() {
 
       if (
         event.streams &&
-        event.streams.length
+        event.streams.length > 0
       ) {
 
         video.srcObject =
@@ -1010,25 +973,34 @@ function createViewerPeer() {
 
       } else {
 
-        let stream =
-          video.srcObject;
+        /*
+         * Fallback.
+         */
 
+        if (!video.srcObject) {
 
-        if (!stream) {
+          try {
 
-          stream =
-            new MediaStream();
+            const stream =
+              new MediaStream();
 
+            stream.addTrack(
+              event.track
+            );
 
-          video.srcObject =
-            stream;
+            video.srcObject =
+              stream;
+
+          } catch (error) {
+
+            console.error(
+              "HUNT: erro criando MediaStream:",
+              error
+            );
+
+          }
 
         }
-
-
-        stream.addTrack(
-          event.track
-        );
 
       }
 
@@ -1038,7 +1010,7 @@ function createViewerPeer() {
           () => {
 
             console.log(
-              "HUNT: vídeo reproduzindo."
+              "HUNT: vídeo reproduzindo"
             );
 
           }
@@ -1077,7 +1049,7 @@ function createViewerPeer() {
 
 
   /* ======================================
-     ICE
+     ICE ENVIADO
   ====================================== */
 
   peer.onicecandidate =
@@ -1097,7 +1069,7 @@ function createViewerPeer() {
       ) {
 
         console.warn(
-          "HUNT: ICE sem broadcasterId."
+          "HUNT: ICE sem broadcasterId"
         );
 
         return;
@@ -1108,26 +1080,24 @@ function createViewerPeer() {
       socket.emit(
         "webrtc-ice-candidate",
         {
-
           target:
             broadcasterId,
 
           candidate:
             event.candidate
-
         }
       );
 
 
       console.log(
-        "HUNT: ICE enviado."
+        "HUNT: ICE enviado"
       );
 
     };
 
 
   /* ======================================
-     CONNECTION STATE
+     ESTADO DA CONEXÃO
   ====================================== */
 
   peer.onconnectionstatechange =
@@ -1138,13 +1108,9 @@ function createViewerPeer() {
       }
 
 
-      const state =
-        peer.connectionState;
-
-
       console.log(
         "HUNT: estado WebRTC:",
-        state
+        peer.connectionState
       );
 
 
@@ -1155,22 +1121,7 @@ function createViewerPeer() {
 
 
       if (
-        state ===
-        "connecting"
-      ) {
-
-        if (status) {
-
-          status.textContent =
-            "● CONECTANDO À TRANSMISSÃO";
-
-        }
-
-      }
-
-
-      if (
-        state ===
+        peer.connectionState ===
         "connected"
       ) {
 
@@ -1185,7 +1136,22 @@ function createViewerPeer() {
 
 
       if (
-        state ===
+        peer.connectionState ===
+        "connecting"
+      ) {
+
+        if (status) {
+
+          status.textContent =
+            "● CONECTANDO À TRANSMISSÃO";
+
+        }
+
+      }
+
+
+      if (
+        peer.connectionState ===
         "failed"
       ) {
 
@@ -1197,7 +1163,7 @@ function createViewerPeer() {
 
 
       if (
-        state ===
+        peer.connectionState ===
         "disconnected"
       ) {
 
@@ -1207,23 +1173,11 @@ function createViewerPeer() {
 
       }
 
-
-      if (
-        state ===
-        "closed"
-      ) {
-
-        console.log(
-          "HUNT: Peer fechado."
-        );
-
-      }
-
     };
 
 
   /* ======================================
-     ICE CONNECTION
+     ESTADO ICE
   ====================================== */
 
   peer.oniceconnectionstatechange =
@@ -1235,7 +1189,7 @@ function createViewerPeer() {
 
 
       console.log(
-        "HUNT: ICE state:",
+        "HUNT: ICE:",
         peer.iceConnectionState
       );
 
@@ -1258,17 +1212,6 @@ socket.on(
     );
 
 
-    if (!viewerActive) {
-
-      console.log(
-        "HUNT: OFFER ignorada; não estamos no viewer."
-      );
-
-      return;
-
-    }
-
-
     if (
       !data ||
       !data.sender ||
@@ -1276,7 +1219,28 @@ socket.on(
     ) {
 
       console.warn(
-        "HUNT: OFFER inválida."
+        "HUNT: OFFER inválida"
+      );
+
+      return;
+
+    }
+
+
+    /*
+     * Garantir que estamos no Viewer.
+     */
+
+    const video =
+      document.getElementById(
+        "remoteVideo"
+      );
+
+
+    if (!video) {
+
+      console.log(
+        "HUNT: OFFER ignorada: não estamos no viewer."
       );
 
       return;
@@ -1322,7 +1286,7 @@ socket.on(
 
 
       console.log(
-        "HUNT: OFFER aplicada."
+        "HUNT: OFFER aplicada"
       );
 
 
@@ -1331,12 +1295,14 @@ socket.on(
        */
 
       if (
-        pendingCandidates.length
+        pendingCandidates.length >
+        0
       ) {
 
         console.log(
-          "HUNT: aplicando ICE pendente:",
-          pendingCandidates.length
+          "HUNT: aplicando",
+          pendingCandidates.length,
+          "ICE pendentes"
         );
 
 
@@ -1377,8 +1343,18 @@ socket.on(
         await peer.createAnswer();
 
 
+      console.log(
+        "HUNT: ANSWER criada"
+      );
+
+
       await peer.setLocalDescription(
         answer
+      );
+
+
+      console.log(
+        "HUNT: descrição local configurada"
       );
 
 
@@ -1401,7 +1377,7 @@ socket.on(
 
 
       console.log(
-        "HUNT: ANSWER enviada."
+        "HUNT: ANSWER enviada"
       );
 
     } catch (error) {
@@ -1431,15 +1407,9 @@ socket.on(
   async data => {
 
     console.log(
-      "HUNT: ICE recebido."
+      "HUNT: ICE recebido:",
+      data
     );
-
-
-    if (!viewerActive) {
-
-      return;
-
-    }
 
 
     if (
@@ -1454,8 +1424,7 @@ socket.on(
 
 
     /*
-     * Se não temos Peer,
-     * guardar.
+     * Ainda não existe Peer.
      */
 
     if (!peer) {
@@ -1466,7 +1435,7 @@ socket.on(
 
 
       console.log(
-        "HUNT: ICE guardado; Peer inexistente."
+        "HUNT: ICE guardado: Peer ainda não existe"
       );
 
 
@@ -1476,9 +1445,7 @@ socket.on(
 
 
     /*
-     * Se ainda não existe
-     * descrição remota,
-     * guardar.
+     * Ainda não existe OFFER.
      */
 
     if (
@@ -1491,7 +1458,7 @@ socket.on(
 
 
       console.log(
-        "HUNT: ICE guardado; aguardando OFFER."
+        "HUNT: ICE guardado: aguardando OFFER"
       );
 
 
@@ -1508,7 +1475,7 @@ socket.on(
 
 
       console.log(
-        "HUNT: ICE aplicado."
+        "HUNT: ICE aplicado"
       );
 
     } catch (error) {
@@ -1536,11 +1503,6 @@ socket.on(
       "HUNT: transmissão encerrada:",
       data
     );
-
-
-    if (!viewerActive) {
-      return;
-    }
 
 
     closeViewer();
@@ -1607,5 +1569,5 @@ showHome();
 
 
 console.log(
-  "HUNT: aplicação iniciada."
+  "HUNT: aplicação iniciada"
 );
