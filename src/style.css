@@ -2,37 +2,29 @@
   box-sizing: border-box;
 }
 
-
 html,
 body,
 #app {
   margin: 0;
-
+  padding: 0;
   width: 100%;
   min-width: 100%;
-
+  height: 100%;
   min-height: 100%;
-
   background: #000;
 }
 
+html {
+  background: #000;
+}
 
 body {
-
   min-height: 100vh;
-
   background: #000;
-
   color: #fff;
-
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-
-  overflow-x: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
 }
-
 
 button,
 select {
@@ -45,19 +37,13 @@ select {
 ======================================== */
 
 .hunt-screen {
-
   width: 100%;
-
+  height: 100%;
   min-height: 100vh;
-
   background: #000;
-
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
-
 }
 
 
@@ -66,12 +52,8 @@ select {
 ======================================== */
 
 .home-screen {
-
   justify-content: center;
-
-  padding:
-    30px 20px;
-
+  padding: 30px 20px;
 }
 
 
@@ -80,34 +62,18 @@ select {
 ======================================== */
 
 .hunt-logo {
-
   color: #ff8c00;
-
-  font-size:
-    clamp(
-      42px,
-      8vw,
-      70px
-    );
-
+  font-size: clamp(42px, 8vw, 70px);
   font-weight: 900;
-
   letter-spacing: 12px;
-
   line-height: 1;
 }
 
-
 .hunt-subtitle {
-
   margin-top: 10px;
-
   color: #555;
-
   font-size: 13px;
-
   letter-spacing: 9px;
-
 }
 
 
@@ -116,21 +82,11 @@ select {
 ======================================== */
 
 .hunt-menu {
-
-  width:
-    min(
-      500px,
-      90%
-    );
-
+  width: min(500px, 90%);
   margin-top: 45px;
-
   display: flex;
-
   flex-direction: column;
-
   gap: 14px;
-
 }
 
 
@@ -139,65 +95,37 @@ select {
 ======================================== */
 
 .hunt-button {
-
   border: 0;
-
   border-radius: 7px;
-
   background: #ff8c00;
-
   color: #000;
-
-  padding:
-    14px 22px;
-
+  padding: 14px 22px;
   font-size: 14px;
-
   font-weight: 900;
-
   cursor: pointer;
-
   transition:
     transform .15s ease,
     filter .15s ease,
     background .15s ease;
 }
 
-
 .hunt-button:hover {
-
   filter: brightness(1.12);
-
-  transform:
-    translateY(-1px);
-
+  transform: translateY(-1px);
 }
-
 
 .hunt-button:active {
-
-  transform:
-    translateY(0);
-
+  transform: translateY(0);
 }
-
 
 .hunt-button.secondary {
-
   background: #171717;
-
   color: #fff;
-
-  border:
-    1px solid #292929;
-
+  border: 1px solid #292929;
 }
 
-
 .small-button {
-
   min-width: 130px;
-
 }
 
 
@@ -206,17 +134,11 @@ select {
 ======================================== */
 
 .hunt-status {
-
   margin-top: 15px;
-
   color: #666;
-
   font-size: 10px;
-
   letter-spacing: 2px;
-
   text-align: center;
-
 }
 
 
@@ -225,45 +147,32 @@ select {
 ======================================== */
 
 .viewer-screen {
-
-  justify-content:
-    flex-start;
-
+  justify-content: flex-start;
   padding: 0;
-
   background: #000;
-
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
 }
 
 
 /* ========================================
-   HEADER DO VIEWER
+   HEADER
 ======================================== */
 
 .viewer-header {
-
   width: 100%;
-
   min-height: 54px;
-
-  padding:
-    8px 18px;
-
+  height: 54px;
+  padding: 8px 18px;
   display: flex;
-
   align-items: center;
-
-  justify-content:
-    space-between;
-
+  justify-content: space-between;
   gap: 15px;
-
-  background:
-    #0b0b0b;
-
-  border-bottom:
-    1px solid #1c1c1c;
-
+  background: #0b0b0b;
+  border-bottom: 1px solid #1c1c1c;
+  flex-shrink: 0;
+  z-index: 10;
 }
 
 
@@ -272,48 +181,28 @@ select {
 ======================================== */
 
 .viewer-brand {
-
   display: flex;
-
   align-items: center;
-
   gap: 8px;
-
   white-space: nowrap;
-
 }
-
 
 .viewer-logo {
-
   color: #ff8c00;
-
   font-size: 18px;
-
   font-weight: 900;
-
   letter-spacing: 4px;
-
 }
-
 
 .viewer-brand-divider {
-
   color: #333;
-
   font-size: 18px;
-
 }
 
-
 .viewer-brand-screen {
-
   color: #666;
-
   font-size: 10px;
-
   letter-spacing: 3px;
-
 }
 
 
@@ -322,65 +211,37 @@ select {
 ======================================== */
 
 .viewer-mode-selector {
-
   display: flex;
-
   align-items: center;
-
   gap: 4px;
-
   padding: 3px;
-
   background: #151515;
-
-  border:
-    1px solid #252525;
-
+  border: 1px solid #252525;
   border-radius: 7px;
-
 }
 
-
 .mode-button {
-
   border: 0;
-
   background: transparent;
-
   color: #666;
-
-  padding:
-    7px 13px;
-
+  padding: 7px 13px;
   border-radius: 5px;
-
   font-size: 10px;
-
   font-weight: 900;
-
   letter-spacing: 1px;
-
   cursor: pointer;
-
   transition:
     background .15s ease,
     color .15s ease;
 }
 
-
 .mode-button:hover {
-
   color: #aaa;
-
 }
 
-
 .mode-button.active {
-
   background: #ff8c00;
-
   color: #000;
-
 }
 
 
@@ -389,24 +250,13 @@ select {
 ======================================== */
 
 .viewer-container {
-
   position: relative;
-
   background: #000;
-
   overflow: hidden;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
-  transition:
-    width .25s ease,
-    height .25s ease,
-    max-width .25s ease;
-
+  flex-shrink: 0;
 }
 
 
@@ -414,31 +264,14 @@ select {
    WIDE
 ======================================== */
 
-/*
-   WIDE:
-
-   Ocupa praticamente todo o espaço
-   disponível da Activity.
-
-   É o modo inspirado na imagem
-   que você mandou.
-*/
-
 .viewer-container.wide-mode {
-
   width: 100%;
-
-  height:
-    calc(
-      100vh - 54px
-    );
-
+  height: calc(100vh - 54px);
   min-height: 0;
-
+  margin: 0;
+  padding: 0;
   border: 0;
-
   border-radius: 0;
-
 }
 
 
@@ -446,17 +279,24 @@ select {
    VÍDEO WIDE
 ======================================== */
 
-.viewer-container.wide-mode
-#remoteVideo {
-
+.viewer-container.wide-mode #remoteVideo {
+  position: absolute;
+  inset: 0;
   width: 100%;
-
   height: 100%;
-
-  object-fit: contain;
-
+  min-width: 100%;
+  min-height: 100%;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
   background: #000;
 
+  /*
+     COVER faz o vídeo ocupar
+     absolutamente toda a área.
+  */
+  object-fit: cover;
 }
 
 
@@ -464,42 +304,14 @@ select {
    NORMAL
 ======================================== */
 
-/*
-   Player parecido com YouTube.
-
-   16:9.
-
-   Máximo de aproximadamente
-   1000px de largura.
-*/
-
 .viewer-container.normal-mode {
-
-  width:
-    min(
-      1000px,
-      92vw
-    );
-
-  aspect-ratio:
-    16 / 9;
-
+  width: min(1000px, 92vw);
+  aspect-ratio: 16 / 9;
   margin-top: 35px;
-
-  border:
-    1px solid #222;
-
+  border: 1px solid #222;
   border-radius: 9px;
-
   box-shadow:
-    0 15px 50px
-    rgba(
-      0,
-      0,
-      0,
-      .45
-    );
-
+    0 15px 50px rgba(0, 0, 0, .45);
 }
 
 
@@ -507,64 +319,12 @@ select {
    VÍDEO NORMAL
 ======================================== */
 
-.viewer-container.normal-mode
-#remoteVideo {
-
+.viewer-container.normal-mode #remoteVideo {
   width: 100%;
-
   height: 100%;
-
-  object-fit: contain;
-
+  display: block;
   background: #000;
-
-}
-
-
-/* ========================================
-   SMART
-======================================== */
-
-/*
-   Smart foi pensado para celular.
-
-   Usa quase toda a largura,
-   mas mantém uma proporção
-   confortável.
-*/
-
-.viewer-container.smart-mode {
-
-  width: 96vw;
-
-  aspect-ratio:
-    16 / 10;
-
-  margin-top: 25px;
-
-  border:
-    1px solid #202020;
-
-  border-radius: 8px;
-
-}
-
-
-/* ========================================
-   VÍDEO SMART
-======================================== */
-
-.viewer-container.smart-mode
-#remoteVideo {
-
-  width: 100%;
-
-  height: 100%;
-
   object-fit: contain;
-
-  background: #000;
-
 }
 
 
@@ -573,13 +333,9 @@ select {
 ======================================== */
 
 #remoteVideo {
-
   display: block;
-
   background: #000;
-
   cursor: pointer;
-
 }
 
 
@@ -588,42 +344,24 @@ select {
 ======================================== */
 
 #remoteVideo:fullscreen {
-
   width: 100vw;
-
   height: 100vh;
-
   background: #000;
-
   object-fit: contain;
-
 }
-
 
 .viewer-container:fullscreen {
-
   width: 100vw;
-
   height: 100vh;
-
   margin: 0;
-
   border: 0;
-
   border-radius: 0;
-
 }
 
-
-.viewer-container:fullscreen
-#remoteVideo {
-
+.viewer-container:fullscreen #remoteVideo {
   width: 100%;
-
   height: 100%;
-
   object-fit: contain;
-
 }
 
 
@@ -632,39 +370,19 @@ select {
 ======================================== */
 
 .viewer-message {
-
   position: absolute;
-
   inset: 0;
-
   z-index: 5;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   padding: 30px;
-
-  background:
-    rgba(
-      0,
-      0,
-      0,
-      .35
-    );
-
+  background: rgba(0, 0, 0, .35);
   color: #666;
-
   font-size: 12px;
-
   letter-spacing: 2px;
-
   text-align: center;
-
   pointer-events: none;
-
 }
 
 
@@ -673,20 +391,13 @@ select {
 ======================================== */
 
 .viewer-bottom {
-
   width: 100%;
-
-  padding:
-    10px 18px 15px;
-
+  padding: 10px 18px 15px;
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
-
-  background: #000;
-
+  background: #080808;
+  flex-shrink: 0;
 }
 
 
@@ -695,28 +406,10 @@ select {
 ======================================== */
 
 .viewer-controls {
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   gap: 8px;
-
-}
-
-
-/* ========================================
-   WIDE — CONTROLES DISCRETOS
-======================================== */
-
-.viewer-screen
-.viewer-bottom {
-
-  background:
-    #080808;
-
 }
 
 
@@ -727,45 +420,27 @@ select {
 @media (max-width: 900px) {
 
   .viewer-header {
-
-    padding:
-      8px 12px;
-
+    padding: 8px 12px;
   }
-
 
   .viewer-brand-screen {
-
     display: none;
-
   }
-
 
   .viewer-brand-divider {
-
     display: none;
-
   }
-
 
   .viewer-logo {
-
     font-size: 15px;
-
   }
-
 
   .viewer-container.normal-mode {
-
     width: 94vw;
-
   }
 
-
   .viewer-controls {
-
     flex-wrap: wrap;
-
   }
 
 }
@@ -778,144 +453,84 @@ select {
 @media (max-width: 600px) {
 
   .home-screen {
-
-    padding:
-      20px 14px;
-
+    padding: 20px 14px;
   }
-
 
   .hunt-logo {
-
     font-size: 42px;
-
     letter-spacing: 8px;
-
   }
-
 
   .hunt-subtitle {
-
     font-size: 11px;
-
     letter-spacing: 6px;
-
   }
 
-
   .hunt-menu {
-
     width: 100%;
-
     margin-top: 35px;
-
   }
 
 
   /* HEADER */
 
   .viewer-header {
-
     min-height: 50px;
-
-    padding:
-      7px 9px;
-
+    height: 50px;
+    padding: 7px 9px;
   }
-
 
   .viewer-mode-selector {
-
     gap: 2px;
-
   }
-
 
   .mode-button {
-
-    padding:
-      7px 9px;
-
+    padding: 7px 11px;
     font-size: 9px;
-
-  }
-
-
-  /* SMART */
-
-  .viewer-container.smart-mode {
-
-    width: 100vw;
-
-    aspect-ratio:
-      16 / 10;
-
-    margin-top: 18px;
-
-    border-left: 0;
-
-    border-right: 0;
-
-    border-radius: 0;
-
   }
 
 
   /* NORMAL */
 
   .viewer-container.normal-mode {
-
     width: 100vw;
-
-    aspect-ratio:
-      16 / 9;
-
+    aspect-ratio: 16 / 9;
     margin-top: 18px;
-
     border-left: 0;
-
     border-right: 0;
-
     border-radius: 0;
-
   }
 
 
   /* WIDE */
 
   .viewer-container.wide-mode {
-
     width: 100vw;
+    height: calc(100vh - 50px);
+    margin: 0;
+    padding: 0;
+  }
 
-    height:
-      calc(
-        100vh - 50px
-      );
-
+  .viewer-container.wide-mode #remoteVideo {
+    width: 100%;
+    height: 100%;
+    min-width: 100%;
+    min-height: 100%;
+    object-fit: cover;
   }
 
 
   .viewer-bottom {
-
-    padding:
-      8px 10px 12px;
-
+    padding: 8px 10px 12px;
   }
-
 
   .viewer-controls {
-
     width: 100%;
-
   }
 
-
   .small-button {
-
     flex: 1;
-
     min-width: 0;
-
   }
 
 }
@@ -925,34 +540,53 @@ select {
    CELULAR DEITADO
 ======================================== */
 
-@media (
-  max-width: 900px
-) and (
-  orientation: landscape
-) {
-
-  .viewer-container.wide-mode {
-
-    height:
-      calc(
-        100vh - 50px
-      );
-
-  }
-
+@media (max-width: 900px) and (orientation: landscape) {
 
   .viewer-header {
-
     min-height: 46px;
-
+    height: 46px;
   }
 
+  .viewer-container.wide-mode {
+    width: 100vw;
+    height: calc(100vh - 46px);
+    margin: 0;
+    padding: 0;
+  }
+
+  .viewer-container.wide-mode #remoteVideo {
+    width: 100%;
+    height: 100%;
+    min-width: 100%;
+    min-height: 100%;
+    object-fit: cover;
+  }
 
   .viewer-bottom {
+    padding: 5px 10px;
+  }
 
-    padding:
-      5px 10px;
+}
 
+
+/* ========================================
+   DISPOSITIVOS COM ALTURA PEQUENA
+======================================== */
+
+@media (max-height: 500px) and (orientation: landscape) {
+
+  .viewer-header {
+    min-height: 42px;
+    height: 42px;
+    padding: 5px 10px;
+  }
+
+  .viewer-container.wide-mode {
+    height: calc(100vh - 42px);
+  }
+
+  .viewer-bottom {
+    display: none;
   }
 
 }

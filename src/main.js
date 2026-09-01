@@ -392,15 +392,6 @@ function startViewer() {
 
           </button>
 
-
-          <button
-            id="smartModeButton"
-            class="mode-button">
-
-            SMART
-
-          </button>
-
         </div>
 
       </div>
@@ -470,6 +461,7 @@ function startViewer() {
 
       </div>
 
+
     </div>
 
   `;
@@ -500,12 +492,6 @@ function startViewer() {
   const normalButton =
     document.getElementById(
       "normalModeButton"
-    );
-
-
-  const smartButton =
-    document.getElementById(
-      "smartModeButton"
     );
 
 
@@ -544,7 +530,7 @@ function startViewer() {
 
 
   /* ======================================
-     MODOS
+     MODO WIDE
   ====================================== */
 
   if (wideButton) {
@@ -563,6 +549,10 @@ function startViewer() {
   }
 
 
+  /* ======================================
+     MODO NORMAL
+  ====================================== */
+
   if (normalButton) {
 
     normalButton.addEventListener(
@@ -571,22 +561,6 @@ function startViewer() {
 
         setPlayerMode(
           "normal"
-        );
-
-      }
-    );
-
-  }
-
-
-  if (smartButton) {
-
-    smartButton.addEventListener(
-      "click",
-      () => {
-
-        setPlayerMode(
-          "smart"
         );
 
       }
@@ -683,12 +657,6 @@ function setPlayerMode(
     );
 
 
-  const smartButton =
-    document.getElementById(
-      "smartModeButton"
-    );
-
-
   if (!container) {
     return;
   }
@@ -696,9 +664,22 @@ function setPlayerMode(
 
   container.classList.remove(
     "wide-mode",
-    "normal-mode",
-    "smart-mode"
+    "normal-mode"
   );
+
+
+  if (
+    mode !== "wide" &&
+    mode !== "normal"
+  ) {
+
+    mode =
+      "wide";
+
+    currentPlayerMode =
+      "wide";
+
+  }
 
 
   container.classList.add(
@@ -721,16 +702,6 @@ function setPlayerMode(
     normalButton.classList.toggle(
       "active",
       mode === "normal"
-    );
-
-  }
-
-
-  if (smartButton) {
-
-    smartButton.classList.toggle(
-      "active",
-      mode === "smart"
     );
 
   }
