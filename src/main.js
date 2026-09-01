@@ -6,8 +6,11 @@ import "./style.css";
    CONFIGURAÇÃO
 ======================================== */
 
-const SERVER_URL = "https://hunt-screen-server.onrender.com";
-const ROOM_ID = "hunt-screen-main";
+const SERVER_URL =
+  "https://hunt-screen-server.onrender.com";
+
+const ROOM_ID =
+  "hunt-screen-main";
 
 const isDiscordActivity =
   window.location.hostname.endsWith(".discordsays.com");
@@ -29,7 +32,8 @@ if (isDiscordActivity) {
     patchUrlMappings([
       {
         prefix: "/hunt-socket",
-        target: "hunt-screen-server.onrender.com"
+        target:
+          "hunt-screen-server.onrender.com"
       }
     ]);
 
@@ -37,7 +41,9 @@ if (isDiscordActivity) {
       "HUNT: URL Mapping configurado"
     );
 
-  } catch (error) {
+  }
+
+  catch (error) {
 
     console.warn(
       "HUNT: erro no patchUrlMappings:",
@@ -53,44 +59,50 @@ if (isDiscordActivity) {
    SOCKET.IO
 ======================================== */
 
-const socket = io(
-  isDiscordActivity
-    ? window.location.origin
-    : SERVER_URL,
-  {
-    path: "/hunt-socket",
+const socket =
+  io(
+    isDiscordActivity
+      ? window.location.origin
+      : SERVER_URL,
+    {
+      path:
+        "/hunt-socket",
 
-    transports: [
-      "polling",
-      "websocket"
-    ],
+      transports: [
+        "polling",
+        "websocket"
+      ],
 
-    reconnection: true,
+      reconnection:
+        true,
 
-    reconnectionAttempts:
-      Infinity,
+      reconnectionAttempts:
+        Infinity,
 
-    reconnectionDelay:
-      1000,
+      reconnectionDelay:
+        1000,
 
-    reconnectionDelayMax:
-      5000,
+      reconnectionDelayMax:
+        5000,
 
-    timeout:
-      20000
-  }
-);
+      timeout:
+        20000
+    }
+  );
 
 
 /* ========================================
    VARIÁVEIS WEBRTC
 ======================================== */
 
-let peer = null;
+let peer =
+  null;
 
-let broadcasterId = null;
+let broadcasterId =
+  null;
 
-let pendingCandidates = [];
+let pendingCandidates =
+  [];
 
 
 /* ========================================
@@ -98,7 +110,9 @@ let pendingCandidates = [];
 ======================================== */
 
 const app =
-  document.getElementById("app");
+  document.getElementById(
+    "app"
+  );
 
 
 if (!app) {
@@ -134,6 +148,147 @@ const rtcConfig = {
 
 
 /* ========================================
+   OBTER RTCPeerConnection
+======================================== */
+
+async function getRTCPeerConnection() {
+
+  console.log(
+    "HUNT: procurando RTCPeerConnection..."
+  );
+
+
+  /*
+   * O Discord pode terminar de inicializar
+   * algumas APIs depois que o JavaScript
+   * da Activity já começou.
+   *
+   * Por isso tentamos várias vezes.
+   */
+
+  for (
+    let attempt = 0;
+    attempt < 50;
+    attempt++
+  ) {
+
+    let RTCClass =
+      null;
+
+
+    /*
+     * Primeiro window.
+     */
+
+    try {
+
+      if (
+        typeof window !==
+        "undefined"
+      ) {
+
+        if (
+          typeof window.RTCPeerConnection ===
+          "function"
+        ) {
+
+          RTCClass =
+            window.RTCPeerConnection;
+
+        }
+
+      }
+
+    }
+
+    catch (error) {
+
+      console.warn(
+        "HUNT: erro acessando window.RTCPeerConnection:",
+        error
+      );
+
+    }
+
+
+    /*
+     * Depois globalThis.
+     */
+
+    if (
+      !RTCClass &&
+      typeof globalThis !==
+      "undefined"
+    ) {
+
+      try {
+
+        if (
+          typeof globalThis.RTCPeerConnection ===
+          "function"
+        ) {
+
+          RTCClass =
+            globalThis.RTCPeerConnection;
+
+        }
+
+      }
+
+      catch (error) {
+
+        console.warn(
+          "HUNT: erro acessando globalThis.RTCPeerConnection:",
+          error
+        );
+
+      }
+
+    }
+
+
+    /*
+     * Encontrou.
+     */
+
+    if (
+      typeof RTCClass ===
+      "function"
+    ) {
+
+      console.log(
+        "HUNT: RTCPeerConnection encontrado."
+      );
+
+
+      return RTCClass;
+
+    }
+
+
+    /*
+     * Esperar 100ms e tentar novamente.
+     */
+
+    await new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          100
+        )
+    );
+
+  }
+
+
+  throw new Error(
+    "RTCPeerConnection não ficou disponível."
+  );
+
+}
+
+
+/* ========================================
    TELA INICIAL
 ======================================== */
 
@@ -143,11 +298,6 @@ function showHome() {
     return;
   }
 
-
-  /*
-   * Garantir que qualquer Peer anterior
-   * seja fechado.
-   */
 
   closeViewer();
 
@@ -253,12 +403,16 @@ function updateHomeStatus() {
   }
 
 
-  if (socket.connected) {
+  if (
+    socket.connected
+  ) {
 
     status.textContent =
       "● SERVIDOR ONLINE";
 
-  } else {
+  }
+
+  else {
 
     status.textContent =
       "● CONECTANDO...";
@@ -278,11 +432,6 @@ function openBroadcaster() {
     "HUNT: abrindo broadcaster"
   );
 
-
-  /*
-   * O broadcaster está hospedado
-   * junto com o client.
-   */
 
   window.location.href =
     "/broadcaster.html";
@@ -305,10 +454,6 @@ function startViewer() {
     return;
   }
 
-
-  /*
-   * Fechar conexão anterior.
-   */
 
   closeViewer();
 
@@ -425,22 +570,23 @@ function startViewer() {
   updateViewerStatus();
 
 
-  /*
-   * Entrar na sala.
-   */
-
-  if (socket.connected) {
+  if (
+    socket.connected
+  ) {
 
     socket.emit(
       "join-room",
       ROOM_ID
     );
 
+
     console.log(
       "HUNT: viewer entrou na sala"
     );
 
-  } else {
+  }
+
+  else {
 
     console.log(
       "HUNT: aguardando Socket.IO..."
@@ -468,12 +614,16 @@ function updateViewerStatus() {
   }
 
 
-  if (socket.connected) {
+  if (
+    socket.connected
+  ) {
 
     status.textContent =
       "● CONECTADO";
 
-  } else {
+  }
+
+  else {
 
     status.textContent =
       "● CONECTANDO...";
@@ -493,10 +643,6 @@ function refreshViewer() {
     "HUNT: atualizando transmissão"
   );
 
-
-  /*
-   * Fechar Peer atual.
-   */
 
   closeViewer();
 
@@ -532,11 +678,9 @@ function refreshViewer() {
   }
 
 
-  /*
-   * Entrar novamente na sala.
-   */
-
-  if (socket.connected) {
+  if (
+    socket.connected
+  ) {
 
     socket.emit(
       "join-room",
@@ -572,9 +716,14 @@ function closeViewer() {
       peer.onconnectionstatechange =
         null;
 
+      peer.oniceconnectionstatechange =
+        null;
+
       peer.close();
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       console.warn(
         "HUNT: erro fechando Peer:",
@@ -610,7 +759,9 @@ function closeViewer() {
 
       video.pause();
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       console.warn(
         "HUNT: erro pausando vídeo:",
@@ -646,11 +797,6 @@ socket.on(
 
     updateViewerStatus();
 
-
-    /*
-     * Se estiver na tela de espectador,
-     * entrar novamente na sala.
-     */
 
     if (
       document.getElementById(
@@ -768,11 +914,6 @@ socket.on(
       data.broadcasterId;
 
 
-    /*
-     * Só iniciar WebRTC se estiver
-     * na tela de espectador.
-     */
-
     if (
       document.getElementById(
         "remoteVideo"
@@ -791,7 +932,7 @@ socket.on(
    CRIAR PEER DO VIEWER
 ======================================== */
 
-function createViewerPeer() {
+async function createViewerPeer() {
 
   console.log(
     "HUNT: criando RTCPeerConnection..."
@@ -808,7 +949,9 @@ function createViewerPeer() {
 
       peer.close();
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
       console.warn(
         "HUNT: erro fechando Peer anterior:",
@@ -829,31 +972,45 @@ function createViewerPeer() {
 
 
   /*
-   * IMPORTANTE:
-   *
-   * Usamos explicitamente
-   * window.RTCPeerConnection.
-   *
-   * O teste dentro do Discord
-   * confirmou que isso funciona.
+   * Obter o construtor WebRTC.
+   */
+
+  let RTCPeerConnectionClass;
+
+
+  try {
+
+    RTCPeerConnectionClass =
+      await getRTCPeerConnection();
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "HUNT: RTCPeerConnection não disponível:",
+      error
+    );
+
+
+    showViewerMessage(
+      "WEBRTC NÃO ESTÁ DISPONÍVEL"
+    );
+
+
+    return;
+
+  }
+
+
+  /*
+   * Criar Peer.
    */
 
   try {
 
-    if (
-      typeof window.RTCPeerConnection !==
-      "function"
-    ) {
-
-      throw new Error(
-        "window.RTCPeerConnection não está disponível."
-      );
-
-    }
-
-
     peer =
-      new window.RTCPeerConnection(
+      new RTCPeerConnectionClass(
         rtcConfig
       );
 
@@ -876,6 +1033,10 @@ function createViewerPeer() {
     showViewerMessage(
       "ERRO AO INICIAR WEBRTC"
     );
+
+
+    peer =
+      null;
 
 
     return;
@@ -920,14 +1081,13 @@ function createViewerPeer() {
         video.srcObject =
           event.streams[0];
 
-      } else {
+      }
 
-        /*
-         * Fallback caso o navegador não
-         * forneça event.streams.
-         */
+      else {
 
-        if (!video.srcObject) {
+        if (
+          !video.srcObject
+        ) {
 
           const stream =
             new MediaStream();
@@ -1169,21 +1329,37 @@ socket.on(
 
 
     /*
-     * A pessoa que enviou a OFFER
-     * é o broadcaster.
+     * Garantir que estamos no viewer.
      */
+
+    const video =
+      document.getElementById(
+        "remoteVideo"
+      );
+
+
+    if (!video) {
+
+      console.log(
+        "HUNT: OFFER ignorada porque não estamos no viewer."
+      );
+
+      return;
+
+    }
+
 
     broadcasterId =
       data.sender;
 
 
     /*
-     * Criar Peer se necessário.
+     * Criar Peer.
      */
 
     if (!peer) {
 
-      createViewerPeer();
+      await createViewerPeer();
 
     }
 
@@ -1216,8 +1392,7 @@ socket.on(
 
 
       /*
-       * Aplicar ICE que chegou
-       * antes da OFFER.
+       * Aplicar ICE pendente.
        */
 
       if (
@@ -1276,7 +1451,7 @@ socket.on(
 
 
       /*
-       * Enviar ANSWER para broadcaster.
+       * Enviar ANSWER.
        */
 
       socket.emit(
@@ -1343,7 +1518,7 @@ socket.on(
 
     /*
      * Se ainda não existe Peer,
-     * guardar.
+     * guardar ICE.
      */
 
     if (!peer) {
@@ -1364,8 +1539,8 @@ socket.on(
 
 
     /*
-     * Se ainda não temos OFFER,
-     * guardar.
+     * Se ainda não existe OFFER,
+     * guardar ICE.
      */
 
     if (
