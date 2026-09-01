@@ -12,11 +12,19 @@
 
   <title>HUNT SCREEN</title>
 
+  <!-- Discord Embedded App SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@2.0.0/output/index.js"></script>
+
+  <!-- Socket.IO -->
+  <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+
+
   <style>
 
     * {
       box-sizing: border-box;
     }
+
 
     body {
 
@@ -89,6 +97,14 @@
 
       overflow: hidden;
 
+      min-height: 250px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
     }
 
 
@@ -101,6 +117,19 @@
       display: block;
 
       background: #000;
+
+    }
+
+
+    .empty-preview {
+
+      color: #333;
+
+      font-size: 13px;
+
+      letter-spacing: 2px;
+
+      padding: 100px 20px;
 
     }
 
@@ -301,9 +330,6 @@
 
   </style>
 
-
-  <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
-
 </head>
 
 
@@ -331,6 +357,14 @@
         playsinline>
       </video>
 
+      <div
+        id="emptyPreview"
+        class="empty-preview">
+
+        NENHUMA TELA SELECIONADA
+
+      </div>
+
     </div>
 
 
@@ -347,7 +381,9 @@
           720p
         </option>
 
-        <option value="1080" selected>
+        <option
+          value="1080"
+          selected>
           1080p
         </option>
 
@@ -369,7 +405,9 @@
           30 FPS
         </option>
 
-        <option value="60" selected>
+        <option
+          value="60"
+          selected>
           60 FPS
         </option>
 
@@ -379,6 +417,7 @@
 
 
     <div class="controls">
+
 
       <button
         id="chooseButton"
@@ -408,12 +447,11 @@
 
       </button>
 
+
     </div>
 
 
-    <!-- =========================
-         BOTÃO VOLTAR
-    ========================== -->
+    <!-- BOTÃO VOLTAR -->
 
     <div class="back-container">
 
@@ -455,9 +493,9 @@
 
 <script>
 
-/* =========================
+/* ==================================================
    CONFIGURAÇÃO
-========================= */
+================================================== */
 
 const SERVER_URL =
   "https://hunt-screen-server.onrender.com";
@@ -466,38 +504,59 @@ const ROOM_ID =
   "hunt-screen-main";
 
 
-/* =========================
+/* ==================================================
    ELEMENTOS
-========================= */
+================================================== */
 
 const preview =
-  document.getElementById("preview");
+  document.getElementById(
+    "preview"
+  );
+
+const emptyPreview =
+  document.getElementById(
+    "emptyPreview"
+  );
 
 const chooseButton =
-  document.getElementById("chooseButton");
+  document.getElementById(
+    "chooseButton"
+  );
 
 const startButton =
-  document.getElementById("startButton");
+  document.getElementById(
+    "startButton"
+  );
 
 const stopButton =
-  document.getElementById("stopButton");
+  document.getElementById(
+    "stopButton"
+  );
 
 const status =
-  document.getElementById("status");
+  document.getElementById(
+    "status"
+  );
 
 const errorBox =
-  document.getElementById("error");
+  document.getElementById(
+    "error"
+  );
 
 const quality =
-  document.getElementById("quality");
+  document.getElementById(
+    "quality"
+  );
 
 const fps =
-  document.getElementById("fps");
+  document.getElementById(
+    "fps"
+  );
 
 
-/* =========================
+/* ==================================================
    VARIÁVEIS
-========================= */
+================================================== */
 
 let socket = null;
 
@@ -508,9 +567,9 @@ let transmitting = false;
 const peers = new Map();
 
 
-/* =========================
+/* ==================================================
    WEBRTC
-========================= */
+================================================== */
 
 const rtcConfig = {
 
@@ -531,119 +590,462 @@ const rtcConfig = {
 };
 
 
-/* =========================
-   SOCKET
-========================= */
+/* ==================================================
+   DISCORD ACTIVITY
+================================================== */
+
+const isDiscordActivity =
+  window.location.hostname
+    .endsWith(
+      ".discordsays.com"
+    );
+
 
 console.log(
-  "HUNT: conectando ao servidor..."
+  "HUNT: Discord Activity:",
+  isDiscordActivity
 );
 
 
-socket = io(
-  SERVER_URL,
-  {
-    path: "/hunt-socket",
+/* ==================================================
+   CONFIGURAR DISCORD PROXY
+================================================== */
 
-    transports: [
-      "websocket"
-    ],
+async function setupDiscord() {
 
-    reconnection: true,
-
-    reconnectionAttempts:
-      Infinity,
-
-    reconnectionDelay:
-      1000,
-
-    reconnectionDelayMax:
-      5000
-  }
-);
-
-
-/* =========================
-   CONECTADO
-========================= */
-
-socket.on(
-  "connect",
-  () => {
+  if (!isDiscordActivity) {
 
     console.log(
-      "HUNT SERVER conectado:",
-      socket.id
+      "HUNT: navegador normal"
     );
 
-
-    status.textContent =
-      "● ONLINE";
-
-
-    socket.emit(
-      "join-room",
-      ROOM_ID
-    );
+    return;
 
   }
-);
 
 
-/* =========================
-   ERRO SOCKET
-========================= */
-
-socket.on(
-  "connect_error",
-  error => {
-
-    console.error(
-      "HUNT: erro de conexão:",
-      error
-    );
+  console.log(
+    "HUNT: configurando Discord Activity..."
+  );
 
 
-    status.textContent =
-      "● ERRO DE CONEXÃO";
+  try {
 
+    /*
+     * O Discord encaminha /hunt-socket
+     * para nosso servidor.
+     */
 
-    showError(
-      "Não foi possível conectar ao servidor."
-    );
+    if (
+      window.DiscordSDK &&
+      window.DiscordSDK.patchUrlMappings
+    ) {
 
-  }
-);
+      window.DiscordSDK.patchUrlMappings([
 
+        {
 
-/* =========================
-   DESCONECTADO
-========================= */
+          prefix:
+            "/hunt-socket",
 
-socket.on(
-  "disconnect",
-  reason => {
+          target:
+            "hunt-screen-server.onrender.com"
 
-    console.warn(
-      "HUNT: servidor desconectado:",
-      reason
-    );
+        }
 
+      ]);
 
-    if (!transmitting) {
+      console.log(
+        "HUNT: URL Mapping configurado"
+      );
 
-      status.textContent =
-        "● DESCONECTADO";
+    }
+
+    else {
+
+      console.warn(
+        "HUNT: patchUrlMappings não encontrado"
+      );
 
     }
 
   }
-);
+
+  catch (error) {
+
+    console.error(
+      "HUNT: erro Discord:",
+      error
+    );
+
+  }
+
+}
 
 
-/* =========================
+/* ==================================================
+   INICIAR SOCKET
+================================================== */
+
+async function connectSocket() {
+
+  await setupDiscord();
+
+
+  console.log(
+    "HUNT: iniciando Socket.IO..."
+  );
+
+
+  /*
+   * No navegador normal:
+   *
+   * https://hunt-screen-server.onrender.com
+   *
+   * No Discord:
+   *
+   * https://xxxx.discordsays.com
+   *
+   * usando o proxy /hunt-socket.
+   */
+
+  const socketURL =
+    isDiscordActivity
+      ? window.location.origin
+      : SERVER_URL;
+
+
+  console.log(
+    "HUNT: Socket URL:",
+    socketURL
+  );
+
+
+  socket =
+    io(
+      socketURL,
+      {
+
+        path:
+          "/hunt-socket",
+
+        transports:
+          [
+            "polling",
+            "websocket"
+          ],
+
+        reconnection:
+          true,
+
+        reconnectionAttempts:
+          Infinity,
+
+        reconnectionDelay:
+          1000,
+
+        reconnectionDelayMax:
+          5000
+
+      }
+    );
+
+
+  /* ==================================================
+     CONNECT
+  ================================================== */
+
+  socket.on(
+    "connect",
+    () => {
+
+      console.log(
+        "HUNT SERVER conectado:",
+        socket.id
+      );
+
+
+      status.textContent =
+        "● ONLINE";
+
+
+      status.classList.remove(
+        "live"
+      );
+
+
+      hideError();
+
+
+      socket.emit(
+        "join-room",
+        ROOM_ID
+      );
+
+    }
+  );
+
+
+  /* ==================================================
+     CONNECT ERROR
+  ================================================== */
+
+  socket.on(
+    "connect_error",
+    error => {
+
+      console.error(
+        "HUNT: erro de conexão:",
+        error
+      );
+
+
+      console.error(
+        "HUNT: detalhes:",
+        {
+
+          message:
+            error.message,
+
+          description:
+            error.description,
+
+          context:
+            error.context,
+
+          type:
+            error.type
+
+        }
+      );
+
+
+      status.textContent =
+        "● ERRO DE CONEXÃO";
+
+
+      showError(
+        "Não foi possível conectar ao servidor."
+      );
+
+    }
+  );
+
+
+  /* ==================================================
+     DISCONNECT
+  ================================================== */
+
+  socket.on(
+    "disconnect",
+    reason => {
+
+      console.warn(
+        "HUNT: desconectado:",
+        reason
+      );
+
+
+      if (!transmitting) {
+
+        status.textContent =
+          "● DESCONECTADO";
+
+      }
+
+    }
+  );
+
+
+  /* ==================================================
+     NOVO ESPECTADOR
+  ================================================== */
+
+  socket.on(
+    "user-joined",
+    async data => {
+
+      console.log(
+        "HUNT: novo espectador:",
+        data
+      );
+
+
+      if (!transmitting) {
+
+        return;
+
+      }
+
+
+      if (
+        !data ||
+        !data.socketId
+      ) {
+
+        return;
+
+      }
+
+
+      await createOffer(
+        data.socketId
+      );
+
+    }
+  );
+
+
+  /* ==================================================
+     ANSWER
+  ================================================== */
+
+  socket.on(
+    "webrtc-answer",
+    async data => {
+
+      console.log(
+        "HUNT: ANSWER recebida:",
+        data
+      );
+
+
+      if (
+        !data ||
+        !data.sender ||
+        !data.answer
+      ) {
+
+        return;
+
+      }
+
+
+      const peer =
+        peers.get(
+          data.sender
+        );
+
+
+      if (!peer) {
+
+        console.warn(
+          "HUNT: Peer não encontrado:",
+          data.sender
+        );
+
+        return;
+
+      }
+
+
+      try {
+
+        await peer.setRemoteDescription(
+          data.answer
+        );
+
+
+        console.log(
+          "HUNT: ANSWER aplicada"
+        );
+
+      }
+
+      catch (error) {
+
+        console.error(
+          "HUNT: erro ANSWER:",
+          error
+        );
+
+      }
+
+    }
+  );
+
+
+  /* ==================================================
+     ICE
+  ================================================== */
+
+  socket.on(
+    "webrtc-ice-candidate",
+    async data => {
+
+      if (
+        !data ||
+        !data.sender ||
+        !data.candidate
+      ) {
+
+        return;
+
+      }
+
+
+      const peer =
+        peers.get(
+          data.sender
+        );
+
+
+      if (!peer) {
+
+        return;
+
+      }
+
+
+      try {
+
+        await peer.addIceCandidate(
+          data.candidate
+        );
+
+
+        console.log(
+          "HUNT: ICE aplicado:",
+          data.sender
+        );
+
+      }
+
+      catch (error) {
+
+        console.error(
+          "HUNT: erro ICE:",
+          error
+        );
+
+      }
+
+    }
+  );
+
+
+  /* ==================================================
+     STREAM STOPPED
+  ================================================== */
+
+  socket.on(
+    "stream-stopped",
+    data => {
+
+      console.log(
+        "HUNT: transmissão encerrada:",
+        data
+      );
+
+    }
+  );
+
+}
+
+
+/* ==================================================
    ESCOLHER TELA
-========================= */
+================================================== */
 
 async function chooseScreen() {
 
@@ -684,6 +1086,10 @@ async function chooseScreen() {
 
     preview.srcObject =
       screenStream;
+
+
+    emptyPreview.style.display =
+      "none";
 
 
     chooseButton.style.display =
@@ -730,7 +1136,7 @@ async function chooseScreen() {
   catch (error) {
 
     console.error(
-      "HUNT: erro ao capturar tela:",
+      "HUNT: erro captura:",
       error
     );
 
@@ -744,9 +1150,9 @@ async function chooseScreen() {
 }
 
 
-/* =========================
+/* ==================================================
    INICIAR TRANSMISSÃO
-========================= */
+================================================== */
 
 function startTransmission() {
 
@@ -806,8 +1212,10 @@ function startTransmission() {
   socket.emit(
     "start-stream",
     {
+
       roomId:
         ROOM_ID
+
     }
   );
 
@@ -819,48 +1227,9 @@ function startTransmission() {
 }
 
 
-/* =========================
-   NOVO ESPECTADOR
-========================= */
-
-socket.on(
-  "user-joined",
-  async data => {
-
-    console.log(
-      "HUNT: novo espectador:",
-      data
-    );
-
-
-    if (!transmitting) {
-
-      return;
-
-    }
-
-
-    if (
-      !data ||
-      !data.socketId
-    ) {
-
-      return;
-
-    }
-
-
-    await createOffer(
-      data.socketId
-    );
-
-  }
-);
-
-
-/* =========================
+/* ==================================================
    CRIAR PEER
-========================= */
+================================================== */
 
 function createPeer(
   viewerId
@@ -908,7 +1277,9 @@ function createPeer(
     event => {
 
       if (
-        event.candidate
+        event.candidate &&
+        socket &&
+        socket.connected
       ) {
 
         socket.emit(
@@ -930,14 +1301,14 @@ function createPeer(
 
 
   /*
-   * ESTADO DA CONEXÃO
+   * ESTADO
    */
 
   peer.onconnectionstatechange =
     () => {
 
       console.log(
-        "HUNT: estado WebRTC:",
+        "HUNT: WebRTC:",
         viewerId,
         peer.connectionState
       );
@@ -974,16 +1345,16 @@ function createPeer(
 }
 
 
-/* =========================
+/* ==================================================
    CRIAR OFFER
-========================= */
+================================================== */
 
 async function createOffer(
   viewerId
 ) {
 
   console.log(
-    "HUNT: criando OFFER para:",
+    "HUNT: criando OFFER:",
     viewerId
   );
 
@@ -1020,7 +1391,7 @@ async function createOffer(
 
 
     console.log(
-      "HUNT: OFFER enviada para:",
+      "HUNT: OFFER enviada:",
       viewerId
     );
 
@@ -1029,7 +1400,7 @@ async function createOffer(
   catch (error) {
 
     console.error(
-      "HUNT: erro criando OFFER:",
+      "HUNT: erro OFFER:",
       error
     );
 
@@ -1038,137 +1409,9 @@ async function createOffer(
 }
 
 
-/* =========================
-   RECEBER ANSWER
-========================= */
-
-socket.on(
-  "webrtc-answer",
-  async data => {
-
-    console.log(
-      "HUNT: ANSWER recebida:",
-      data
-    );
-
-
-    if (
-      !data ||
-      !data.sender ||
-      !data.answer
-    ) {
-
-      return;
-
-    }
-
-
-    const peer =
-      peers.get(
-        data.sender
-      );
-
-
-    if (!peer) {
-
-      console.warn(
-        "HUNT: Peer não encontrado:",
-        data.sender
-      );
-
-      return;
-
-    }
-
-
-    try {
-
-      await peer.setRemoteDescription(
-        data.answer
-      );
-
-
-      console.log(
-        "HUNT: ANSWER aplicada"
-      );
-
-    }
-
-    catch (error) {
-
-      console.error(
-        "HUNT: erro aplicando ANSWER:",
-        error
-      );
-
-    }
-
-  }
-);
-
-
-/* =========================
-   ICE
-========================= */
-
-socket.on(
-  "webrtc-ice-candidate",
-  async data => {
-
-    if (
-      !data ||
-      !data.sender ||
-      !data.candidate
-    ) {
-
-      return;
-
-    }
-
-
-    const peer =
-      peers.get(
-        data.sender
-      );
-
-
-    if (!peer) {
-
-      return;
-
-    }
-
-
-    try {
-
-      await peer.addIceCandidate(
-        data.candidate
-      );
-
-
-      console.log(
-        "HUNT: ICE aplicado:",
-        data.sender
-      );
-
-    }
-
-    catch (error) {
-
-      console.error(
-        "HUNT: erro ICE:",
-        error
-      );
-
-    }
-
-  }
-);
-
-
-/* =========================
+/* ==================================================
    PARAR TRANSMISSÃO
-========================= */
+================================================== */
 
 function stopTransmission() {
 
@@ -1182,7 +1425,23 @@ function stopTransmission() {
     screenStream
       .getTracks()
       .forEach(
-        track => track.stop()
+        track => {
+
+          try {
+
+            track.stop();
+
+          }
+
+          catch (error) {
+
+            console.warn(
+              error
+            );
+
+          }
+
+        }
       );
 
   }
@@ -1194,6 +1453,10 @@ function stopTransmission() {
 
   preview.srcObject =
     null;
+
+
+  emptyPreview.style.display =
+    "block";
 
 
   transmitting =
@@ -1218,7 +1481,6 @@ function stopTransmission() {
     catch (error) {
 
       console.warn(
-        "HUNT: erro fechando Peer:",
         error
       );
 
@@ -1231,7 +1493,7 @@ function stopTransmission() {
 
 
   /*
-   * AVISAR SERVER
+   * AVISAR SERVIDOR
    */
 
   if (
@@ -1242,8 +1504,10 @@ function stopTransmission() {
     socket.emit(
       "stop-stream",
       {
+
         roomId:
           ROOM_ID
+
       }
     );
 
@@ -1255,9 +1519,9 @@ function stopTransmission() {
 }
 
 
-/* =========================
+/* ==================================================
    RESET
-========================= */
+================================================== */
 
 function resetInterface() {
 
@@ -1284,22 +1548,16 @@ function resetInterface() {
 }
 
 
-/* =========================
-   BOTÃO VOLTAR
-========================= */
+/* ==================================================
+   VOLTAR
+================================================== */
 
 function goBack() {
 
   console.log(
-    "HUNT: voltando para a tela principal"
+    "HUNT: voltando..."
   );
 
-
-  /*
-   * Se estiver transmitindo,
-   * encerra a transmissão antes
-   * de voltar.
-   */
 
   if (transmitting) {
 
@@ -1309,17 +1567,18 @@ function goBack() {
 
 
   /*
-   * Voltar para a página principal.
+   * Volta para a tela principal
    */
 
-  window.location.href = "/";
+  window.location.href =
+    "/";
 
 }
 
 
-/* =========================
+/* ==================================================
    ERROS
-========================= */
+================================================== */
 
 function showError(
   message
@@ -1347,13 +1606,17 @@ function hideError() {
 }
 
 
-/* =========================
-   FINAL
-========================= */
+/* ==================================================
+   INICIALIZAÇÃO
+================================================== */
 
 console.log(
-  "HUNT: broadcaster pronto"
+  "HUNT: broadcaster iniciando..."
 );
+
+
+connectSocket();
+
 
 </script>
 
