@@ -35,7 +35,7 @@ const socket = io(
     : SERVER_URL,
   {
     path: "/hunt-socket",
-    transports: ["websocket"]
+    transports: ["polling", "websocket"]
   }
 );
 
