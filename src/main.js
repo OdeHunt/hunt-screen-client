@@ -50,10 +50,19 @@ const socket = io(
     : SERVER_URL,
   {
     path: "/hunt-socket",
+
     transports: [
       "polling",
       "websocket"
-    ]
+    ],
+
+    reconnection: true,
+
+    reconnectionAttempts: Infinity,
+
+    reconnectionDelay: 1000,
+
+    reconnectionDelayMax: 5000
   }
 );
 
@@ -75,11 +84,21 @@ let currentMode = null;
 
 /*
 ========================================
-INTERFACE
+APP
 ========================================
 */
 
-document.querySelector("#app").innerHTML = `
+const app =
+  document.querySelector("#app");
+
+
+/*
+========================================
+TELA ÚNICA
+========================================
+*/
+
+app.innerHTML = `
 
   <main class="hunt-screen">
 
@@ -96,131 +115,19 @@ document.querySelector("#app").innerHTML = `
     </header>
 
 
-    <!-- ================================
-         TELA DE ESCOLHA
-    ================================= -->
-
     <section
-      id="modeSelector"
+      id="mainScreen"
       class="viewer"
     >
 
-      <div class="waiting">
-
-        <div class="live-dot"></div>
-
-        <h1>HUNT SCREEN</h1>
-
-        <p>
-          Escolha como deseja entrar.
-        </p>
-
-
-        <div class="mode-buttons">
-
-          <button
-            id="spectatorButton"
-            class="play-button"
-            type="button"
-          >
-            👁 ESPECTADOR
-          </button>
-
-
-          <button
-            id="broadcasterButton"
-            class="play-button"
-            type="button"
-          >
-            📺 TRANSMITIR
-          </button>
-
-        </div>
-
-      </div>
+      <!--
+      ==================================
+      CONTEÚDO SERÁ INSERIDO AQUI
+      ==================================
+      -->
 
     </section>
 
-
-    <!-- ================================
-         ÁREA DO ESPECTADOR
-    ================================= -->
-
-    <section
-      id="spectatorArea"
-      class="viewer hidden"
-    >
-
-      <div
-        id="waiting"
-        class="waiting"
-      >
-
-        <div class="live-dot"></div>
-
-        <h1>
-          NENHUMA TRANSMISSÃO
-        </h1>
-
-        <p>
-          Quando alguém iniciar uma transmissão,
-          ela aparecerá aqui.
-        </p>
-
-
-        <button
-          id="refreshStreamButton"
-          class="play-button"
-          type="button"
-        >
-          🔄 ATUALIZAR TRANSMISSÃO
-        </button>
-
-
-        <button
-          id="backButton"
-          class="play-button"
-          type="button"
-        >
-          ← VOLTAR
-        </button>
-
-      </div>
-
-
-      <video
-        id="remoteVideo"
-        autoplay
-        muted
-        playsinline
-        controls
-        class="remote-video hidden"
-      ></video>
-
-
-      <button
-        id="playButton"
-        class="play-button hidden"
-        type="button"
-      >
-        ▶ ASSISTIR TRANSMISSÃO
-      </button>
-
-
-      <button
-        id="backFromVideoButton"
-        class="play-button hidden"
-        type="button"
-      >
-        ← VOLTAR
-      </button>
-
-    </section>
-
-
-    <!-- ================================
-         STATUS
-    ================================= -->
 
     <section class="controls">
 
@@ -233,7 +140,6 @@ document.querySelector("#app").innerHTML = `
 
     </section>
 
-
   </main>
 
 `;
@@ -245,53 +151,35 @@ ELEMENTOS
 ========================================
 */
 
-const modeSelector =
-  document.querySelector("#modeSelector");
-
-
-const spectatorArea =
-  document.querySelector("#spectatorArea");
-
+const mainScreen =
+  document.querySelector("#mainScreen");
 
 const status =
   document.querySelector("#status");
 
 
-const waiting =
-  document.querySelector("#waiting");
+/*
+========================================
+ESTILO DOS BOTÕES
+========================================
+*/
 
-
-const remoteVideo =
-  document.querySelector("#remoteVideo");
-
-
-const playButton =
-  document.querySelector("#playButton");
-
-
-const spectatorButton =
-  document.querySelector("#spectatorButton");
-
-
-const broadcasterButton =
-  document.querySelector("#broadcasterButton");
-
-
-const refreshStreamButton =
-  document.querySelector("#refreshStreamButton");
-
-
-const backButton =
-  document.querySelector("#backButton");
-
-
-const backFromVideoButton =
-  document.querySelector("#backFromVideoButton");
+const buttonStyle = `
+  display: block;
+  width: min(360px, 90%);
+  margin: 14px auto;
+  padding: 16px 22px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 700;
+`;
 
 
 /*
 ========================================
-WEBRTC CONFIG
+RTC CONFIG
 ========================================
 */
 
@@ -320,36 +208,114 @@ TELA INICIAL
 ========================================
 */
 
-function showModeSelector() {
+function showHome() {
 
   currentMode = null;
 
-  modeSelector.classList.remove(
-    "hidden"
-  );
+  closePeer();
 
-  spectatorArea.classList.add(
-    "hidden"
-  );
+  broadcasterId = null;
 
-  remoteVideo.classList.add(
-    "hidden"
-  );
+  pendingCandidates = [];
 
-  playButton.classList.add(
-    "hidden"
-  );
 
-  backFromVideoButton.classList.add(
-    "hidden"
-  );
+  mainScreen.innerHTML = `
 
-  waiting.classList.remove(
-    "hidden"
-  );
+    <div class="waiting">
+
+      <div class="live-dot"></div>
+
+      <h1>
+        HUNT SCREEN
+      </h1>
+
+      <p>
+        Escolha como deseja entrar.
+      </p>
+
+
+      <div>
+
+        <button
+          id="spectatorButton"
+          type="button"
+          style="${buttonStyle}"
+        >
+          👁️ ESPECTADOR
+        </button>
+
+
+        <button
+          id="broadcasterButton"
+          type="button"
+          style="${buttonStyle}"
+        >
+          📺 TRANSMITIR
+        </button>
+
+      </div>
+
+    </div>
+
+  `;
+
 
   status.textContent =
     "ESCOLHA UM MODO";
+
+
+  /*
+  ======================================
+  BOTÃO ESPECTADOR
+  ======================================
+  */
+
+  document
+    .querySelector("#spectatorButton")
+    .addEventListener(
+      "click",
+      enterSpectator
+    );
+
+
+  /*
+  ======================================
+  BOTÃO TRANSMITIR
+  ======================================
+  */
+
+  document
+    .querySelector("#broadcasterButton")
+    .addEventListener(
+      "click",
+      openBroadcaster
+    );
+
+}
+
+
+/*
+========================================
+ABRIR TRANSMISSOR
+========================================
+*/
+
+function openBroadcaster() {
+
+  console.log(
+    "HUNT: abrindo transmissor"
+  );
+
+
+  /*
+   * Não usamos iframe.
+   *
+   * A página inteira passa a ser
+   * o broadcaster.
+   */
+
+  window.location.href =
+    "/broadcaster.html";
 
 }
 
@@ -360,45 +326,19 @@ ENTRAR COMO ESPECTADOR
 ========================================
 */
 
-function enterSpectatorMode() {
+function enterSpectator() {
 
   currentMode =
     "spectator";
 
 
-  modeSelector.classList.add(
-    "hidden"
-  );
+  showSpectatorWaiting();
 
 
-  spectatorArea.classList.remove(
-    "hidden"
-  );
-
-
-  status.textContent =
-    "● PROCURANDO TRANSMISSÃO";
-
-
-  waiting.classList.remove(
-    "hidden"
-  );
-
-
-  remoteVideo.classList.add(
-    "hidden"
-  );
-
-
-  playButton.classList.add(
-    "hidden"
-  );
-
-
-  backFromVideoButton.classList.add(
-    "hidden"
-  );
-
+  /*
+   * Se já estiver conectado,
+   * entra imediatamente na sala.
+   */
 
   if (
     socket &&
@@ -417,108 +357,263 @@ function enterSpectatorMode() {
 
 /*
 ========================================
-BOTÃO ESPECTADOR
+TELA DO ESPECTADOR
 ========================================
 */
 
-spectatorButton.addEventListener(
-  "click",
-  () => {
+function showSpectatorWaiting(
+  message = "NENHUMA TRANSMISSÃO"
+) {
 
-    enterSpectatorMode();
+  mainScreen.innerHTML = `
 
-  }
-);
+    <div
+      id="spectatorWaiting"
+      class="waiting"
+    >
+
+      <div class="live-dot"></div>
+
+      <h1>
+        ${message}
+      </h1>
+
+      <p>
+        Quando alguém iniciar uma transmissão,
+        ela aparecerá aqui.
+      </p>
 
 
-/*
-========================================
-BOTÃO TRANSMITIR
-========================================
-*/
+      <button
+        id="refreshButton"
+        type="button"
+        style="${buttonStyle}"
+      >
+        🔄 ATUALIZAR TRANSMISSÃO
+      </button>
 
-broadcasterButton.addEventListener(
-  "click",
-  () => {
 
-    console.log(
-      "HUNT: entrando no modo transmissor"
+      <button
+        id="homeButton"
+        type="button"
+        style="${buttonStyle}"
+      >
+        ← VOLTAR
+      </button>
+
+    </div>
+
+  `;
+
+
+  status.textContent =
+    "● PROCURANDO TRANSMISSÃO";
+
+
+  /*
+  ======================================
+  ATUALIZAR
+  ======================================
+  */
+
+  document
+    .querySelector("#refreshButton")
+    .addEventListener(
+      "click",
+      refreshStream
     );
 
 
-    /*
-     * O broadcaster já existe
-     * separadamente.
-     *
-     * Aqui simplesmente abrimos
-     * a página de transmissão.
-     */
+  /*
+  ======================================
+  VOLTAR
+  ======================================
+  */
 
-    window.location.href =
-      "/broadcaster.html";
+  document
+    .querySelector("#homeButton")
+    .addEventListener(
+      "click",
+      showHome
+    );
 
-  }
-);
+}
 
 
 /*
 ========================================
-VOLTAR
+ATUALIZAR TRANSMISSÃO
 ========================================
 */
 
-backButton.addEventListener(
-  "click",
-  () => {
+function refreshStream() {
 
-    if (peer) {
+  console.log(
+    "HUNT: atualizando transmissão..."
+  );
+
+
+  closePeer();
+
+
+  broadcasterId =
+    null;
+
+
+  pendingCandidates =
+    [];
+
+
+  showSpectatorWaiting(
+    "PROCURANDO TRANSMISSÃO..."
+  );
+
+
+  if (
+    socket &&
+    socket.connected
+  ) {
+
+    /*
+     * Entrar novamente na sala.
+     */
+
+    socket.emit(
+      "join-room",
+      ROOM_ID
+    );
+
+  }
+
+}
+
+
+/*
+========================================
+FECHAR PEER
+========================================
+*/
+
+function closePeer() {
+
+  if (peer) {
+
+    try {
 
       peer.close();
 
-      peer = null;
+    }
+    catch (
+      error
+    ) {
+
+      console.warn(
+        "HUNT: erro fechando PeerConnection:",
+        error
+      );
 
     }
 
-
-    pendingCandidates = [];
-
-    broadcasterId = null;
-
-    remoteVideo.srcObject =
+    peer =
       null;
 
-
-    showModeSelector();
-
   }
-);
+
+}
 
 
-backFromVideoButton.addEventListener(
-  "click",
-  () => {
+/*
+========================================
+MOSTRAR VÍDEO
+========================================
+*/
 
-    if (peer) {
+function showVideo() {
 
-      peer.close();
+  mainScreen.innerHTML = `
 
-      peer = null;
+    <div
+      class="waiting"
+      style="
+        width:100%;
+        max-width:1100px;
+        margin:auto;
+      "
+    >
 
-    }
+      <h1>
+        🔴 AO VIVO
+      </h1>
 
 
-    pendingCandidates = [];
+      <video
+        id="remoteVideo"
+        autoplay
+        muted
+        playsinline
+        controls
+        style="
+          display:block;
+          width:100%;
+          max-height:75vh;
+          object-fit:contain;
+          border-radius:12px;
+          background:#000;
+        "
+      ></video>
 
-    broadcasterId = null;
 
-    remoteVideo.srcObject =
-      null;
+      <button
+        id="backButton"
+        type="button"
+        style="${buttonStyle}"
+      >
+        ← VOLTAR
+      </button>
+
+    </div>
+
+  `;
 
 
-    showModeSelector();
+  const remoteVideo =
+    document.querySelector(
+      "#remoteVideo"
+    );
 
-  }
-);
+
+  /*
+  ======================================
+  VOLTAR
+  ======================================
+  */
+
+  document
+    .querySelector("#backButton")
+    .addEventListener(
+      "click",
+      () => {
+
+        closePeer();
+
+        broadcasterId =
+          null;
+
+        pendingCandidates =
+          [];
+
+        remoteVideo.srcObject =
+          null;
+
+        showHome();
+
+      }
+    );
+
+
+  return remoteVideo;
+
+}
 
 
 /*
@@ -542,8 +637,8 @@ socket.on(
 
 
     /*
-     * Se o usuário já escolheu
-     * espectador, entra na sala.
+     * Se o usuário já está no modo
+     * espectador, entrar na sala.
      */
 
     if (
@@ -582,22 +677,29 @@ socket.on(
       "HUNT: detalhes do erro:",
       {
         message:
-          error.message,
+          error?.message,
 
         description:
-          error.description,
+          error?.description,
 
         context:
-          error.context,
+          error?.context,
 
         type:
-          error.type
+          error?.type
       }
     );
 
 
-    status.textContent =
-      "● ERRO DE CONEXÃO";
+    if (
+      currentMode ===
+      "spectator"
+    ) {
+
+      status.textContent =
+        "● ERRO DE CONEXÃO";
+
+    }
 
   }
 );
@@ -633,18 +735,15 @@ socket.on(
       data.broadcasterId;
 
 
-    status.textContent =
-      "● TRANSMISSÃO DISPONÍVEL";
+    if (
+      currentMode ===
+      "spectator"
+    ) {
 
+      status.textContent =
+        "● TRANSMISSÃO DISPONÍVEL";
 
-    /*
-     * Se estamos no modo espectador,
-     * o servidor já avisou que existe
-     * transmissão.
-     *
-     * O broadcaster receberá
-     * user-joined e enviará a OFFER.
-     */
+    }
 
   }
 );
@@ -667,6 +766,16 @@ socket.on(
 
 
     if (
+      currentMode !==
+      "spectator"
+    ) {
+
+      return;
+
+    }
+
+
+    if (
       !data ||
       !data.sender ||
       !data.offer
@@ -681,36 +790,24 @@ socket.on(
     }
 
 
-    if (
-      currentMode !==
-      "spectator"
-    ) {
+    /*
+    ====================================
+    FECHAR PEER ANTIGO
+    ====================================
+    */
 
-      return;
+    closePeer();
 
-    }
+
+    pendingCandidates =
+      [];
 
 
     /*
-     * Fechar conexão anterior.
-     */
-
-    if (peer) {
-
-      peer.close();
-
-      peer = null;
-
-    }
-
-
-    pendingCandidates = [];
-
-
-    /*
-     * Obter RTCPeerConnection
-     * diretamente do window.
-     */
+    ====================================
+    RTCPeerConnection
+    ====================================
+    */
 
     const RTCPeerConnectionClass =
       window.RTCPeerConnection;
@@ -725,8 +822,10 @@ socket.on(
         "HUNT: RTCPeerConnection não está disponível neste ambiente."
       );
 
+
       status.textContent =
         "● WEBRTC INDISPONÍVEL";
+
 
       return;
 
@@ -734,8 +833,10 @@ socket.on(
 
 
     /*
-     * Criar conexão.
-     */
+    ====================================
+    CRIAR PEER
+    ====================================
+    */
 
     const currentPeer =
       new RTCPeerConnectionClass(
@@ -748,87 +849,48 @@ socket.on(
 
 
     /*
-     ======================================
-     VÍDEO RECEBIDO
-     ======================================
+    ====================================
+    ICE
+    ====================================
     */
 
-    currentPeer.ontrack =
+    currentPeer.onicecandidate =
       (event) => {
 
-        console.log(
-          "HUNT: VÍDEO RECEBIDO"
+        if (
+          !event.candidate
+        ) {
+
+          return;
+
+        }
+
+
+        socket.emit(
+          "webrtc-ice-candidate",
+          {
+
+            target:
+              data.sender,
+
+            candidate:
+              event.candidate
+
+          }
         );
 
 
-        if (
-          event.streams &&
-          event.streams[0]
-        ) {
-
-          remoteVideo.srcObject =
-            event.streams[0];
-
-
-          waiting.classList.add(
-            "hidden"
-          );
-
-
-          remoteVideo.classList.remove(
-            "hidden"
-          );
-
-
-          playButton.classList.remove(
-            "hidden"
-          );
-
-
-          backFromVideoButton.classList.remove(
-            "hidden"
-          );
-
-
-          status.textContent =
-            "🔴 AO VIVO";
-
-
-          remoteVideo.muted =
-            true;
-
-
-          remoteVideo
-            .play()
-            .then(
-              () => {
-
-                console.log(
-                  "HUNT: vídeo reproduzindo"
-                );
-
-              }
-            )
-            .catch(
-              (error) => {
-
-                console.warn(
-                  "HUNT: autoplay bloqueado:",
-                  error
-                );
-
-              }
-            );
-
-        }
+        console.log(
+          "HUNT: ICE enviado"
+        );
 
       };
 
 
     /*
-     ======================================
-     ESTADO WEBRTC
-     ======================================
+    ====================================
+    ESTADO DA CONEXÃO
+    ====================================
     */
 
     currentPeer
@@ -877,45 +939,80 @@ socket.on(
 
 
     /*
-     ======================================
-     ICE
-     ======================================
+    ====================================
+    VÍDEO RECEBIDO
+    ====================================
     */
 
-    currentPeer.onicecandidate =
+    currentPeer.ontrack =
       (event) => {
 
+        console.log(
+          "HUNT: VÍDEO RECEBIDO"
+        );
+
+
         if (
-          event.candidate
+          !event.streams ||
+          !event.streams[0]
         ) {
 
-          socket.emit(
-            "webrtc-ice-candidate",
-            {
+          return;
 
-              target:
-                data.sender,
+        }
 
-              candidate:
-                event.candidate
+
+        const remoteVideo =
+          showVideo();
+
+
+        remoteVideo.srcObject =
+          event.streams[0];
+
+
+        remoteVideo.muted =
+          true;
+
+
+        status.textContent =
+          "🔴 AO VIVO";
+
+
+        /*
+        ==================================
+        TENTAR REPRODUZIR
+        ==================================
+        */
+
+        remoteVideo
+          .play()
+          .then(
+            () => {
+
+              console.log(
+                "HUNT: vídeo reproduzindo"
+              );
+
+            }
+          )
+          .catch(
+            (error) => {
+
+              console.warn(
+                "HUNT: autoplay bloqueado:",
+                error
+              );
 
             }
           );
-
-
-          console.log(
-            "HUNT: ICE enviado"
-          );
-
-        }
 
       };
 
 
     /*
-     ======================================
-     APLICAR OFFER
-     ======================================
+    ====================================
+    APLICAR OFFER
+    ====================================
     */
 
     try {
@@ -932,9 +1029,10 @@ socket.on(
 
 
       /*
-       * Aplicar ICE que chegou
-       * antes da OFFER.
-       */
+      ==================================
+      ICE PENDENTE
+      ==================================
+      */
 
       for (
         const candidate
@@ -963,13 +1061,14 @@ socket.on(
       }
 
 
-      pendingCandidates = [];
+      pendingCandidates =
+        [];
 
 
       /*
-       ====================================
-       CRIAR ANSWER
-       ====================================
+      ==================================
+      CRIAR ANSWER
+      ==================================
       */
 
       const answer =
@@ -982,6 +1081,12 @@ socket.on(
           answer
         );
 
+
+      /*
+      ==================================
+      ENVIAR ANSWER
+      ==================================
+      */
 
       socket.emit(
         "webrtc-answer",
@@ -1047,8 +1152,9 @@ socket.on(
 
 
     /*
-     * Se a OFFER ainda não foi
-     * aplicada, guardar o ICE.
+     * Se ainda não temos Peer ou
+     * não aplicamos a OFFER,
+     * guardamos o candidato.
      */
 
     if (
@@ -1101,42 +1207,43 @@ socket.on(
 
 /*
 ========================================
-BOTÃO ASSISTIR
+TRANSMISSÃO ENCERRADA
 ========================================
 */
 
-playButton.addEventListener(
-  "click",
-  async () => {
+socket.on(
+  "stream-stopped",
+  () => {
 
-    try {
-
-      remoteVideo.muted =
-        false;
-
-
-      await remoteVideo.play();
+    console.log(
+      "HUNT: transmissão encerrada"
+    );
 
 
-      playButton.classList.add(
-        "hidden"
-      );
-
-
-      status.textContent =
-        "🔴 AO VIVO";
-
-    }
-    catch (
-      error
+    if (
+      currentMode !==
+      "spectator"
     ) {
 
-      console.error(
-        "HUNT: erro ao reproduzir:",
-        error
-      );
+      return;
 
     }
+
+
+    closePeer();
+
+
+    broadcasterId =
+      null;
+
+
+    pendingCandidates =
+      [];
+
+
+    showSpectatorWaiting(
+      "TRANSMISSÃO ENCERRADA"
+    );
 
   }
 );
@@ -1144,81 +1251,22 @@ playButton.addEventListener(
 
 /*
 ========================================
-ATUALIZAR TRANSMISSÃO
+RECONEXÃO
 ========================================
 */
 
-refreshStreamButton.addEventListener(
-  "click",
+socket.on(
+  "reconnect",
   () => {
 
     console.log(
-      "HUNT: procurando transmissão novamente..."
+      "HUNT: Socket reconectado"
     );
 
-
-    /*
-     * Fechar WebRTC anterior.
-     */
-
-    if (peer) {
-
-      peer.close();
-
-      peer = null;
-
-    }
-
-
-    /*
-     * Limpar dados anteriores.
-     */
-
-    pendingCandidates = [];
-
-    broadcasterId = null;
-
-
-    /*
-     * Limpar vídeo.
-     */
-
-    remoteVideo.srcObject =
-      null;
-
-
-    remoteVideo.classList.add(
-      "hidden"
-    );
-
-
-    playButton.classList.add(
-      "hidden"
-    );
-
-
-    backFromVideoButton.classList.add(
-      "hidden"
-    );
-
-
-    waiting.classList.remove(
-      "hidden"
-    );
-
-
-    status.textContent =
-      "● PROCURANDO TRANSMISSÃO";
-
-
-    /*
-     * Pedir novamente ao servidor
-     * para entrar na sala.
-     */
 
     if (
-      socket &&
-      socket.connected
+      currentMode ===
+      "spectator"
     ) {
 
       socket.emit(
@@ -1234,98 +1282,13 @@ refreshStreamButton.addEventListener(
 
 /*
 ========================================
-TRANSMISSÃO ENCERRADA
+INICIALIZAÇÃO
 ========================================
 */
 
-socket.on(
-  "stream-stopped",
-  () => {
+showHome();
 
-    console.log(
-      "HUNT: transmissão encerrada"
-    );
-
-
-    /*
-     * Fechar WebRTC.
-     */
-
-    if (peer) {
-
-      peer.close();
-
-      peer = null;
-
-    }
-
-
-    pendingCandidates = [];
-
-    broadcasterId = null;
-
-
-    /*
-     * Limpar vídeo.
-     */
-
-    remoteVideo.srcObject =
-      null;
-
-
-    remoteVideo.classList.add(
-      "hidden"
-    );
-
-
-    playButton.classList.add(
-      "hidden"
-    );
-
-
-    backFromVideoButton.classList.add(
-      "hidden"
-    );
-
-
-    waiting.classList.remove(
-      "hidden"
-    );
-
-
-    status.textContent =
-      "● TRANSMISSÃO ENCERRADA";
-
-  }
-);
-
-
-/*
-========================================
-SAÍDA
-========================================
-*/
-
-window.addEventListener(
-  "beforeunload",
-  () => {
-
-    if (peer) {
-
-      peer.close();
-
-    }
-
-  }
-);
-
-
-/*
-========================================
-SISTEMA CARREGADO
-========================================
-*/
 
 console.log(
-  "HUNT: sistema do viewer carregado"
+  "HUNT: sistema carregado"
 );
