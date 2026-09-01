@@ -238,10 +238,22 @@ socket.on("webrtc-offer", async (data) => {
 
   pendingCandidates = [];
 
-  const currentPeer =
-    new RTCPeerConnection(
-      rtcConfig
-    );
+  const RTCPeerConnectionClass =
+  window.RTCPeerConnection;
+
+if (
+  typeof RTCPeerConnectionClass !== "function"
+) {
+  console.error(
+    "HUNT: RTCPeerConnection não está disponível neste ambiente."
+  );
+  return;
+}
+
+const currentPeer =
+  new RTCPeerConnectionClass(
+    rtcConfig
+  );
 
   peer = currentPeer;
 
