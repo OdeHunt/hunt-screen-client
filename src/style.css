@@ -22,7 +22,11 @@ body {
   background: #000;
   color: #fff;
   font-family: Arial, Helvetica, sans-serif;
+
+  /* IMPORTANTE:
+     não bloquear o scroll da Activity */
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
 button,
@@ -73,7 +77,6 @@ select {
   margin-top: 10px;
 
   color: #555;
-
   font-size: 13px;
   letter-spacing: 9px;
   font-weight: 700;
@@ -121,7 +124,6 @@ select {
 
 .hunt-button:hover {
   filter: brightness(1.12);
-
   transform: translateY(-1px);
 
   box-shadow:
@@ -130,7 +132,6 @@ select {
 
 .hunt-button:active {
   transform: translateY(0);
-
   box-shadow: none;
 }
 
@@ -146,7 +147,6 @@ select {
 .hunt-button.secondary:hover {
   background: #202020;
   border-color: #383838;
-
   filter: none;
 }
 
@@ -162,7 +162,6 @@ select {
   margin-top: 15px;
 
   color: #666;
-
   font-size: 10px;
   letter-spacing: 2px;
 
@@ -178,14 +177,29 @@ select {
 .viewer-screen {
   width: 100%;
 
+  /*
+    IMPORTANTE:
+    não usar height: 100%;
+    para permitir que NORMAL cresça
+    e gere scroll.
+  */
   min-height: 100vh;
   min-height: 100dvh;
+  height: auto;
 
   justify-content: flex-start;
 
   padding: 0;
-
   background: #000;
+
+  /*
+    O próprio viewer pode rolar.
+  */
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ========================================
@@ -224,7 +238,6 @@ select {
   gap: 8px;
 
   white-space: nowrap;
-
   user-select: none;
 }
 
@@ -239,7 +252,6 @@ select {
 
 .viewer-brand-divider {
   color: #333;
-
   font-size: 18px;
 }
 
@@ -247,7 +259,6 @@ select {
   color: #666;
 
   font-size: 10px;
-
   letter-spacing: 3px;
 }
 
@@ -266,7 +277,6 @@ select {
   background: #151515;
 
   border: 1px solid #252525;
-
   border-radius: 7px;
 
   flex-shrink: 0;
@@ -276,8 +286,8 @@ select {
   appearance: none;
 
   border: 0;
-
   background: transparent;
+
   color: #666;
 
   padding: 7px 13px;
@@ -286,7 +296,6 @@ select {
 
   font-size: 10px;
   font-weight: 900;
-
   letter-spacing: 1px;
 
   cursor: pointer;
@@ -342,6 +351,9 @@ select {
 .viewer-container.wide-mode {
   width: 100%;
 
+  /*
+    WIDE ocupa a área disponível da tela.
+  */
   height: calc(100vh - 54px);
   height: calc(100dvh - 54px);
 
@@ -357,6 +369,8 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
+
+  flex-shrink: 0;
 }
 
 /* ========================================
@@ -389,15 +403,22 @@ select {
   aspect-ratio: 16 / 9;
 
   margin-top: 35px;
+  margin-bottom: 0;
 
   border: 1px solid #222;
-
   border-radius: 9px;
 
   box-shadow:
     0 15px 50px rgba(0, 0, 0, 0.45);
 
   background: #000;
+
+  /*
+    IMPORTANTE:
+    deixar o NORMAL ocupar seu espaço
+    naturalmente no documento.
+  */
+  flex-shrink: 0;
 }
 
 /* ========================================
@@ -531,7 +552,6 @@ select {
   z-index: 5;
 
   display: flex;
-
   align-items: center;
   justify-content: center;
 
@@ -542,7 +562,6 @@ select {
   color: #666;
 
   font-size: 12px;
-
   letter-spacing: 2px;
 
   text-align: center;
@@ -563,7 +582,6 @@ select {
 
   display: flex;
   flex-direction: column;
-
   align-items: center;
 
   background: #080808;
@@ -579,7 +597,6 @@ select {
 
 .viewer-controls {
   display: flex;
-
   align-items: center;
   justify-content: center;
 
@@ -588,12 +605,6 @@ select {
 
 /* ========================================
    FULLSCREEN HUNT
-
-   Modo usado pelo main.js
-
-   NÃO depende do fullscreen
-   nativo do navegador.
-
 ======================================== */
 
 body.hunt-fullscreen-active {
@@ -617,7 +628,7 @@ body.hunt-fullscreen-active #app {
 }
 
 /* ========================================
-   VIEWER EM FULLSCREEN
+   VIEWER EM FULLSCREEN HUNT
 ======================================== */
 
 .viewer-screen.hunt-player-fullscreen {
@@ -671,7 +682,6 @@ body.hunt-fullscreen-active #app {
   margin: 0;
 
   border: 0;
-
   border-radius: 0;
 
   background: #000;
@@ -683,8 +693,6 @@ body.hunt-fullscreen-active #app {
 
 /* ========================================
    VÍDEO FULLSCREEN
-
-   Mantém proporção original
 ======================================== */
 
 .viewer-container.hunt-fullscreen-container #remoteVideo {
@@ -895,7 +903,6 @@ body.hunt-fullscreen-active #app {
     height: 100%;
 
     object-fit: contain;
-
     object-position: center center;
   }
 
@@ -926,11 +933,10 @@ body.hunt-fullscreen-active #app {
 
   .small-button {
     flex: 1;
-
     min-width: 0;
   }
 
-  /* FULLSCREEN */
+  /* FULLSCREEN HUNT */
 
   .viewer-screen.hunt-player-fullscreen .viewer-header {
     min-height: 50px;
@@ -966,7 +972,7 @@ body.hunt-fullscreen-active #app {
     padding: 5px 10px;
   }
 
-  /* FULLSCREEN */
+  /* FULLSCREEN HUNT */
 
   .viewer-screen.hunt-player-fullscreen .viewer-header {
     min-height: 46px;
@@ -989,56 +995,23 @@ body.hunt-fullscreen-active #app {
 }
 
 /* ========================================
-   TELA CHEIA / ACTIVITY
+   IMPORTANTE — DISCORD ACTIVITY
 ======================================== */
 
-@media (display-mode: fullscreen) {
+/*
+   NÃO colocar:
 
-  html,
-  body,
-  #app {
-    width: 100%;
-    height: 100%;
+   @media (display-mode: fullscreen)
 
-    min-width: 100%;
-    min-height: 100%;
+   aqui.
 
-    margin: 0;
-    padding: 0;
+   O fullscreen da CALL do Discord não significa
+   necessariamente que a Activity entrou em
+   fullscreen nativo.
 
-    background: #000;
-  }
-
-  body {
-    overflow: hidden;
-  }
-
-  .viewer-screen {
-    width: 100%;
-    height: 100%;
-
-    min-height: 100%;
-
-    background: #000;
-  }
-
-  .viewer-container.wide-mode {
-    width: 100%;
-
-    height: calc(100% - 54px);
-
-    margin: 0;
-  }
-
-  .viewer-container.wide-mode #remoteVideo {
-    width: 100%;
-    height: 100%;
-
-    object-fit: contain;
-
-    object-position: center center;
-  }
-}
+   Se bloquearmos o body com overflow:hidden
+   nesse estado, o NORMAL perde o scroll.
+*/
 
 /* ========================================
    FULLSCREEN HUNT + ACTIVITY
@@ -1066,11 +1039,18 @@ body.hunt-fullscreen-active
 }
 
 /* ========================================
-   SEGURANÇA CONTRA SCROLL NO FULLSCREEN
+   SEGURANÇA DO SCROLL
 ======================================== */
 
-body.hunt-fullscreen-active,
-body.hunt-fullscreen-active html {
+/*
+   Só bloqueia o scroll quando o fullscreen
+   PRÓPRIO DO HUNT está realmente ativo.
+
+   O fullscreen da CALL do Discord NÃO
+   ativa esta classe.
+*/
+
+body.hunt-fullscreen-active {
   overflow: hidden !important;
 }
 
@@ -1083,6 +1063,7 @@ body.hunt-fullscreen-active html {
 .hunt-fullscreen-button,
 .hunt-exit-fullscreen-button {
   -webkit-tap-highlight-color: transparent;
+
   user-select: none;
 }
 
