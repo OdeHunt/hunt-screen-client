@@ -1,4 +1,4 @@
-import { io } from "socket.io-client";
+ import { io } from "socket.io-client";
 import { patchUrlMappings } from "@discord/embedded-app-sdk";
 import "./style.css";
 
@@ -12,9 +12,6 @@ const SERVER_URL =
 
 const ROOM_ID =
   "hunt-screen-main";
-
-const BROADCASTER_URL =
-  "https://hunt-screen-client.onrender.com/broadcaster.html";
 
 
 /* ========================================
@@ -312,59 +309,10 @@ function updateHomeStatus() {
    BROADCASTER
 ======================================== */
 
-/*
- * IMPORTANTE:
- *
- * Dentro da Discord Activity não podemos
- * chamar getDisplayMedia() diretamente.
- *
- * Portanto o botão TRANSMITIR abre o
- * broadcaster.html fora da Activity.
- */
-
 function openBroadcaster() {
 
-  console.log(
-    "HUNT: abrindo transmissor:",
-    BROADCASTER_URL
-  );
-
-
-  /*
-   * Tenta abrir uma nova janela/aba.
-   *
-   * Isso é importante porque queremos que
-   * o broadcaster rode como uma página
-   * normal do navegador.
-   */
-
-  const broadcasterWindow =
-    window.open(
-      BROADCASTER_URL,
-      "_blank",
-      "noopener,noreferrer"
-    );
-
-
-  /*
-   * Alguns ambientes podem bloquear
-   * window.open.
-   *
-   * Nesse caso fazemos fallback para
-   * navegação normal.
-   */
-
-  if (!broadcasterWindow) {
-
-    console.warn(
-      "HUNT: window.open foi bloqueado. Usando fallback."
-    );
-
-
-    window.location.href =
-      BROADCASTER_URL;
-
-  }
+  window.location.href =
+    "/broadcaster.html";
 
 }
 
@@ -631,10 +579,8 @@ function startViewer() {
 
 
   /*
-   * ACTIVITY
-   *
-   * Aqui usamos o transporte compatível
-   * com a Activity.
+   * Se estiver dentro da Activity,
+   * usa o novo transporte.
    */
 
   if (isDiscordActivity) {
@@ -657,9 +603,7 @@ function startViewer() {
   else {
 
     /*
-     * NAVEGADOR NORMAL
-     *
-     * Continua usando WebRTC.
+     * Navegador normal continua com WebRTC.
      */
 
     if (socket.connected) {
@@ -1210,7 +1154,6 @@ function startActivityPlayback(
 
   if (!video) {
     return;
-
   }
 
 
@@ -1242,6 +1185,7 @@ function startActivityPlayback(
     showViewerMessage(
       "FORMATO DE VÍDEO NÃO SUPORTADO"
     );
+
 
     return;
 
@@ -1284,19 +1228,6 @@ function startActivityPlayback(
         activitySourceBuffer.addEventListener(
           "updateend",
           processActivityQueue
-        );
-
-
-        activitySourceBuffer.addEventListener(
-          "error",
-          error => {
-
-            console.error(
-              "HUNT ACTIVITY: SourceBuffer:",
-              error
-            );
-
-          }
         );
 
 
@@ -1506,6 +1437,11 @@ function processActivityQueue() {
     );
 
 
+    /*
+     * Se o buffer estiver cheio,
+     * removemos uma pequena parte antiga.
+     */
+
     if (
       error.name ===
       "QuotaExceededError"
@@ -1544,6 +1480,32 @@ function processActivityQueue() {
 
 
 /* ========================================
+   ACTIVITY — SOURCE BUFFER UPDATE
+======================================== */
+
+function setupActivityQueueEvents() {
+
+  if (!activitySourceBuffer) {
+    return;
+  }
+
+
+  activitySourceBuffer.addEventListener(
+    "error",
+    error => {
+
+      console.error(
+        "HUNT ACTIVITY: SourceBuffer:",
+        error
+      );
+
+    }
+  );
+
+}
+
+
+/* ========================================
    SOCKET CONNECT
 ======================================== */
 
@@ -1562,6 +1524,11 @@ socket.on(
     updateViewerStatus();
 
 
+    /*
+     * Se a Activity já estiver no viewer,
+     * entrar novamente na sala.
+     */
+
     if (
       isDiscordActivity &&
       document.getElementById(
@@ -1579,6 +1546,10 @@ socket.on(
 
     }
 
+
+    /*
+     * Site normal = WebRTC.
+     */
 
     else if (
       !isDiscordActivity &&
@@ -2255,7 +2226,7 @@ socket.on(
 
 
 /* ========================================
-   TRANSMISSÃO PAROU
+   TRANSMISSÃO WEBRTC PAROU
 ======================================== */
 
 socket.on(
