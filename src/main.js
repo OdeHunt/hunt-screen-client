@@ -12,6 +12,9 @@ const SERVER_URL =
 const ROOM_ID =
   "hunt-screen-main";
 
+const PRO_VERSION_URL =
+  "https://hunt-screen-client.onrender.com/";
+
 
 /* ========================================
    DISCORD ACTIVITY
@@ -338,6 +341,25 @@ function openBroadcaster() {
 
 
 /* ========================================
+   ABRIR VERSÃO PRO
+======================================== */
+
+function openProVersion() {
+
+  console.log(
+    "HUNT: abrindo Versão Pro"
+  );
+
+  window.open(
+    PRO_VERSION_URL,
+    "_blank",
+    "noopener,noreferrer"
+  );
+
+}
+
+
+/* ========================================
    INICIAR VIEWER
 ======================================== */
 
@@ -436,30 +458,6 @@ function startViewer() {
         </video>
 
 
-        <button
-          id="huntFullscreenButton"
-          class="hunt-fullscreen-button"
-          type="button"
-          title="Tela cheia"
-          aria-label="Entrar em tela cheia">
-
-          ⛶
-
-        </button>
-
-
-        <button
-          id="huntExitFullscreenButton"
-          class="hunt-exit-fullscreen-button"
-          type="button"
-          title="Sair da tela cheia"
-          aria-label="Sair da tela cheia">
-
-          ✕
-
-        </button>
-
-
       </div>
 
 
@@ -483,6 +481,15 @@ function startViewer() {
             class="hunt-button small-button fullscreen-control-button">
 
             ⛶ TELA CHEIA
+
+          </button>
+
+
+          <button
+            id="proButton"
+            class="hunt-button small-button pro-button">
+
+            🚀 VERSÃO PRO
 
           </button>
 
@@ -528,6 +535,12 @@ function startViewer() {
     );
 
 
+  const proButton =
+    document.getElementById(
+      "proButton"
+    );
+
+
   const wideButton =
     document.getElementById(
       "wideModeButton"
@@ -546,18 +559,6 @@ function startViewer() {
     );
 
 
-  const huntFullscreenButton =
-    document.getElementById(
-      "huntFullscreenButton"
-    );
-
-
-  const huntExitFullscreenButton =
-    document.getElementById(
-      "huntExitFullscreenButton"
-    );
-
-
   /* ======================================
      ATUALIZAR
   ====================================== */
@@ -567,6 +568,20 @@ function startViewer() {
     refreshButton.addEventListener(
       "click",
       refreshViewer
+    );
+
+  }
+
+
+  /* ======================================
+     VERSÃO PRO
+  ====================================== */
+
+  if (proButton) {
+
+    proButton.addEventListener(
+      "click",
+      openProVersion
     );
 
   }
@@ -643,26 +658,6 @@ function startViewer() {
     fullscreenButton.addEventListener(
       "click",
       toggleHuntFullscreen
-    );
-
-  }
-
-
-  if (huntFullscreenButton) {
-
-    huntFullscreenButton.addEventListener(
-      "click",
-      toggleHuntFullscreen
-    );
-
-  }
-
-
-  if (huntExitFullscreenButton) {
-
-    huntExitFullscreenButton.addEventListener(
-      "click",
-      exitHuntFullscreen
     );
 
   }
@@ -1032,7 +1027,7 @@ document.addEventListener(
 
 
 /* ========================================
-   BOTÕES FULLSCREEN
+   BOTÃO FULLSCREEN
 ======================================== */
 
 function updateFullscreenButtons() {
@@ -1043,46 +1038,15 @@ function updateFullscreenButtons() {
     );
 
 
-  const enterButton =
-    document.getElementById(
-      "huntFullscreenButton"
-    );
-
-
-  const exitButton =
-    document.getElementById(
-      "huntExitFullscreenButton"
-    );
-
-
-  if (fullscreenButton) {
-
-    fullscreenButton.textContent =
-      huntFullscreen
-        ? "✕ SAIR DA TELA CHEIA"
-        : "⛶ TELA CHEIA";
-
+  if (!fullscreenButton) {
+    return;
   }
 
 
-  if (enterButton) {
-
-    enterButton.style.display =
-      huntFullscreen
-        ? "none"
-        : "flex";
-
-  }
-
-
-  if (exitButton) {
-
-    exitButton.style.display =
-      huntFullscreen
-        ? "flex"
-        : "none";
-
-  }
+  fullscreenButton.textContent =
+    huntFullscreen
+      ? "✕ SAIR DA TELA CHEIA"
+      : "⛶ TELA CHEIA";
 
 }
 
