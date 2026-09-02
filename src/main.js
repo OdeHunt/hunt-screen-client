@@ -41,12 +41,14 @@ async function initializeDiscordSDK() {
   }
 
   discordSdkInitPromise = (async () => {
-    const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
+    const clientId =
+      import.meta.env.VITE_DISCORD_CLIENT_ID;
 
     if (!clientId) {
       console.error(
         "VITE_DISCORD_CLIENT_ID não foi encontrado."
       );
+
       return null;
     }
 
@@ -55,7 +57,9 @@ async function initializeDiscordSDK() {
 
       await discordSdk.ready();
 
-      console.log("Discord SDK conectado.");
+      console.log(
+        "Discord SDK conectado."
+      );
 
       return discordSdk;
     } catch (error) {
@@ -92,7 +96,10 @@ socket = io(
     : SERVER_URL,
   {
     path: "/hunt-socket",
-    transports: ["polling", "websocket"],
+    transports: [
+      "polling",
+      "websocket"
+    ],
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
@@ -106,37 +113,57 @@ socket = io(
 ========================================================= */
 
 socket.on("connect", () => {
-  console.log("Socket conectado:", socket.id);
+  console.log(
+    "Socket conectado:",
+    socket.id
+  );
 
-  const status = document.getElementById("viewerStatus");
+  const status =
+    document.getElementById(
+      "viewerStatus"
+    );
 
   if (status) {
-    status.textContent = "🟢 CONECTADO AO SERVIDOR";
+    status.textContent =
+      "🟢 CONECTADO AO SERVIDOR";
   }
 });
 
 socket.on("disconnect", () => {
-  console.log("Socket desconectado.");
-
-  const status = document.getElementById("viewerStatus");
-
-  if (status) {
-    status.textContent = "🔴 DESCONECTADO";
-  }
-});
-
-socket.on("connect_error", (error) => {
-  console.error(
-    "Erro de conexão Socket.IO:",
-    error
+  console.log(
+    "Socket desconectado."
   );
 
-  const status = document.getElementById("viewerStatus");
+  const status =
+    document.getElementById(
+      "viewerStatus"
+    );
 
   if (status) {
-    status.textContent = "🟡 CONECTANDO...";
+    status.textContent =
+      "🔴 DESCONECTADO";
   }
 });
+
+socket.on(
+  "connect_error",
+  (error) => {
+    console.error(
+      "Erro de conexão Socket.IO:",
+      error
+    );
+
+    const status =
+      document.getElementById(
+        "viewerStatus"
+      );
+
+    if (status) {
+      status.textContent =
+        "🟡 CONECTANDO...";
+    }
+  }
+);
 
 /* =========================================================
    HOME
@@ -152,13 +179,15 @@ function showHome() {
   document.body.innerHTML = `
     <div class="hunt-screen home-screen">
 
-      <div class="home-logo">
-        <div class="hunt-logo-text">HUNT</div>
-        <div class="hunt-logo-smile">⌣</div>
-        <div class="hunt-screen-text">SCREEN</div>
+      <div class="hunt-logo">
+        HUNT
       </div>
 
-      <div class="home-menu">
+      <div class="hunt-subtitle">
+        SCREEN
+      </div>
+
+      <div class="hunt-menu">
 
         <button
           id="spectatorButton"
@@ -176,7 +205,7 @@ function showHome() {
 
       </div>
 
-      <div class="home-status">
+      <div class="hunt-status">
         HUNT SCREEN
       </div>
 
@@ -184,14 +213,18 @@ function showHome() {
   `;
 
   document
-    .getElementById("spectatorButton")
+    .getElementById(
+      "spectatorButton"
+    )
     .addEventListener(
       "click",
       startViewer
     );
 
   document
-    .getElementById("broadcastButton")
+    .getElementById(
+      "broadcastButton"
+    )
     .addEventListener(
       "click",
       openBroadcaster
@@ -212,7 +245,10 @@ function openBroadcaster() {
 ========================================================= */
 
 async function openProVersion() {
-  const url = PRO_VERSION_URL;
+  const url =
+    PRO_VERSION_URL;
+
+  /* FORA DO DISCORD */
 
   if (!isDiscordActivity) {
     window.open(
@@ -224,6 +260,8 @@ async function openProVersion() {
     return;
   }
 
+  /* DENTRO DO DISCORD */
+
   try {
     const sdk =
       await initializeDiscordSDK();
@@ -234,11 +272,11 @@ async function openProVersion() {
       !sdk.commands.openExternalLink
     ) {
       console.error(
-        "Discord SDK não está disponível para abrir o link."
+        "Discord SDK não está disponível."
       );
 
       alert(
-        "Não foi possível abrir a Versão Pro pelo Discord."
+        "Não foi possível abrir a Versão Pro."
       );
 
       return;
@@ -253,7 +291,6 @@ async function openProVersion() {
       "Resultado openExternalLink:",
       result
     );
-
   } catch (error) {
     console.error(
       "Erro ao abrir Versão Pro:",
@@ -283,13 +320,19 @@ function startViewer() {
       <header class="viewer-header">
 
         <div class="viewer-brand">
-          <span class="viewer-hunt">
+
+          <span class="viewer-logo">
             HUNT
           </span>
 
-          <span class="viewer-screen-title">
+          <span class="viewer-brand-divider">
+            /
+          </span>
+
+          <span class="viewer-brand-screen">
             SCREEN
           </span>
+
         </div>
 
         <div class="viewer-mode-selector">
@@ -312,74 +355,70 @@ function startViewer() {
 
       </header>
 
-      <main class="viewer-main">
+      <div
+        id="viewerContainer"
+        class="viewer-container wide-mode"
+      >
 
         <div
-          id="viewerContainer"
-          class="viewer-container wide-mode"
+          id="viewerMessage"
+          class="viewer-message"
         >
+          📺 NENHUMA TRANSMISSÃO ATIVA
+        </div>
 
-          <div
-            id="viewerMessage"
-            class="viewer-message"
+        <video
+          id="remoteVideo"
+          autoplay
+          playsinline
+          controls
+          preload="none"
+        ></video>
+
+      </div>
+
+      <div class="viewer-bottom">
+
+        <div class="viewer-controls">
+
+          <button
+            id="refreshButton"
+            class="hunt-button small-button"
           >
-            📺 NENHUMA TRANSMISSÃO ATIVA
-          </div>
+            🔄 ATUALIZAR
+          </button>
 
-          <video
-            id="remoteVideo"
-            autoplay
-            playsinline
-            controls
-            preload="none"
-          ></video>
+          <button
+            id="fullscreenButton"
+            class="hunt-button small-button"
+          >
+            ⛶ TELA CHEIA
+          </button>
+
+          <button
+            id="proButton"
+            class="hunt-button small-button pro-button"
+          >
+            🚀 VERSÃO PRO
+          </button>
+
+          <button
+            id="backButton"
+            class="hunt-button small-button secondary"
+          >
+            ← VOLTAR
+          </button>
 
         </div>
 
-        <div class="viewer-bottom">
-
-          <div class="viewer-controls">
-
-            <button
-              id="refreshButton"
-              class="viewer-button"
-            >
-              🔄 ATUALIZAR
-            </button>
-
-            <button
-              id="fullscreenButton"
-              class="viewer-button"
-            >
-              ⛶ TELA CHEIA
-            </button>
-
-            <button
-              id="proButton"
-              class="viewer-button pro-button"
-            >
-              🚀 VERSÃO PRO
-            </button>
-
-            <button
-              id="backButton"
-              class="viewer-button"
-            >
-              ← VOLTAR
-            </button>
-
-          </div>
-
-          <div
-            id="viewerStatus"
-            class="viewer-status"
-          >
-            🟡 CONECTANDO...
-          </div>
-
+        <div
+          id="viewerStatus"
+          class="hunt-status"
+        >
+          🟡 CONECTANDO...
         </div>
 
-      </main>
+      </div>
 
     </div>
   `;
@@ -430,13 +469,14 @@ function startViewer() {
     );
 
   /* =======================================================
-     MODO WIDE
+     WIDE
   ======================================================= */
 
   wideModeButton.addEventListener(
     "click",
     () => {
-      currentPlayerMode = "wide";
+      currentPlayerMode =
+        "wide";
 
       viewerContainer.classList.remove(
         "normal-mode"
@@ -457,13 +497,14 @@ function startViewer() {
   );
 
   /* =======================================================
-     MODO NORMAL
+     NORMAL
   ======================================================= */
 
   normalModeButton.addEventListener(
     "click",
     () => {
-      currentPlayerMode = "normal";
+      currentPlayerMode =
+        "normal";
 
       viewerContainer.classList.remove(
         "wide-mode"
@@ -500,7 +541,8 @@ function startViewer() {
       broadcasterId = null;
       pendingCandidates = [];
 
-      remoteVideo.srcObject = null;
+      remoteVideo.srcObject =
+        null;
 
       viewerMessage.style.display =
         "flex";
@@ -543,7 +585,8 @@ function startViewer() {
       broadcasterId = null;
       pendingCandidates = [];
 
-      remoteVideo.srcObject = null;
+      remoteVideo.srcObject =
+        null;
 
       showHome();
     }
@@ -591,7 +634,7 @@ function createViewerPeer(
 
   if (!RTCPeerConnectionClass) {
     console.error(
-      "WebRTC não está disponível neste navegador."
+      "WebRTC não está disponível."
     );
 
     const message =
@@ -633,7 +676,8 @@ function createViewerPeer(
         socket.emit(
           "webrtc-ice-candidate",
           {
-            target: targetId,
+            target:
+              targetId,
             candidate:
               event.candidate
           }
@@ -687,7 +731,7 @@ function createViewerPeer(
         await video.play();
       } catch (error) {
         console.warn(
-          "O navegador bloqueou autoplay:",
+          "Autoplay bloqueado:",
           error
         );
       }
@@ -740,7 +784,7 @@ function createViewerPeer(
         "disconnected"
       ) {
         status.textContent =
-          "🟠 TRANSMISSÃO DESCONectADA";
+          "🟠 TRANSMISSÃO DESCONECTADA";
       }
 
       if (
@@ -804,7 +848,8 @@ socket.on(
       socket.emit(
         "viewer-joined",
         {
-          roomId: ROOM_ID,
+          roomId:
+            ROOM_ID,
           broadcasterId
         }
       );
@@ -818,7 +863,7 @@ socket.on(
 
 socket.on(
   "viewer-joined",
-  async (data) => {
+  (data) => {
     console.log(
       "Viewer entrou:",
       data
@@ -1012,7 +1057,8 @@ socket.on(
       );
 
     if (video) {
-      video.srcObject = null;
+      video.srcObject =
+        null;
     }
 
     if (message) {
