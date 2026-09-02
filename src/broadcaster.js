@@ -354,8 +354,12 @@ function connectSocket() {
         path:
           "/hunt-socket",
 
+        /*
+         * Permite polling como fallback
+         * e mantém WebSocket disponível.
+         */
         transports:
-          ["websocket"],
+          ["polling", "websocket"],
 
         reconnection:
           true,
@@ -367,7 +371,10 @@ function connectSocket() {
           1000,
 
         reconnectionDelayMax:
-          5000
+          5000,
+
+        timeout:
+          20000
 
       }
     );
@@ -703,9 +710,6 @@ async function applyVideoConstraints() {
 
       width: {
 
-        min:
-          320,
-
         ideal:
           selectedQuality.width,
 
@@ -716,9 +720,6 @@ async function applyVideoConstraints() {
 
       height: {
 
-        min:
-          180,
-
         ideal:
           selectedQuality.height,
 
@@ -728,9 +729,6 @@ async function applyVideoConstraints() {
       },
 
       frameRate: {
-
-        min:
-          15,
 
         ideal:
           selectedFPS,
@@ -743,24 +741,8 @@ async function applyVideoConstraints() {
     });
 
 
-    const settings =
-      videoTrack.getSettings();
-
-
     console.log(
-      "HUNT: qualidade REAL da captura:",
-      {
-
-        width:
-          settings.width,
-
-        height:
-          settings.height,
-
-        frameRate:
-          settings.frameRate
-
-      }
+      "HUNT: qualidade aplicada."
     );
 
 
@@ -771,64 +753,12 @@ async function applyVideoConstraints() {
   catch (error) {
 
     console.warn(
-      "HUNT: não foi possível aplicar exatamente a qualidade:",
+      "HUNT: não foi possível aplicar todas as constraints:",
       error
     );
 
 
-    /*
-     * Algumas fontes de captura não aceitam
-     * todas as restrições.
-     *
-     * Tentamos uma versão mais flexível.
-     */
-
-    try {
-
-      await videoTrack.applyConstraints({
-
-        width:
-          selectedQuality.width,
-
-        height:
-          selectedQuality.height,
-
-        frameRate:
-          selectedFPS
-
-      });
-
-
-      const settings =
-        videoTrack.getSettings();
-
-
-      console.log(
-        "HUNT: qualidade aplicada com fallback:",
-        settings
-      );
-
-
-      return true;
-
-    }
-
-    catch (fallbackError) {
-
-      console.error(
-        "HUNT: erro aplicando qualidade:",
-        fallbackError
-      );
-
-
-      showError(
-        "Não foi possível alterar a qualidade desta captura."
-      );
-
-
-      return false;
-
-    }
+    return false;
 
   }
 
@@ -836,7 +766,7 @@ async function applyVideoConstraints() {
 
 
 /* =========================================================
-   APLICAR BITRATE NOS PEERS
+   APLICAR BITRATE
 ========================================================= */
 
 async function applyBitrateToPeer(
@@ -854,27 +784,28 @@ async function applyBitrateToPeer(
     getSelectedQuality();
 
 
-  const senders =
-    peer.getSenders();
+  try {
+
+    const senders =
+      peer.getSenders();
 
 
-  for (
-    const sender
-    of senders
-  ) {
-
-    if (
-      !sender.track ||
-      sender.track.kind !==
-        "video"
+    for (
+      const sender
+      of senders
     ) {
 
-      continue;
+      if (
+        !sender ||
+        !sender.track ||
+        sender.track.kind !==
+          "video"
+      ) {
 
-    }
+        continue;
 
+      }
 
-    try {
 
       const parameters =
         sender.getParameters();
@@ -882,25 +813,24 @@ async function applyBitrateToPeer(
 
       if (
         !parameters.encodings ||
-        parameters.encodings.length === 0
+        !parameters.encodings.length
       ) {
 
-        parameters.encodings = [
-          {}
-        ];
+        parameters.encodings =
+          [{}];
 
       }
 
 
-      for (
-        const encoding
-        of parameters.encodings
-      ) {
+      parameters.encodings
+        .forEach(
+          encoding => {
 
-        encoding.maxBitrate =
-          selectedQuality.bitrate;
+            encoding.maxBitrate =
+              selectedQuality.bitrate;
 
-      }
+          }
+        );
 
 
       await sender.setParameters(
@@ -915,33 +845,13 @@ async function applyBitrateToPeer(
 
     }
 
-    catch (error) {
-
-      console.warn(
-        "HUNT: não foi possível aplicar bitrate:",
-        error
-      );
-
-    }
-
   }
 
-}
+  catch (error) {
 
-
-/* =========================================================
-   APLICAR BITRATE EM TODOS OS ESPECTADORES
-========================================================= */
-
-async function applyBitrateToAllPeers() {
-
-  for (
-    const peer
-    of peers.values()
-  ) {
-
-    await applyBitrateToPeer(
-      peer
+    console.warn(
+      "HUNT: não foi possível aplicar bitrate:",
+      error
     );
 
   }
@@ -955,104 +865,33 @@ async function applyBitrateToAllPeers() {
 
 async function changeQuality() {
 
-  hideError();
-
-
-  const selectedQuality =
-    getSelectedQuality();
-
-
-  console.log(
-    "HUNT: qualidade selecionada:",
-    {
-
-      resolution:
-        `${selectedQuality.width}x${selectedQuality.height}`,
-
-      bitrate:
-        selectedQuality.bitrate
-
-    }
-  );
-
-
-  /*
-   * Se ainda não escolheu a tela,
-   * apenas guardamos a preferência.
-   */
-
   if (!screenStream) {
 
-    console.log(
-      "HUNT: qualidade será aplicada quando a tela for selecionada."
+    return;
+
+  }
+
+
+  await applyVideoConstraints();
+
+
+  for (
+    const peer
+    of peers.values()
+  ) {
+
+    await applyBitrateToPeer(
+      peer
     );
 
-    return;
-
   }
-
-
-  /*
-   * Aplicar resolução/FPS
-   * diretamente no track.
-   */
-
-  const success =
-    await applyVideoConstraints();
-
-
-  if (!success) {
-
-    return;
-
-  }
-
-
-  /*
-   * Atualizar bitrate
-   * de todos os espectadores.
-   */
-
-  await applyBitrateToAllPeers();
-
-
-  const settings =
-    screenStream
-      .getVideoTracks()[0]
-      ?.getSettings();
-
-
-  console.log(
-    "HUNT: transmissão atualizada:",
-    {
-
-      configurado:
-        `${selectedQuality.width}x${selectedQuality.height}`,
-
-      real:
-        settings
-          ? `${settings.width}x${settings.height}`
-          : "desconhecido",
-
-      fps:
-        settings?.frameRate
-
-    }
-  );
 
 
   if (transmitting) {
 
     setStatus(
-      `🔴 TRANSMITINDO • ${quality.value}p`,
+      `🔴 TRANSMITINDO • ${quality.value}p • ${fps.value} FPS`,
       true
-    );
-
-  }
-  else {
-
-    setStatus(
-      `● TELA SELECIONADA • ${quality.value}p`
     );
 
   }
@@ -1065,9 +904,6 @@ async function changeQuality() {
 ========================================================= */
 
 async function changeFPS() {
-
-  hideError();
-
 
   if (!screenStream) {
 

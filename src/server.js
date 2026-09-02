@@ -110,7 +110,7 @@ io.on("connection", (socket) => {
       );
 
 
-      // Avisar o novo usuário
+      // Avisar o novo espectador
       socket.emit(
         "stream-started",
         {
@@ -119,11 +119,11 @@ io.on("connection", (socket) => {
       );
 
 
-      // Avisar o transmissor
+      // Avisar o transmissor que um novo espectador entrou
       io.to(room.broadcaster).emit(
-        "viewer-joined",
+        "user-joined",
         {
-          viewerId: socket.id
+          socketId: socket.id
         }
       );
 
@@ -178,6 +178,41 @@ io.on("connection", (socket) => {
         broadcasterId: socket.id
       }
     );
+
+
+    // --------------------------------------------------
+    // ESPECTADORES QUE JÁ ESTAVAM NA SALA
+    // --------------------------------------------------
+
+    // Se já havia espectadores na sala antes da
+    // transmissão começar, avisar o broadcaster
+    // sobre cada um para que ele crie o OFFER WebRTC.
+
+    io.in(roomId).fetchSockets().then((clients) => {
+
+      for (const client of clients) {
+
+        if (client.id === socket.id) {
+          continue;
+        }
+
+        io.to(socket.id).emit(
+          "user-joined",
+          {
+            socketId: client.id
+          }
+        );
+
+      }
+
+    }).catch((error) => {
+
+      console.error(
+        "HUNT: erro buscando espectadores da sala:",
+        error
+      );
+
+    });
 
   });
 
