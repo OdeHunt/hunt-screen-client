@@ -7,7 +7,6 @@ import "./style.css";
 
 const SERVER_URL = "https://hunt-screen-server.onrender.com";
 const ROOM_ID = "hunt-screen-main";
-const PRO_VERSION_URL = "https://hunt-screen-client.onrender.com/";
 
 const isDiscordActivity =
   window.location.hostname.endsWith(".discordsays.com");
@@ -97,10 +96,12 @@ socket = io(
     : SERVER_URL,
   {
     path: "/hunt-socket",
+
     transports: [
       "polling",
       "websocket"
     ],
+
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
@@ -214,18 +215,14 @@ function showHome() {
   `;
 
   document
-    .getElementById(
-      "spectatorButton"
-    )
+    .getElementById("spectatorButton")
     .addEventListener(
       "click",
       startViewer
     );
 
   document
-    .getElementById(
-      "broadcastButton"
-    )
+    .getElementById("broadcastButton")
     .addEventListener(
       "click",
       openBroadcaster
@@ -239,146 +236,6 @@ function showHome() {
 function openBroadcaster() {
   window.location.href =
     "/broadcaster.html";
-}
-
-/* =========================================================
-   VERSÃO PRO
-========================================================= */
-
-async function openProVersion() {
-  const url =
-    PRO_VERSION_URL;
-
-  console.log(
-    "================================="
-  );
-
-  console.log(
-    "🚀 BOTÃO VERSÃO PRO CLICADO"
-  );
-
-  console.log(
-    "URL:",
-    url
-  );
-
-  console.log(
-    "Discord Activity:",
-    isDiscordActivity
-  );
-
-  console.log(
-    "SDK atual:",
-    discordSdk
-  );
-
-  console.log(
-    "================================="
-  );
-
-  /* =====================================================
-     FORA DO DISCORD
-  ===================================================== */
-
-  if (!isDiscordActivity) {
-    console.log(
-      "🌐 Abrindo fora do Discord..."
-    );
-
-    window.open(
-      url,
-      "_blank",
-      "noopener,noreferrer"
-    );
-
-    return;
-  }
-
-  /* =====================================================
-     DENTRO DO DISCORD
-  ===================================================== */
-
-  try {
-    console.log(
-      "🔵 Inicializando Discord SDK..."
-    );
-
-    const sdk =
-      await initializeDiscordSDK();
-
-    if (!sdk) {
-      console.error(
-        "❌ Discord SDK não foi inicializado."
-      );
-
-      alert(
-        "Não foi possível conectar ao Discord."
-      );
-
-      return;
-    }
-
-    console.log(
-      "✅ Discord SDK inicializado:",
-      sdk
-    );
-
-    if (!sdk.commands) {
-      console.error(
-        "❌ sdk.commands não existe."
-      );
-
-      alert(
-        "O Discord SDK não disponibilizou os comandos."
-      );
-
-      return;
-    }
-
-    if (
-      typeof sdk.commands.openExternalLink !==
-      "function"
-    ) {
-      console.error(
-        "❌ openExternalLink não está disponível."
-      );
-
-      console.log(
-        "Comandos disponíveis:",
-        Object.keys(sdk.commands)
-      );
-
-      alert(
-        "O Discord não disponibilizou a abertura de links externos."
-      );
-
-      return;
-    }
-
-    console.log(
-      "🟢 Abrindo link externo..."
-    );
-
-    const result =
-      await sdk.commands.openExternalLink({
-        url: url
-      });
-
-    console.log(
-      "✅ openExternalLink executado:",
-      result
-    );
-
-  } catch (error) {
-    console.error(
-      "❌ ERRO AO ABRIR VERSÃO PRO:",
-      error
-    );
-
-    alert(
-      "Não foi possível abrir a Versão Pro."
-    );
-  }
 }
 
 /* =========================================================
@@ -474,13 +331,6 @@ function startViewer() {
           </button>
 
           <button
-            id="proButton"
-            class="hunt-button small-button pro-button"
-          >
-            🚀 VERSÃO PRO
-          </button>
-
-          <button
             id="backButton"
             class="hunt-button small-button secondary"
           >
@@ -524,11 +374,6 @@ function startViewer() {
   const fullscreenButton =
     document.getElementById(
       "fullscreenButton"
-    );
-
-  const proButton =
-    document.getElementById(
-      "proButton"
     );
 
   const backButton =
@@ -635,15 +480,6 @@ function startViewer() {
         );
       }
     }
-  );
-
-  /* =======================================================
-     VERSÃO PRO
-  ======================================================= */
-
-  proButton.addEventListener(
-    "click",
-    openProVersion
   );
 
   /* =======================================================
@@ -790,6 +626,7 @@ function createViewerPeer(
       ) {
         video.srcObject =
           event.streams[0];
+
       } else {
         const stream =
           new MediaStream();
@@ -807,6 +644,7 @@ function createViewerPeer(
 
       try {
         await video.play();
+
       } catch (error) {
         console.warn(
           "Autoplay bloqueado:",
@@ -1018,6 +856,7 @@ socket.on(
               candidate
             )
           );
+
         } catch (error) {
           console.warn(
             "Erro ao adicionar ICE pendente:",
@@ -1040,6 +879,7 @@ socket.on(
         {
           target:
             broadcasterId,
+
           answer:
             peer.localDescription
         }
@@ -1314,6 +1154,7 @@ function updateFullscreenButtons() {
   ) {
     button.textContent =
       "⛶ SAIR DA TELA CHEIA";
+
   } else {
     button.textContent =
       "⛶ TELA CHEIA";
