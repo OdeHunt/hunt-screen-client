@@ -1,6 +1,6 @@
-/* =========================================================
+/* =====================================================
    RESET
-========================================================= */
+===================================================== */
 
 * {
   box-sizing: border-box;
@@ -17,122 +17,116 @@ body {
 body {
   background: #050505;
   color: #ffffff;
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
 
   overflow-x: hidden;
+  overflow-y: auto;
+
+  -webkit-font-smoothing: antialiased;
 }
 
-/* =========================================================
-   HUNT SCREEN BASE
-========================================================= */
 
-.hunt-screen {
-  width: 100%;
-  min-height: 100vh;
-  background:
-    radial-gradient(
-      circle at center,
-      #151515 0%,
-      #090909 45%,
-      #030303 100%
-    );
-
-  color: #ffffff;
-}
-
-/* =========================================================
+/* =====================================================
    HOME
-========================================================= */
+===================================================== */
 
 .home-screen {
+  width: 100%;
   min-height: 100vh;
 
   display: flex;
   flex-direction: column;
-
   align-items: center;
   justify-content: center;
 
-  text-align: center;
-
   padding: 30px;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255, 102, 0, 0.08),
+      transparent 45%
+    ),
+    #050505;
 }
 
-/* =========================================================
+
+/* =====================================================
    LOGO
-========================================================= */
+===================================================== */
+
+.home-logo {
+  text-align: center;
+  margin-bottom: 15px;
+}
 
 .hunt-logo {
-  color: #ff8c00;
+  color: #ff6600;
 
-  font-size:
-    clamp(
-      42px,
-      8vw,
-      70px
-    );
-
+  font-size: 64px;
   font-weight: 900;
+  letter-spacing: 5px;
 
-  letter-spacing: 12px;
-
-  line-height: 1;
+  line-height: 0.95;
 
   text-shadow:
-    0 0 10px rgba(255, 140, 0, 0.15),
-    0 0 30px rgba(255, 140, 0, 0.08);
+    0 0 10px rgba(255, 102, 0, 0.35),
+    0 0 25px rgba(255, 102, 0, 0.15);
 }
 
-.hunt-subtitle {
-  margin-top: 10px;
-
-  color: #555555;
-
-  font-size: 13px;
-
-  letter-spacing: 9px;
-
-  font-weight: 700;
-}
-
-/* =========================================================
-   HOME MENU
-========================================================= */
-
-.hunt-menu {
-  width: min(500px, 90%);
-
-  margin-top: 45px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 14px;
-}
-
-/* =========================================================
-   BUTTONS
-========================================================= */
-
-.hunt-button {
-  width: 100%;
-
-  min-height: 54px;
-
-  border: 1px solid #2b2b2b;
-
-  border-radius: 10px;
-
-  background: #111111;
-
+.screen-logo {
   color: #ffffff;
 
-  font-size: 14px;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: 8px;
 
+  margin-top: 8px;
+}
+
+
+/* =====================================================
+   HOME SUBTITLE
+===================================================== */
+
+.home-subtitle {
+  color: #888888;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 4px;
+
+  margin-bottom: 40px;
+
+  text-align: center;
+}
+
+
+/* =====================================================
+   HOME BUTTONS
+===================================================== */
+
+.home-buttons {
+  width: min(420px, 100%);
+
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.home-button {
+  width: 100%;
+
+  min-height: 62px;
+
+  border: 2px solid #ff6600;
+  border-radius: 12px;
+
+  background: #111111;
+  color: #ffffff;
+
+  font-size: 16px;
   font-weight: 800;
 
   letter-spacing: 1px;
@@ -141,178 +135,128 @@ body {
 
   transition:
     background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease,
     transform 0.2s ease,
     box-shadow 0.2s ease;
 }
 
-.hunt-button:hover {
-  background: #171717;
+.home-button:hover {
+  background: #ff6600;
 
-  border-color: #ff8c00;
+  color: #000000;
 
-  color: #ff8c00;
+  transform: translateY(-2px);
 
   box-shadow:
-    0 0 18px
-    rgba(255, 140, 0, 0.12);
-
-  transform: translateY(-1px);
+    0 8px 25px rgba(255, 102, 0, 0.25);
 }
 
-.hunt-button:active {
+.home-button:active {
   transform: translateY(0);
-
-  box-shadow: none;
 }
 
-.hunt-button.secondary {
-  background: #0d0d0d;
 
-  border-color: #252525;
-
-  color: #777777;
-}
-
-.hunt-button.secondary:hover {
-  border-color: #777777;
-
-  color: #ffffff;
-
-  box-shadow: none;
-}
-
-/* =========================================================
-   HOME STATUS
-========================================================= */
-
-.hunt-status {
-  margin-top: 22px;
-
-  color: #555555;
-
-  font-size: 11px;
-
-  font-weight: 700;
-
-  letter-spacing: 2px;
-
-  text-align: center;
-}
-
-/* =========================================================
-   VIEWER
-========================================================= */
+/* =====================================================
+   VIEWER SCREEN
+===================================================== */
 
 .viewer-screen {
+  width: 100%;
   min-height: 100vh;
 
-  display: flex;
+  height: auto;
 
+  display: flex;
   flex-direction: column;
 
-  background:
-    #050505;
+  background: #050505;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  overscroll-behavior-y: auto;
+
+  -webkit-overflow-scrolling: touch;
 }
 
-/* =========================================================
+
+/* =====================================================
    VIEWER HEADER
-========================================================= */
+===================================================== */
 
 .viewer-header {
   width: 100%;
 
-  min-height: 72px;
-
-  padding:
-    16px
-    24px;
+  min-height: 75px;
 
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
 
-  gap: 20px;
+  padding: 15px 25px;
 
   background: #080808;
 
-  border-bottom:
-    1px solid #202020;
+  border-bottom: 1px solid #222222;
+
+  flex-shrink: 0;
 }
 
-/* =========================================================
+
+/* =====================================================
    VIEWER BRAND
-========================================================= */
+===================================================== */
 
 .viewer-brand {
   display: flex;
-
   align-items: center;
-
   gap: 10px;
-
-  white-space: nowrap;
 }
 
-.viewer-logo {
-  color: #ff8c00;
-
-  font-size: 25px;
-
-  font-weight: 900;
-
-  letter-spacing: 4px;
+.viewer-brand .hunt-logo {
+  font-size: 30px;
+  letter-spacing: 3px;
 }
 
-.viewer-brand-divider {
-  color: #333333;
-
-  font-size: 24px;
-
-  font-weight: 300;
-}
-
-.viewer-brand-screen {
-  color: #666666;
-
+.viewer-brand .screen-logo {
   font-size: 13px;
-
-  font-weight: 800;
-
   letter-spacing: 4px;
+
+  margin-top: 0;
 }
 
-/* =========================================================
+
+/* =====================================================
    MODE SELECTOR
-========================================================= */
+===================================================== */
 
 .viewer-mode-selector {
   display: flex;
-
   align-items: center;
 
-  gap: 6px;
+  gap: 5px;
+
+  padding: 4px;
+
+  background: #111111;
+
+  border: 1px solid #292929;
+
+  border-radius: 9px;
 }
 
-.mode-button {
-  border: 1px solid #242424;
+.viewer-mode-button {
+  min-width: 80px;
+  height: 34px;
 
-  border-radius: 7px;
+  border: 0;
+  border-radius: 6px;
 
-  background: #0e0e0e;
+  background: transparent;
 
-  color: #666666;
+  color: #777777;
 
-  padding:
-    8px
-    13px;
-
-  font-size: 10px;
-
-  font-weight: 800;
+  font-size: 11px;
+  font-weight: 900;
 
   letter-spacing: 1px;
 
@@ -320,155 +264,163 @@ body {
 
   transition:
     background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
+    color 0.2s ease;
 }
 
-.mode-button:hover {
+.viewer-mode-button:hover {
   color: #ffffff;
-
-  border-color: #444444;
 }
 
-.mode-button.active {
-  background: #ff8c00;
-
-  border-color: #ff8c00;
+.viewer-mode-button.active {
+  background: #ff6600;
 
   color: #000000;
 }
 
-/* =========================================================
+
+/* =====================================================
    VIEWER CONTAINER
-========================================================= */
+===================================================== */
 
 .viewer-container {
   position: relative;
 
   width: 100%;
 
-  flex: 1;
+  background: #000000;
+
+  border-bottom: 1px solid #222222;
+
+  overflow: hidden;
+
+  flex-shrink: 0;
+}
+
+
+/* =====================================================
+   WIDE MODE
+===================================================== */
+
+.viewer-container.wide-mode {
+  height: calc(100vh - 75px);
+
+  min-height: 400px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* =====================================================
+   NORMAL MODE
+===================================================== */
+
+.viewer-container.normal-mode {
+  width: 100%;
+
+  aspect-ratio: 16 / 9;
+
+  height: auto;
 
   min-height: 0;
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
-  overflow: hidden;
-
-  background:
-    #020202;
 }
 
-/* =========================================================
-   WIDE MODE
-========================================================= */
 
-.viewer-container.wide-mode {
-  aspect-ratio: auto;
+/* =====================================================
+   VIDEO
+===================================================== */
+
+#remoteVideo {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  background: #000000;
+
+  object-fit: contain;
+
+  border: 0;
+
+  outline: none;
 }
+
+
+/*
+  Mantém a proporção original da transmissão.
+  Nunca estica a imagem.
+*/
 
 .viewer-container.wide-mode #remoteVideo {
   width: 100%;
-
   height: 100%;
 
   object-fit: contain;
 }
 
-/* =========================================================
-   NORMAL MODE
-========================================================= */
-
-.viewer-container.normal-mode {
-  padding: 20px;
-}
-
 .viewer-container.normal-mode #remoteVideo {
-  width: min(
-    1100px,
-    100%
-  );
-
-  height: auto;
-
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
 
   object-fit: contain;
-
-  border-radius: 8px;
 }
 
-/* =========================================================
-   VIDEO
-========================================================= */
 
-#remoteVideo {
-  display: block;
-
-  background: #000000;
-
-  max-width: 100%;
-
-  max-height: 100%;
-}
-
-/* =========================================================
+/* =====================================================
    VIEWER MESSAGE
-========================================================= */
+===================================================== */
 
 .viewer-message {
   position: absolute;
 
   inset: 0;
 
-  z-index: 2;
-
   display: flex;
 
-  align-items: center;
+  flex-direction: column;
 
+  align-items: center;
   justify-content: center;
+
+  text-align: center;
 
   padding: 30px;
 
-  color: #555555;
-
-  font-size: 13px;
-
-  font-weight: 800;
-
-  letter-spacing: 2px;
-
-  text-align: center;
+  background: rgba(0, 0, 0, 0.75);
 
   pointer-events: none;
 }
 
-/* =========================================================
-   VIEWER BOTTOM
-========================================================= */
+.viewer-message-title {
+  color: #ff6600;
 
-.viewer-bottom {
-  width: 100%;
+  font-size: 22px;
+  font-weight: 900;
 
-  padding:
-    14px
-    20px
-    18px;
+  letter-spacing: 2px;
 
-  background: #080808;
-
-  border-top:
-    1px solid #202020;
+  margin-bottom: 10px;
 }
 
-/* =========================================================
+.viewer-message-text {
+  color: #888888;
+
+  font-size: 14px;
+
+  max-width: 450px;
+
+  line-height: 1.5;
+}
+
+
+/* =====================================================
    VIEWER CONTROLS
-========================================================= */
+===================================================== */
 
 .viewer-controls {
   width: 100%;
@@ -476,123 +428,357 @@ body {
   display: flex;
 
   align-items: center;
-
   justify-content: center;
 
-  flex-wrap: wrap;
+  gap: 12px;
 
-  gap: 8px;
+  padding: 18px 20px;
+
+  background: #080808;
+
+  border-top: 1px solid #222222;
+
+  flex-shrink: 0;
 }
 
-.small-button {
-  width: auto;
 
-  min-height: 40px;
+/* =====================================================
+   CONTROL BUTTON
+===================================================== */
 
-  padding:
-    0
-    16px;
+.viewer-control-button {
+  min-height: 48px;
 
-  font-size: 11px;
+  padding: 0 20px;
+
+  border: 1px solid #333333;
+
+  border-radius: 9px;
+
+  background: #111111;
+
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 900;
+
+  letter-spacing: 0.8px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
-/* =========================================================
-   FULLSCREEN
-========================================================= */
+.viewer-control-button:hover {
+  border-color: #ff6600;
+
+  color: #ff6600;
+
+  transform: translateY(-1px);
+}
+
+.viewer-control-button:active {
+  transform: translateY(0);
+}
+
+
+/* =====================================================
+   FULLSCREEN BUTTON
+===================================================== */
+
+.fullscreen-control-button {
+  min-width: 170px;
+
+  background: #ff6600;
+
+  border-color: #ff6600;
+
+  color: #000000;
+
+  box-shadow:
+    0 5px 20px rgba(255, 102, 0, 0.18);
+}
+
+.fullscreen-control-button:hover {
+  background: #ff7a1a;
+
+  border-color: #ff7a1a;
+
+  color: #000000;
+
+  box-shadow:
+    0 7px 25px rgba(255, 102, 0, 0.3);
+}
+
+
+/* =====================================================
+   BACK BUTTON
+===================================================== */
+
+.back-button {
+  min-width: 120px;
+}
+
+
+/* =====================================================
+   HUNT FULLSCREEN
+===================================================== */
 
 body.hunt-fullscreen-active {
+  width: 100%;
+  height: 100%;
+
   overflow: hidden;
 }
 
-.viewer-screen.hunt-player-fullscreen {
-  position: fixed;
-
-  inset: 0;
-
-  z-index: 9999;
-
-  width: 100vw;
-
+body.hunt-fullscreen-active .viewer-screen {
+  width: 100%;
   height: 100vh;
+
+  min-height: 100vh;
+
+  overflow: hidden;
 }
 
-.viewer-container.hunt-fullscreen-container {
-  width: 100vw;
 
-  height: 100vh;
+/* =====================================================
+   PLAYER FULLSCREEN
+===================================================== */
+
+body.hunt-player-fullscreen
+  .viewer-container {
+  height: calc(100vh - 75px);
 }
 
-/* =========================================================
-   RESPONSIVE
-========================================================= */
+body.hunt-player-fullscreen
+  .viewer-container.wide-mode {
+  height: calc(100vh - 75px);
+}
 
-@media (max-width: 700px) {
+body.hunt-player-fullscreen
+  .viewer-container.normal-mode {
+  width: 100%;
+
+  height: calc(100vh - 75px);
+
+  aspect-ratio: auto;
+}
+
+
+/* =====================================================
+   FULLSCREEN VIDEO
+===================================================== */
+
+body.hunt-fullscreen-container
+  #remoteVideo {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+
+/* =====================================================
+   SCROLLBAR
+===================================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080808;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333333;
+
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff6600;
+}
+
+
+/* =====================================================
+   RESPONSIVE — TABLET
+===================================================== */
+
+@media (max-width: 800px) {
+
   .viewer-header {
-    padding:
-      14px
-      15px;
-
-    flex-direction: column;
-
-    align-items: stretch;
+    padding: 12px 15px;
   }
 
-  .viewer-brand {
-    justify-content: center;
+  .viewer-brand .hunt-logo {
+    font-size: 25px;
   }
 
-  .viewer-mode-selector {
-    justify-content: center;
+  .viewer-brand .screen-logo {
+    font-size: 11px;
+  }
+
+  .viewer-mode-button {
+    min-width: 65px;
   }
 
   .viewer-controls {
-    flex-direction: column;
+    gap: 8px;
+
+    padding: 14px 12px;
   }
 
-  .viewer-controls
-  .small-button {
-    width: min(
-      420px,
-      100%
-    );
+  .viewer-control-button {
+    padding: 0 14px;
+
+    font-size: 11px;
   }
 
-  .viewer-bottom {
-    padding:
-      12px
-      12px
-      15px;
+  .fullscreen-control-button {
+    min-width: 145px;
   }
+
 }
 
-/* =========================================================
-   SMALL MOBILE
-========================================================= */
 
-@media (max-width: 420px) {
-  .hunt-logo {
-    letter-spacing: 7px;
+/* =====================================================
+   RESPONSIVE — CELULAR
+===================================================== */
+
+@media (max-width: 600px) {
+
+  .home-screen {
+    padding: 20px;
   }
 
-  .hunt-subtitle {
+  .hunt-logo {
+    font-size: 48px;
+  }
+
+  .screen-logo {
+    font-size: 18px;
+
     letter-spacing: 6px;
   }
 
-  .viewer-logo {
-    font-size: 21px;
+  .home-subtitle {
+    font-size: 10px;
 
     letter-spacing: 3px;
+
+    margin-bottom: 30px;
   }
 
-  .viewer-brand-screen {
-    font-size: 11px;
 
-    letter-spacing: 3px;
+  .viewer-header {
+    min-height: 65px;
+
+    padding: 10px;
   }
 
-  .mode-button {
-    padding:
-      7px
-      10px;
+  .viewer-brand {
+    gap: 5px;
   }
+
+  .viewer-brand .hunt-logo {
+    font-size: 22px;
+  }
+
+  .viewer-brand .screen-logo {
+    font-size: 9px;
+
+    letter-spacing: 2px;
+  }
+
+
+  .viewer-mode-selector {
+    gap: 2px;
+  }
+
+  .viewer-mode-button {
+    min-width: 55px;
+
+    height: 30px;
+
+    font-size: 9px;
+  }
+
+
+  .viewer-container.wide-mode {
+    min-height: 250px;
+
+    height: calc(100vh - 65px);
+  }
+
+
+  .viewer-controls {
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    padding: 12px 8px;
+  }
+
+  .viewer-control-button {
+    flex: 1;
+
+    min-width: 0;
+
+    min-height: 45px;
+
+    padding: 0 8px;
+
+    font-size: 10px;
+  }
+
+  .fullscreen-control-button {
+    min-width: 0;
+  }
+
+  .back-button {
+    min-width: 0;
+  }
+
+
+  .viewer-message-title {
+    font-size: 17px;
+  }
+
+  .viewer-message-text {
+    font-size: 12px;
+  }
+
+}
+
+
+/* =====================================================
+   RESPONSIVE — CELULAR PEQUENO
+===================================================== */
+
+@media (max-width: 400px) {
+
+  .viewer-brand .screen-logo {
+    display: none;
+  }
+
+  .viewer-mode-button {
+    min-width: 50px;
+  }
+
+  .viewer-controls {
+    gap: 5px;
+  }
+
+  .viewer-control-button {
+    font-size: 9px;
+
+    padding: 0 5px;
+  }
+
 }
