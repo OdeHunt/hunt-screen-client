@@ -1,5 +1,8 @@
 import { io } from "socket.io-client";
-import { patchUrlMappings } from "@discord/embedded-app-sdk";
+import {
+  patchUrlMappings,
+  openExternalLink
+} from "@discord/embedded-app-sdk";
 import "./style.css";
 
 /* ========================================
@@ -350,11 +353,50 @@ function openProVersion() {
     "HUNT: abrindo Versão Pro"
   );
 
-  window.open(
-    PRO_VERSION_URL,
-    "_blank",
-    "noopener,noreferrer"
-  );
+
+  try {
+
+    if (isDiscordActivity) {
+
+      openExternalLink({
+        url:
+          PRO_VERSION_URL
+      });
+
+      console.log(
+        "HUNT: link externo enviado ao Discord"
+      );
+
+      return;
+
+    }
+
+
+    window.open(
+      PRO_VERSION_URL,
+      "_blank",
+      "noopener,noreferrer"
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "HUNT: erro ao abrir Versão Pro:",
+      error
+    );
+
+
+    /*
+      Último recurso caso o método
+      anterior seja bloqueado.
+    */
+
+    window.location.href =
+      PRO_VERSION_URL;
+
+  }
 
 }
 
