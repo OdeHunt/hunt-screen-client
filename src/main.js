@@ -5,2345 +5,1194 @@ import {
 } from "@discord/embedded-app-sdk";
 import "./style.css";
 
-/* ========================================
-   CONFIGURAÇÃO
-======================================== */
-
-const SERVER_URL =
-  "https://hunt-screen-server.onrender.com";
-
-const ROOM_ID =
-  "hunt-screen-main";
-
-const PRO_VERSION_URL =
-  "https://hunt-screen-client.onrender.com/";
-
-/*
-  Client ID da aplicação Discord.
-
-  No Vite, coloque no .env:
-
-  VITE_DISCORD_CLIENT_ID=SEU_CLIENT_ID
-
-  No Render, coloque a mesma variável
-  nas Environment Variables.
-*/
-const DISCORD_CLIENT_ID =
-  import.meta.env.VITE_DISCORD_CLIENT_ID || "";
-
-
-/* ========================================
-   DISCORD ACTIVITY
-======================================== */
+const SERVER_URL = "https://hunt-screen-server.onrender.com";
+const ROOM_ID = "hunt-screen-main";
+const PRO_VERSION_URL = "https://hunt-screen-client.onrender.com/";
 
 const isDiscordActivity =
-  window.location.hostname.endsWith(
-    ".discordsays.com"
-  );
+  window.location.hostname.endsWith(".discordsays.com");
 
-console.log(
-  "HUNT: Discord Activity:",
-  isDiscordActivity
-);
+let discordSdk = null;
+let discordSdkInitPromise = null;
 
+let socket = null;
+let peer = null;
+let broadcasterId = null;
+let pendingCandidates = [];
 
-/* ========================================
+let currentPlayerMode = "wide";
+let huntFullscreen = false;
+
+/* =========================================================
    DISCORD SDK
-======================================== */
-
-let discordSdk =
-  null;
-
-let discordSdkReady =
-  false;
-
-
-/*
-  O SDK só é inicializado dentro
-  da Discord Activity.
-*/
+========================================================= */
 
 async function initializeDiscordSDK() {
-
   if (!isDiscordActivity) {
-
-    console.log(
-      "HUNT: navegador normal - Discord SDK não necessário."
-    );
-
-    return;
-
+    return null;
   }
 
-
-  if (!DISCORD_CLIENT_ID) {
-
-    console.warn(
-      "HUNT: VITE_DISCORD_CLIENT_ID não configurado."
-    );
-
-    return;
-
+  if (discordSdk) {
+    return discordSdk;
   }
 
+  if (discordSdkInitPromise) {
+    return discordSdkInitPromise;
+  }
 
-  try {
+  discordSdkInitPromise = (async () => {
+    const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
 
-    console.log(
-      "HUNT: inicializando Discord SDK..."
-    );
+    if (!clientId) {
+      console.error(
+        "VITE_DISCORD_CLIENT_ID não foi encontrado."
+      );
+      return null;
+    }
 
+    try {
+      discordSdk = new DiscordSDK(clientId);
 
-    discordSdk =
-      new DiscordSDK(
-        DISCORD_CLIENT_ID
+      await discordSdk.ready();
+
+      console.log("Discord SDK conectado.");
+
+      return discordSdk;
+    } catch (error) {
+      console.error(
+        "Erro ao inicializar Discord SDK:",
+        error
       );
 
+      discordSdk = null;
 
-    await discordSdk.ready();
+      return null;
+    }
+  })();
 
-
-    discordSdkReady =
-      true;
-
-
-    console.log(
-      "HUNT: Discord SDK pronto."
-    );
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "HUNT: erro inicializando Discord SDK:",
-      error
-    );
-
-
-    discordSdk =
-      null;
-
-    discordSdkReady =
-      false;
-
-  }
-
+  return discordSdkInitPromise;
 }
 
-
-/* ========================================
-   DISCORD URL MAPPING
-======================================== */
+/* =========================================================
+   SOCKET.IO
+========================================================= */
 
 if (isDiscordActivity) {
-
-  try {
-
-    patchUrlMappings([
-
-      {
-        prefix:
-          "/hunt-socket",
-
-        target:
-          "hunt-screen-server.onrender.com"
-      }
-
-    ]);
-
-
-    console.log(
-      "HUNT: URL Mapping configurado."
-    );
-
-  }
-
-  catch (error) {
-
-    console.warn(
-      "HUNT: erro no patchUrlMappings:",
-      error
-    );
-
-  }
-
+  patchUrlMappings([
+    {
+      prefix: "/hunt-socket",
+      target: "hunt-screen-server.onrender.com"
+    }
+  ]);
 }
 
+socket = io(
+  isDiscordActivity
+    ? window.location.origin
+    : SERVER_URL,
+  {
+    path: "/hunt-socket",
+    transports: ["polling", "websocket"],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000
+  }
+);
 
-/* ========================================
-   SOCKET.IO
-======================================== */
+/* =========================================================
+   SOCKET STATUS
+========================================================= */
 
-const socket =
-  io(
-    isDiscordActivity
-      ? window.location.origin
-      : SERVER_URL,
-    {
+socket.on("connect", () => {
+  console.log("Socket conectado:", socket.id);
 
-      path:
-        "/hunt-socket",
+  const status = document.getElementById("viewerStatus");
 
-      transports: [
-        "polling",
-        "websocket"
-      ],
+  if (status) {
+    status.textContent = "🟢 CONECTADO AO SERVIDOR";
+  }
+});
 
-      reconnection:
-        true,
+socket.on("disconnect", () => {
+  console.log("Socket desconectado.");
 
-      reconnectionAttempts:
-        Infinity,
+  const status = document.getElementById("viewerStatus");
 
-      reconnectionDelay:
-        1000,
+  if (status) {
+    status.textContent = "🔴 DESCONECTADO";
+  }
+});
 
-      reconnectionDelayMax:
-        5000,
-
-      timeout:
-        20000
-
-    }
-  );
-
-
-/* ========================================
-   WEBRTC
-======================================== */
-
-let peer =
-  null;
-
-let broadcasterId =
-  null;
-
-let pendingCandidates =
-  [];
-
-
-/* ========================================
-   ELEMENTO PRINCIPAL
-======================================== */
-
-const app =
-  document.getElementById(
-    "app"
-  );
-
-
-if (!app) {
-
+socket.on("connect_error", (error) => {
   console.error(
-    "HUNT: elemento #app não encontrado."
+    "Erro de conexão Socket.IO:",
+    error
   );
 
-}
+  const status = document.getElementById("viewerStatus");
 
+  if (status) {
+    status.textContent = "🟡 CONECTANDO...";
+  }
+});
 
-/* ========================================
-   RTC
-======================================== */
-
-const rtcConfig = {
-
-  iceServers: [
-
-    {
-      urls:
-        "stun:stun.l.google.com:19302"
-    },
-
-    {
-      urls:
-        "stun:stun1.l.google.com:19302"
-    }
-
-  ]
-
-};
-
-
-console.log(
-  "HUNT: verificando WebRTC..."
-);
-
-console.log(
-  "HUNT: RTCPeerConnection:",
-  window.RTCPeerConnection
-);
-
-
-/* ========================================
-   MODO DO PLAYER
-======================================== */
-
-let currentPlayerMode =
-  "wide";
-
-
-/* ========================================
-   FULLSCREEN HUNT
-======================================== */
-
-let huntFullscreen =
-  false;
-
-
-/* ========================================
-   TELA PRINCIPAL
-======================================== */
+/* =========================================================
+   HOME
+========================================================= */
 
 function showHome() {
-
-  if (!app) {
-    return;
-  }
-
-
-  closeViewer();
-
-
-  huntFullscreen =
-    false;
-
-
   document.body.classList.remove(
     "hunt-fullscreen-active"
   );
 
+  huntFullscreen = false;
 
-  app.innerHTML = `
-
+  document.body.innerHTML = `
     <div class="hunt-screen home-screen">
 
-      <div class="hunt-logo">
-        HUNT
+      <div class="home-logo">
+        <div class="hunt-logo-text">HUNT</div>
+        <div class="hunt-logo-smile">⌣</div>
+        <div class="hunt-screen-text">SCREEN</div>
       </div>
 
-      <div class="hunt-subtitle">
-        SCREEN
-      </div>
-
-      <div class="hunt-menu">
+      <div class="home-menu">
 
         <button
-          id="viewerButton"
-          class="hunt-button">
-
+          id="spectatorButton"
+          class="hunt-button"
+        >
           👁️ ESPECTADOR
-
         </button>
-
 
         <button
           id="broadcastButton"
-          class="hunt-button">
-
+          class="hunt-button"
+        >
           📺 TRANSMITIR
-
         </button>
 
       </div>
 
-
-      <div
-        id="homeStatus"
-        class="hunt-status">
-
-        CONECTANDO...
-
+      <div class="home-status">
+        HUNT SCREEN
       </div>
 
     </div>
-
   `;
 
-
-  const viewerButton =
-    document.getElementById(
-      "viewerButton"
-    );
-
-
-  const broadcastButton =
-    document.getElementById(
-      "broadcastButton"
-    );
-
-
-  if (viewerButton) {
-
-    viewerButton.addEventListener(
+  document
+    .getElementById("spectatorButton")
+    .addEventListener(
       "click",
       startViewer
     );
 
-  }
-
-
-  if (broadcastButton) {
-
-    broadcastButton.addEventListener(
+  document
+    .getElementById("broadcastButton")
+    .addEventListener(
       "click",
       openBroadcaster
     );
-
-  }
-
-
-  updateHomeStatus();
-
 }
 
-
-/* ========================================
-   STATUS HOME
-======================================== */
-
-function updateHomeStatus() {
-
-  const status =
-    document.getElementById(
-      "homeStatus"
-    );
-
-
-  if (!status) {
-    return;
-  }
-
-
-  if (socket.connected) {
-
-    status.textContent =
-      "● SERVIDOR ONLINE";
-
-  }
-
-  else {
-
-    status.textContent =
-      "● CONECTANDO...";
-
-  }
-
-}
-
-
-/* ========================================
-   ABRIR BROADCASTER
-======================================== */
+/* =========================================================
+   BROADCASTER
+========================================================= */
 
 function openBroadcaster() {
-
-  console.log(
-    "HUNT: abrindo broadcaster"
-  );
-
-
   window.location.href =
     "/broadcaster.html";
-
 }
 
-
-/* ========================================
-   ABRIR VERSÃO PRO
-======================================== */
+/* =========================================================
+   VERSÃO PRO
+========================================================= */
 
 async function openProVersion() {
-
-  console.log(
-    "HUNT: abrindo Versão Pro..."
-  );
-
-
-  /*
-    FORA DO DISCORD
-
-    Continua usando nova aba normalmente.
-  */
+  const url = PRO_VERSION_URL;
 
   if (!isDiscordActivity) {
-
-    try {
-
-      const newWindow =
-        window.open(
-          PRO_VERSION_URL,
-          "_blank",
-          "noopener,noreferrer"
-        );
-
-
-      /*
-        Alguns navegadores podem bloquear
-        window.open.
-      */
-
-      if (!newWindow) {
-
-        window.location.href =
-          PRO_VERSION_URL;
-
-      }
-
-    }
-
-    catch (error) {
-
-      console.error(
-        "HUNT: erro abrindo Versão Pro:",
-        error
-      );
-
-
-      window.location.href =
-        PRO_VERSION_URL;
-
-    }
-
-
-    return;
-
-  }
-
-
-  /*
-    DENTRO DO DISCORD
-
-    O Activity é sandboxed.
-
-    Por isso usamos:
-
-    discordSdk.commands.openExternalLink()
-  */
-
-  try {
-
-    /*
-      Se o SDK ainda não estiver pronto,
-      tentamos inicializá-lo.
-    */
-
-    if (
-      !discordSdkReady ||
-      !discordSdk
-    ) {
-
-      await initializeDiscordSDK();
-
-    }
-
-
-    if (
-      !discordSdk ||
-      !discordSdkReady
-    ) {
-
-      console.error(
-        "HUNT: Discord SDK não está disponível."
-      );
-
-
-      /*
-        Não usamos window.open() como
-        método principal dentro da Activity,
-        porque o Discord bloqueia links externos
-        sem o comando RPC apropriado.
-      */
-
-      alert(
-        "Não foi possível abrir a Versão Pro pelo Discord. O Discord SDK ainda não está pronto."
-      );
-
-
-      return;
-
-    }
-
-
-    console.log(
-      "HUNT: enviando OPEN_EXTERNAL_LINK para Discord..."
+    window.open(
+      url,
+      "_blank",
+      "noopener,noreferrer"
     );
 
+    return;
+  }
+
+  try {
+    const sdk =
+      await initializeDiscordSDK();
+
+    if (
+      !sdk ||
+      !sdk.commands ||
+      !sdk.commands.openExternalLink
+    ) {
+      console.error(
+        "Discord SDK não está disponível para abrir o link."
+      );
+
+      alert(
+        "Não foi possível abrir a Versão Pro pelo Discord."
+      );
+
+      return;
+    }
 
     const result =
-      await discordSdk.commands.openExternalLink({
-
-        url:
-          PRO_VERSION_URL
-
+      await sdk.commands.openExternalLink({
+        url
       });
 
-
     console.log(
-      "HUNT: resultado openExternalLink:",
+      "Resultado openExternalLink:",
       result
     );
 
-
-    if (
-      result &&
-      result.opened === false
-    ) {
-
-      console.warn(
-        "HUNT: Discord não abriu o link."
-      );
-
-    }
-
-  }
-
-  catch (error) {
-
+  } catch (error) {
     console.error(
-      "HUNT: erro ao abrir Versão Pro no Discord:",
+      "Erro ao abrir Versão Pro:",
       error
     );
 
-
-    /*
-      Não fazemos window.location.href
-      automaticamente dentro do Discord,
-      porque isso pode tentar tirar a Activity
-      do ambiente sandbox.
-
-      O erro fica registrado no console
-      para podermos identificar o problema.
-    */
-
+    alert(
+      "Não foi possível abrir a Versão Pro."
+    );
   }
-
 }
 
-
-/* ========================================
-   INICIAR VIEWER
-======================================== */
+/* =========================================================
+   VIEWER
+========================================================= */
 
 function startViewer() {
-
-  console.log(
-    "HUNT: entrando como espectador"
-  );
-
-
-  if (!app) {
-    return;
-  }
-
-
-  closeViewer();
-
-
-  huntFullscreen =
-    false;
-
-
   document.body.classList.remove(
     "hunt-fullscreen-active"
   );
 
+  huntFullscreen = false;
 
-  app.innerHTML = `
+  document.body.innerHTML = `
+    <div class="hunt-screen viewer-screen">
 
-    <div
-      class="hunt-screen viewer-screen"
-      id="viewerScreen">
-
-
-      <div class="viewer-header">
+      <header class="viewer-header">
 
         <div class="viewer-brand">
-
-          <span class="viewer-logo">
+          <span class="viewer-hunt">
             HUNT
           </span>
 
-          <span class="viewer-brand-divider">
-            /
-          </span>
-
-          <span class="viewer-brand-screen">
+          <span class="viewer-screen-title">
             SCREEN
           </span>
-
         </div>
-
 
         <div class="viewer-mode-selector">
 
           <button
             id="wideModeButton"
-            class="mode-button active">
-
+            class="mode-button active"
+          >
             WIDE
-
           </button>
-
 
           <button
             id="normalModeButton"
-            class="mode-button">
-
+            class="mode-button"
+          >
             NORMAL
-
           </button>
 
         </div>
 
-      </div>
+      </header>
 
-
-      <div
-        id="viewerContainer"
-        class="viewer-container wide-mode">
-
+      <main class="viewer-main">
 
         <div
-          id="viewerMessage"
-          class="viewer-message">
+          id="viewerContainer"
+          class="viewer-container wide-mode"
+        >
 
-          PROCURANDO TRANSMISSÃO...
+          <div
+            id="viewerMessage"
+            class="viewer-message"
+          >
+            📺 NENHUMA TRANSMISSÃO ATIVA
+          </div>
 
-        </div>
-
-
-        <video
-          id="remoteVideo"
-          autoplay
-          playsinline
-          controls
-          preload="none">
-        </video>
-
-
-      </div>
-
-
-      <div class="viewer-bottom">
-
-
-        <div class="viewer-controls">
-
-
-          <button
-            id="refreshButton"
-            class="hunt-button small-button">
-
-            🔄 ATUALIZAR
-
-          </button>
-
-
-          <button
-            id="fullscreenButton"
-            class="hunt-button small-button fullscreen-control-button">
-
-            ⛶ TELA CHEIA
-
-          </button>
-
-
-          <button
-            id="proButton"
-            class="hunt-button small-button pro-button">
-
-            🚀 VERSÃO PRO
-
-          </button>
-
-
-          <button
-            id="backButton"
-            class="hunt-button secondary small-button">
-
-            ← VOLTAR
-
-          </button>
-
+          <video
+            id="remoteVideo"
+            autoplay
+            playsinline
+            controls
+            preload="none"
+          ></video>
 
         </div>
 
+        <div class="viewer-bottom">
 
-        <div
-          id="viewerStatus"
-          class="hunt-status">
+          <div class="viewer-controls">
 
-          CONECTANDO...
+            <button
+              id="refreshButton"
+              class="viewer-button"
+            >
+              🔄 ATUALIZAR
+            </button>
+
+            <button
+              id="fullscreenButton"
+              class="viewer-button"
+            >
+              ⛶ TELA CHEIA
+            </button>
+
+            <button
+              id="proButton"
+              class="viewer-button pro-button"
+            >
+              🚀 VERSÃO PRO
+            </button>
+
+            <button
+              id="backButton"
+              class="viewer-button"
+            >
+              ← VOLTAR
+            </button>
+
+          </div>
+
+          <div
+            id="viewerStatus"
+            class="viewer-status"
+          >
+            🟡 CONECTANDO...
+          </div>
 
         </div>
 
-
-      </div>
-
+      </main>
 
     </div>
-
   `;
 
+  const remoteVideo =
+    document.getElementById(
+      "remoteVideo"
+    );
+
+  const viewerMessage =
+    document.getElementById(
+      "viewerMessage"
+    );
+
+  const viewerContainer =
+    document.getElementById(
+      "viewerContainer"
+    );
 
   const refreshButton =
     document.getElementById(
       "refreshButton"
     );
 
-
-  const backButton =
+  const fullscreenButton =
     document.getElementById(
-      "backButton"
+      "fullscreenButton"
     );
-
 
   const proButton =
     document.getElementById(
       "proButton"
     );
 
+  const backButton =
+    document.getElementById(
+      "backButton"
+    );
 
-  const wideButton =
+  const wideModeButton =
     document.getElementById(
       "wideModeButton"
     );
 
-
-  const normalButton =
+  const normalModeButton =
     document.getElementById(
       "normalModeButton"
     );
 
+  /* =======================================================
+     MODO WIDE
+  ======================================================= */
 
-  const fullscreenButton =
-    document.getElementById(
-      "fullscreenButton"
-    );
+  wideModeButton.addEventListener(
+    "click",
+    () => {
+      currentPlayerMode = "wide";
 
+      viewerContainer.classList.remove(
+        "normal-mode"
+      );
 
-  /* ======================================
+      viewerContainer.classList.add(
+        "wide-mode"
+      );
+
+      wideModeButton.classList.add(
+        "active"
+      );
+
+      normalModeButton.classList.remove(
+        "active"
+      );
+    }
+  );
+
+  /* =======================================================
+     MODO NORMAL
+  ======================================================= */
+
+  normalModeButton.addEventListener(
+    "click",
+    () => {
+      currentPlayerMode = "normal";
+
+      viewerContainer.classList.remove(
+        "wide-mode"
+      );
+
+      viewerContainer.classList.add(
+        "normal-mode"
+      );
+
+      normalModeButton.classList.add(
+        "active"
+      );
+
+      wideModeButton.classList.remove(
+        "active"
+      );
+    }
+  );
+
+  /* =======================================================
      ATUALIZAR
-  ====================================== */
+  ======================================================= */
 
-  if (refreshButton) {
+  refreshButton.addEventListener(
+    "click",
+    () => {
+      if (peer) {
+        try {
+          peer.close();
+        } catch {}
+      }
 
-    refreshButton.addEventListener(
-      "click",
-      refreshViewer
-    );
+      peer = null;
+      broadcasterId = null;
+      pendingCandidates = [];
 
-  }
+      remoteVideo.srcObject = null;
 
+      viewerMessage.style.display =
+        "flex";
 
-  /* ======================================
+      viewerMessage.textContent =
+        "🔄 PROCURANDO TRANSMISSÃO...";
+
+      if (socket.connected) {
+        socket.emit(
+          "join-room",
+          ROOM_ID
+        );
+      }
+    }
+  );
+
+  /* =======================================================
      VERSÃO PRO
-  ====================================== */
+  ======================================================= */
 
-  if (proButton) {
+  proButton.addEventListener(
+    "click",
+    openProVersion
+  );
 
-    proButton.addEventListener(
-      "click",
-      openProVersion
-    );
-
-  }
-
-
-  /* ======================================
+  /* =======================================================
      VOLTAR
-  ====================================== */
+  ======================================================= */
 
-  if (backButton) {
-
-    backButton.addEventListener(
-      "click",
-      async () => {
-
-        await exitHuntFullscreen();
-
-        closeViewer();
-
-        showHome();
-
+  backButton.addEventListener(
+    "click",
+    () => {
+      if (peer) {
+        try {
+          peer.close();
+        } catch {}
       }
-    );
 
-  }
+      peer = null;
+      broadcasterId = null;
+      pendingCandidates = [];
 
+      remoteVideo.srcObject = null;
 
-  /* ======================================
-     WIDE
-  ====================================== */
+      showHome();
+    }
+  );
 
-  if (wideButton) {
-
-    wideButton.addEventListener(
-      "click",
-      () => {
-
-        setPlayerMode(
-          "wide"
-        );
-
-      }
-    );
-
-  }
-
-
-  /* ======================================
-     NORMAL
-  ====================================== */
-
-  if (normalButton) {
-
-    normalButton.addEventListener(
-      "click",
-      () => {
-
-        setPlayerMode(
-          "normal"
-        );
-
-      }
-    );
-
-  }
-
-
-  /* ======================================
+  /* =======================================================
      FULLSCREEN
-  ====================================== */
+  ======================================================= */
 
-  if (fullscreenButton) {
-
-    fullscreenButton.addEventListener(
-      "click",
-      toggleHuntFullscreen
-    );
-
-  }
-
-
-  /* ======================================
-     VÍDEO
-  ====================================== */
-
-  const video =
-    document.getElementById(
-      "remoteVideo"
-    );
-
-
-  if (video) {
-
-    video.volume =
-      1;
-
-    video.muted =
-      false;
-
-  }
-
-
-  setPlayerMode(
-    currentPlayerMode
+  fullscreenButton.addEventListener(
+    "click",
+    toggleFullscreen
   );
-
 
   updateFullscreenButtons();
 
-  updateViewerStatus();
-
-
-  /* ======================================
+  /* =======================================================
      ENTRAR NA SALA
-  ====================================== */
+  ======================================================= */
 
   if (socket.connected) {
-
     socket.emit(
       "join-room",
       ROOM_ID
     );
-
-
-    console.log(
-      "HUNT: viewer entrou na sala"
-    );
-
   }
 
-  else {
+  viewerMessage.style.display =
+    "flex";
 
-    console.log(
-      "HUNT: aguardando Socket.IO..."
-    );
-
-  }
-
+  viewerMessage.textContent =
+    "🟡 PROCURANDO TRANSMISSÃO...";
 }
 
-
-/* ========================================
-   FULLSCREEN
-======================================== */
-
-async function toggleHuntFullscreen() {
-
-  if (huntFullscreen) {
-
-    await exitHuntFullscreen();
-
-  }
-
-  else {
-
-    await enterHuntFullscreen();
-
-  }
-
-}
-
-
-/* ========================================
-   ENTRAR FULLSCREEN
-======================================== */
-
-async function enterHuntFullscreen() {
-
-  const viewerScreen =
-    document.getElementById(
-      "viewerScreen"
-    );
-
-
-  const container =
-    document.getElementById(
-      "viewerContainer"
-    );
-
-
-  if (!viewerScreen || !container) {
-    return;
-  }
-
-
-  try {
-
-    if (
-      document.fullscreenElement !==
-      viewerScreen
-    ) {
-
-      if (
-        typeof viewerScreen.requestFullscreen ===
-        "function"
-      ) {
-
-        await viewerScreen.requestFullscreen();
-
-
-        console.log(
-          "HUNT: Fullscreen API ativada"
-        );
-
-      }
-
-    }
-
-  }
-
-  catch (error) {
-
-    console.warn(
-      "HUNT: Fullscreen API não disponível ou bloqueada:",
-      error
-    );
-
-  }
-
-
-  huntFullscreen =
-    true;
-
-
-  document.body.classList.add(
-    "hunt-fullscreen-active"
-  );
-
-
-  viewerScreen.classList.add(
-    "hunt-player-fullscreen"
-  );
-
-
-  container.classList.add(
-    "hunt-fullscreen-container"
-  );
-
-
-  updateFullscreenButtons();
-
-
-  console.log(
-    "HUNT: fullscreen ativado"
-  );
-
-}
-
-
-/* ========================================
-   SAIR FULLSCREEN
-======================================== */
-
-async function exitHuntFullscreen() {
-
-  const viewerScreen =
-    document.getElementById(
-      "viewerScreen"
-    );
-
-
-  const container =
-    document.getElementById(
-      "viewerContainer"
-    );
-
-
-  try {
-
-    if (
-      document.fullscreenElement
-    ) {
-
-      if (
-        typeof document.exitFullscreen ===
-        "function"
-      ) {
-
-        await document.exitFullscreen();
-
-      }
-
-    }
-
-  }
-
-  catch (error) {
-
-    console.warn(
-      "HUNT: erro saindo do fullscreen:",
-      error
-    );
-
-  }
-
-
-  huntFullscreen =
-    false;
-
-
-  document.body.classList.remove(
-    "hunt-fullscreen-active"
-  );
-
-
-  if (viewerScreen) {
-
-    viewerScreen.classList.remove(
-      "hunt-player-fullscreen"
-    );
-
-  }
-
-
-  if (container) {
-
-    container.classList.remove(
-      "hunt-fullscreen-container"
-    );
-
-  }
-
-
-  updateFullscreenButtons();
-
-
-  console.log(
-    "HUNT: fullscreen desativado"
-  );
-
-}
-
-
-/* ========================================
-   FULLSCREEN REAL ALTERADO
-======================================== */
-
-document.addEventListener(
-  "fullscreenchange",
-  () => {
-
-    const viewerScreen =
-      document.getElementById(
-        "viewerScreen"
-      );
-
-
-    const container =
-      document.getElementById(
-        "viewerContainer"
-      );
-
-
-    if (
-      !document.fullscreenElement
-    ) {
-
-      if (huntFullscreen) {
-
-        huntFullscreen =
-          false;
-
-
-        document.body.classList.remove(
-          "hunt-fullscreen-active"
-        );
-
-
-        if (viewerScreen) {
-
-          viewerScreen.classList.remove(
-            "hunt-player-fullscreen"
-          );
-
-        }
-
-
-        if (container) {
-
-          container.classList.remove(
-            "hunt-fullscreen-container"
-          );
-
-        }
-
-
-        updateFullscreenButtons();
-
-      }
-
-    }
-
-    else {
-
-      huntFullscreen =
-        true;
-
-
-      document.body.classList.add(
-        "hunt-fullscreen-active"
-      );
-
-
-      if (viewerScreen) {
-
-        viewerScreen.classList.add(
-          "hunt-player-fullscreen"
-        );
-
-      }
-
-
-      if (container) {
-
-        container.classList.add(
-          "hunt-fullscreen-container"
-        );
-
-      }
-
-
-      updateFullscreenButtons();
-
-    }
-
-  }
-);
-
-
-/* ========================================
-   BOTÃO FULLSCREEN
-======================================== */
-
-function updateFullscreenButtons() {
-
-  const fullscreenButton =
-    document.getElementById(
-      "fullscreenButton"
-    );
-
-
-  if (!fullscreenButton) {
-    return;
-  }
-
-
-  fullscreenButton.textContent =
-    huntFullscreen
-      ? "✕ SAIR DA TELA CHEIA"
-      : "⛶ TELA CHEIA";
-
-}
-
-
-/* ========================================
-   TECLA ESC
-======================================== */
-
-document.addEventListener(
-  "keydown",
-  async event => {
-
-    if (
-      event.key === "Escape" &&
-      huntFullscreen
-    ) {
-
-      await exitHuntFullscreen();
-
-    }
-
-  }
-);
-
-
-/* ========================================
-   ALTERAR MODO
-======================================== */
-
-function setPlayerMode(
-  mode
+/* =========================================================
+   WEBRTC
+========================================================= */
+
+function createViewerPeer(
+  targetId
 ) {
+  const RTCPeerConnectionClass =
+    window.RTCPeerConnection ||
+    window.webkitRTCPeerConnection;
 
-  if (
-    mode !== "wide" &&
-    mode !== "normal"
-  ) {
-
-    mode =
-      "wide";
-
-  }
-
-
-  currentPlayerMode =
-    mode;
-
-
-  const container =
-    document.getElementById(
-      "viewerContainer"
+  if (!RTCPeerConnectionClass) {
+    console.error(
+      "WebRTC não está disponível neste navegador."
     );
 
-
-  const wideButton =
-    document.getElementById(
-      "wideModeButton"
-    );
-
-
-  const normalButton =
-    document.getElementById(
-      "normalModeButton"
-    );
-
-
-  if (!container) {
-    return;
-  }
-
-
-  container.classList.remove(
-    "wide-mode",
-    "normal-mode"
-  );
-
-
-  container.classList.add(
-    `${mode}-mode`
-  );
-
-
-  if (wideButton) {
-
-    wideButton.classList.toggle(
-      "active",
-      mode === "wide"
-    );
-
-  }
-
-
-  if (normalButton) {
-
-    normalButton.classList.toggle(
-      "active",
-      mode === "normal"
-    );
-
-  }
-
-
-  console.log(
-    "HUNT: modo do player:",
-    mode
-  );
-
-}
-
-
-/* ========================================
-   STATUS VIEWER
-======================================== */
-
-function updateViewerStatus() {
-
-  const status =
-    document.getElementById(
-      "viewerStatus"
-    );
-
-
-  if (!status) {
-    return;
-  }
-
-
-  if (socket.connected) {
-
-    status.textContent =
-      "● CONECTADO";
-
-  }
-
-  else {
-
-    status.textContent =
-      "● CONECTANDO...";
-
-  }
-
-}
-
-
-/* ========================================
-   ATUALIZAR VIEWER
-======================================== */
-
-function refreshViewer() {
-
-  console.log(
-    "HUNT: atualizando transmissão"
-  );
-
-
-  closeViewer();
-
-
-  const message =
-    document.getElementById(
-      "viewerMessage"
-    );
-
-
-  if (message) {
-
-    message.textContent =
-      "PROCURANDO TRANSMISSÃO...";
-
-
-    message.style.display =
-      "flex";
-
-  }
-
-
-  const status =
-    document.getElementById(
-      "viewerStatus"
-    );
-
-
-  if (status) {
-
-    status.textContent =
-      "● PROCURANDO...";
-
-  }
-
-
-  if (socket.connected) {
-
-    socket.emit(
-      "join-room",
-      ROOM_ID
-    );
-
-  }
-
-}
-
-
-/* ========================================
-   FECHAR VIEWER
-======================================== */
-
-function closeViewer() {
-
-  console.log(
-    "HUNT: fechando viewer"
-  );
-
-
-  if (peer) {
-
-    try {
-
-      peer.ontrack =
-        null;
-
-      peer.onicecandidate =
-        null;
-
-      peer.onconnectionstatechange =
-        null;
-
-      peer.oniceconnectionstatechange =
-        null;
-
-      peer.close();
-
-    }
-
-    catch (error) {
-
-      console.warn(
-        "HUNT: erro fechando Peer:",
-        error
-      );
-
-    }
-
-  }
-
-
-  peer =
-    null;
-
-  broadcasterId =
-    null;
-
-  pendingCandidates =
-    [];
-
-
-  const video =
-    document.getElementById(
-      "remoteVideo"
-    );
-
-
-  if (video) {
-
-    try {
-
-      video.pause();
-
-    }
-
-    catch {
-
-      // ignorar
-
-    }
-
-
-    video.srcObject =
-      null;
-
-  }
-
-}
-
-
-/* ========================================
-   SOCKET CONNECT
-======================================== */
-
-socket.on(
-  "connect",
-  () => {
-
-    console.log(
-      "HUNT SERVER conectado:",
-      socket.id
-    );
-
-
-    updateHomeStatus();
-
-    updateViewerStatus();
-
-
-    if (
+    const message =
       document.getElementById(
-        "remoteVideo"
-      )
-    ) {
-
-      socket.emit(
-        "join-room",
-        ROOM_ID
+        "viewerMessage"
       );
 
+    if (message) {
+      message.style.display =
+        "flex";
 
-      console.log(
-        "HUNT: viewer entrou na sala após conexão"
-      );
-
+      message.textContent =
+        "⚠️ WEBRTC NÃO DISPONÍVEL";
     }
 
-  }
-);
-
-
-/* ========================================
-   SOCKET DISCONNECT
-======================================== */
-
-socket.on(
-  "disconnect",
-  reason => {
-
-    console.warn(
-      "HUNT: servidor desconectado:",
-      reason
-    );
-
-
-    updateHomeStatus();
-
-    updateViewerStatus();
-
-  }
-);
-
-
-/* ========================================
-   SOCKET ERROR
-======================================== */
-
-socket.on(
-  "connect_error",
-  error => {
-
-    console.error(
-      "HUNT: erro de conexão:",
-      error
-    );
-
-
-    updateHomeStatus();
-
-    updateViewerStatus();
-
-  }
-);
-
-
-/* ========================================
-   TRANSMISSÃO DISPONÍVEL
-======================================== */
-
-socket.on(
-  "stream-started",
-  data => {
-
-    console.log(
-      "HUNT: transmissão disponível:",
-      data
-    );
-
-
-    if (
-      !data ||
-      !data.broadcasterId
-    ) {
-
-      console.warn(
-        "HUNT: broadcasterId não recebido"
-      );
-
-
-      return;
-
-    }
-
-
-    broadcasterId =
-      data.broadcasterId;
-
-
-    if (
-      document.getElementById(
-        "remoteVideo"
-      )
-    ) {
-
-      createViewerPeer();
-
-    }
-
-  }
-);
-
-
-/* ========================================
-   CRIAR PEER
-======================================== */
-
-function createViewerPeer() {
-
-  console.log(
-    "HUNT: criando RTCPeerConnection..."
-  );
-
-
-  if (peer) {
-
-    try {
-
-      peer.close();
-
-    }
-
-    catch {
-
-      // ignorar
-
-    }
-
+    return null;
   }
 
+  const connection =
+    new RTCPeerConnectionClass({
+      iceServers: [
+        {
+          urls:
+            "stun:stun.l.google.com:19302"
+        },
+        {
+          urls:
+            "stun:stun1.l.google.com:19302"
+        }
+      ]
+    });
 
-  peer =
-    null;
+  connection.onicecandidate =
+    (event) => {
+      if (
+        event.candidate &&
+        targetId
+      ) {
+        socket.emit(
+          "webrtc-ice-candidate",
+          {
+            target: targetId,
+            candidate:
+              event.candidate
+          }
+        );
+      }
+    };
 
-  pendingCandidates =
-    [];
-
-
-  const RTC =
-    window.RTCPeerConnection;
-
-
-  const RTCCtor =
-    typeof RTC === "function"
-      ? RTC
-      : window.webkitRTCPeerConnection;
-
-
-  if (
-    typeof RTCCtor !==
-    "function"
-  ) {
-
-    console.error(
-      "HUNT: RTCPeerConnection não disponível."
-    );
-
-
-    showViewerMessage(
-      "WEBRTC NÃO ESTÁ DISPONÍVEL"
-    );
-
-
-    return;
-
-  }
-
-
-  try {
-
-    peer =
-      new RTCCtor(
-        rtcConfig
-      );
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "HUNT: erro criando Peer:",
-      error
-    );
-
-
-    peer =
-      null;
-
-
-    showViewerMessage(
-      "ERRO AO INICIAR WEBRTC"
-    );
-
-
-    return;
-
-  }
-
-
-  /* ======================================
-     TRACK
-  ====================================== */
-
-  peer.ontrack =
-    event => {
-
-      console.log(
-        "HUNT: VÍDEO RECEBIDO"
-      );
-
-
+  connection.ontrack =
+    async (event) => {
       const video =
         document.getElementById(
           "remoteVideo"
         );
 
+      const message =
+        document.getElementById(
+          "viewerMessage"
+        );
+
+      const status =
+        document.getElementById(
+          "viewerStatus"
+        );
 
       if (!video) {
         return;
       }
 
-
       if (
         event.streams &&
-        event.streams.length > 0
+        event.streams[0]
       ) {
-
         video.srcObject =
           event.streams[0];
+      } else {
+        const stream =
+          new MediaStream();
 
-      }
-
-      else {
-
-        if (!video.srcObject) {
-
-          try {
-
-            const stream =
-              new MediaStream();
-
-            stream.addTrack(
-              event.track
-            );
-
-            video.srcObject =
-              stream;
-
-          }
-
-          catch (error) {
-
-            console.error(
-              "HUNT: erro MediaStream:",
-              error
-            );
-
-          }
-
-        }
-
-      }
-
-
-      video.volume =
-        1;
-
-      video.muted =
-        false;
-
-
-      video.play()
-        .then(
-          () => {
-
-            console.log(
-              "HUNT: vídeo reproduzindo"
-            );
-
-          }
-        )
-        .catch(
-          error => {
-
-            console.warn(
-              "HUNT: autoplay bloqueado:",
-              error
-            );
-
-          }
+        stream.addTrack(
+          event.track
         );
 
+        video.srcObject =
+          stream;
+      }
 
-      showViewerMessage(
-        ""
-      );
+      video.muted = false;
+      video.volume = 1;
 
-
-      const status =
-        document.getElementById(
-          "viewerStatus"
+      try {
+        await video.play();
+      } catch (error) {
+        console.warn(
+          "O navegador bloqueou autoplay:",
+          error
         );
+      }
 
+      if (message) {
+        message.style.display =
+          "none";
+      }
 
       if (status) {
-
         status.textContent =
-          "🔴 TRANSMISSÃO AO VIVO";
-
+          "🟢 TRANSMISSÃO AO VIVO";
       }
-
     };
 
-
-  /* ======================================
-     ICE
-  ====================================== */
-
-  peer.onicecandidate =
-    event => {
-
-      if (
-        !event.candidate ||
-        !broadcasterId
-      ) {
-
-        return;
-
-      }
-
-
-      socket.emit(
-        "webrtc-ice-candidate",
-        {
-
-          target:
-            broadcasterId,
-
-          candidate:
-            event.candidate
-
-        }
-      );
-
-    };
-
-
-  /* ======================================
-     CONNECTION STATE
-  ====================================== */
-
-  peer.onconnectionstatechange =
+  connection.onconnectionstatechange =
     () => {
-
-      if (!peer) {
-        return;
-      }
-
-
       console.log(
-        "HUNT: estado WebRTC:",
-        peer.connectionState
+        "Estado WebRTC:",
+        connection.connectionState
       );
-
 
       const status =
         document.getElementById(
           "viewerStatus"
         );
 
-
-      if (
-        peer.connectionState ===
-        "connected"
-      ) {
-
-        if (status) {
-
-          status.textContent =
-            "🔴 TRANSMISSÃO AO VIVO";
-
-        }
-
-      }
-
-
-      if (
-        peer.connectionState ===
-        "connecting"
-      ) {
-
-        if (status) {
-
-          status.textContent =
-            "● CONECTANDO À TRANSMISSÃO";
-
-        }
-
-      }
-
-
-      if (
-        peer.connectionState ===
-        "failed"
-      ) {
-
-        showViewerMessage(
-          "FALHA NA CONEXÃO COM A TRANSMISSÃO"
-        );
-
-      }
-
-
-      if (
-        peer.connectionState ===
-        "disconnected"
-      ) {
-
-        showViewerMessage(
-          "TRANSMISSÃO DESCONECTADA"
-        );
-
-      }
-
-    };
-
-
-  /* ======================================
-     ICE STATE
-  ====================================== */
-
-  peer.oniceconnectionstatechange =
-    () => {
-
-      if (!peer) {
+      if (!status) {
         return;
       }
 
-
-      console.log(
-        "HUNT: ICE:",
-        peer.iceConnectionState
-      );
-
-    };
-
-}
-
-
-/* ========================================
-   OFFER
-======================================== */
-
-socket.on(
-  "webrtc-offer",
-  async data => {
-
-    console.log(
-      "HUNT: OFFER recebida:",
-      data
-    );
-
-
-    if (
-      !data ||
-      !data.sender ||
-      !data.offer
-    ) {
-
-      return;
-
-    }
-
-
-    const video =
-      document.getElementById(
-        "remoteVideo"
-      );
-
-
-    if (!video) {
-      return;
-    }
-
-
-    broadcasterId =
-      data.sender;
-
-
-    if (!peer) {
-
-      createViewerPeer();
-
-    }
-
-
-    if (!peer) {
-      return;
-    }
-
-
-    try {
-
-      await peer.setRemoteDescription(
-        data.offer
-      );
-
-
       if (
-        pendingCandidates.length >
-        0
+        connection.connectionState ===
+        "connected"
       ) {
-
-        for (
-          const candidate
-          of pendingCandidates
-        ) {
-
-          try {
-
-            await peer.addIceCandidate(
-              candidate
-            );
-
-          }
-
-          catch (error) {
-
-            console.warn(
-              "HUNT: erro ICE pendente:",
-              error
-            );
-
-          }
-
-        }
-
-
-        pendingCandidates =
-          [];
-
+        status.textContent =
+          "🟢 TRANSMISSÃO AO VIVO";
       }
 
+      if (
+        connection.connectionState ===
+        "connecting"
+      ) {
+        status.textContent =
+          "🟡 CONECTANDO À TRANSMISSÃO...";
+      }
 
-      const answer =
-        await peer.createAnswer();
+      if (
+        connection.connectionState ===
+        "disconnected"
+      ) {
+        status.textContent =
+          "🟠 TRANSMISSÃO DESCONectADA";
+      }
 
+      if (
+        connection.connectionState ===
+          "failed" ||
+        connection.connectionState ===
+          "closed"
+      ) {
+        status.textContent =
+          "🔴 TRANSMISSÃO ENCERRADA";
+      }
+    };
 
-      await peer.setLocalDescription(
-        answer
-      );
+  return connection;
+}
 
-
-      socket.emit(
-        "webrtc-answer",
-        {
-
-          target:
-            data.sender,
-
-          answer:
-            peer.localDescription
-
-        }
-      );
-
-
-      console.log(
-        "HUNT: ANSWER enviada"
-      );
-
-    }
-
-    catch (error) {
-
-      console.error(
-        "HUNT: erro processando OFFER:",
-        error
-      );
-
-
-      showViewerMessage(
-        "ERRO AO CONECTAR À TRANSMISSÃO"
-      );
-
-    }
-
-  }
-);
-
-
-/* ========================================
-   ICE RECEBIDO
-======================================== */
+/* =========================================================
+   STREAM STARTED
+========================================================= */
 
 socket.on(
-  "webrtc-ice-candidate",
-  async data => {
-
-    if (
-      !data ||
-      !data.sender ||
-      !data.candidate
-    ) {
-
-      return;
-
-    }
-
-
-    if (!peer) {
-
-      pendingCandidates.push(
-        data.candidate
-      );
-
-      return;
-
-    }
-
-
-    if (
-      !peer.remoteDescription
-    ) {
-
-      pendingCandidates.push(
-        data.candidate
-      );
-
-      return;
-
-    }
-
-
-    try {
-
-      await peer.addIceCandidate(
-        data.candidate
-      );
-
-    }
-
-    catch (error) {
-
-      console.error(
-        "HUNT: erro aplicando ICE:",
-        error
-      );
-
-    }
-
-  }
-);
-
-
-/* ========================================
-   TRANSMISSÃO PAROU
-======================================== */
-
-socket.on(
-  "stream-stopped",
-  data => {
-
+  "stream-started",
+  (data) => {
     console.log(
-      "HUNT: transmissão encerrada:",
+      "Transmissão iniciada:",
       data
     );
 
-
-    closeViewer();
-
-
-    showViewerMessage(
-      "NENHUMA TRANSMISSÃO ATIVA"
-    );
-
+    const message =
+      document.getElementById(
+        "viewerMessage"
+      );
 
     const status =
       document.getElementById(
         "viewerStatus"
       );
 
+    if (message) {
+      message.style.display =
+        "flex";
 
-    if (status) {
-
-      status.textContent =
-        "● TRANSMISSÃO ENCERRADA";
-
+      message.textContent =
+        "🟡 CONECTANDO À TRANSMISSÃO...";
     }
 
+    if (status) {
+      status.textContent =
+        "🟡 TRANSMISSÃO ENCONTRADA";
+    }
+
+    if (
+      data &&
+      data.broadcasterId
+    ) {
+      broadcasterId =
+        data.broadcasterId;
+    }
+
+    if (broadcasterId) {
+      socket.emit(
+        "viewer-joined",
+        {
+          roomId: ROOM_ID,
+          broadcasterId
+        }
+      );
+    }
   }
 );
 
+/* =========================================================
+   VIEWER JOINED
+========================================================= */
 
-/* ========================================
-   MENSAGEM VIEWER
-======================================== */
+socket.on(
+  "viewer-joined",
+  async (data) => {
+    console.log(
+      "Viewer entrou:",
+      data
+    );
+  }
+);
 
-function showViewerMessage(
-  message
-) {
+/* =========================================================
+   WEBRTC OFFER
+========================================================= */
 
-  const element =
-    document.getElementById(
-      "viewerMessage"
+socket.on(
+  "webrtc-offer",
+  async (data) => {
+    console.log(
+      "Oferta WebRTC recebida:",
+      data
     );
 
+    if (!data) {
+      return;
+    }
 
-  if (!element) {
+    const senderId =
+      data.sender ||
+      data.from ||
+      data.broadcasterId;
+
+    const offer =
+      data.offer ||
+      data.description;
+
+    if (!offer) {
+      console.error(
+        "Oferta WebRTC inválida."
+      );
+
+      return;
+    }
+
+    broadcasterId =
+      senderId ||
+      broadcasterId;
+
+    if (peer) {
+      try {
+        peer.close();
+      } catch {}
+    }
+
+    peer =
+      createViewerPeer(
+        broadcasterId
+      );
+
+    if (!peer) {
+      return;
+    }
+
+    try {
+      await peer.setRemoteDescription(
+        new RTCSessionDescription(
+          offer
+        )
+      );
+
+      for (
+        const candidate of
+        pendingCandidates
+      ) {
+        try {
+          await peer.addIceCandidate(
+            new RTCIceCandidate(
+              candidate
+            )
+          );
+        } catch (error) {
+          console.warn(
+            "Erro ao adicionar ICE pendente:",
+            error
+          );
+        }
+      }
+
+      pendingCandidates = [];
+
+      const answer =
+        await peer.createAnswer();
+
+      await peer.setLocalDescription(
+        answer
+      );
+
+      socket.emit(
+        "webrtc-answer",
+        {
+          target:
+            broadcasterId,
+          answer:
+            peer.localDescription
+        }
+      );
+
+      console.log(
+        "Resposta WebRTC enviada."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao processar oferta WebRTC:",
+        error
+      );
+    }
+  }
+);
+
+/* =========================================================
+   WEBRTC ICE
+========================================================= */
+
+socket.on(
+  "webrtc-ice-candidate",
+  async (data) => {
+    if (!data) {
+      return;
+    }
+
+    const candidate =
+      data.candidate;
+
+    if (!candidate) {
+      return;
+    }
+
+    if (!peer) {
+      pendingCandidates.push(
+        candidate
+      );
+
+      return;
+    }
+
+    try {
+      await peer.addIceCandidate(
+        new RTCIceCandidate(
+          candidate
+        )
+      );
+    } catch (error) {
+      console.warn(
+        "Erro ao adicionar ICE:",
+        error
+      );
+    }
+  }
+);
+
+/* =========================================================
+   STREAM STOPPED
+========================================================= */
+
+socket.on(
+  "stream-stopped",
+  () => {
+    console.log(
+      "Transmissão encerrada."
+    );
+
+    if (peer) {
+      try {
+        peer.close();
+      } catch {}
+    }
+
+    peer = null;
+    broadcasterId = null;
+    pendingCandidates = [];
+
+    const video =
+      document.getElementById(
+        "remoteVideo"
+      );
+
+    const message =
+      document.getElementById(
+        "viewerMessage"
+      );
+
+    const status =
+      document.getElementById(
+        "viewerStatus"
+      );
+
+    if (video) {
+      video.srcObject = null;
+    }
+
+    if (message) {
+      message.style.display =
+        "flex";
+
+      message.textContent =
+        "📺 NENHUMA TRANSMISSÃO ATIVA";
+    }
+
+    if (status) {
+      status.textContent =
+        "⚪ AGUARDANDO TRANSMISSÃO";
+    }
+  }
+);
+
+/* =========================================================
+   FULLSCREEN
+========================================================= */
+
+async function toggleFullscreen() {
+  const viewerScreen =
+    document.querySelector(
+      ".viewer-screen"
+    );
+
+  if (!viewerScreen) {
     return;
   }
 
+  const isNativeFullscreen =
+    document.fullscreenElement ||
+    document.webkitFullscreenElement;
 
-  element.textContent =
-    message;
+  if (isNativeFullscreen) {
+    try {
+      if (
+        document.exitFullscreen
+      ) {
+        await document.exitFullscreen();
+      } else if (
+        document.webkitExitFullscreen
+      ) {
+        await document.webkitExitFullscreen();
+      }
+    } catch (error) {
+      console.warn(
+        "Erro ao sair do fullscreen:",
+        error
+      );
+    }
 
+    huntFullscreen = false;
 
-  element.style.display =
-    message
-      ? "flex"
-      : "none";
+    document.body.classList.remove(
+      "hunt-fullscreen-active"
+    );
 
+    updateFullscreenButtons();
+
+    return;
+  }
+
+  try {
+    if (
+      viewerScreen.requestFullscreen
+    ) {
+      await viewerScreen.requestFullscreen();
+
+      huntFullscreen = true;
+
+      document.body.classList.add(
+        "hunt-fullscreen-active"
+      );
+    } else if (
+      viewerScreen.webkitRequestFullscreen
+    ) {
+      viewerScreen.webkitRequestFullscreen();
+
+      huntFullscreen = true;
+
+      document.body.classList.add(
+        "hunt-fullscreen-active"
+      );
+    } else {
+      huntFullscreen =
+        !huntFullscreen;
+
+      document.body.classList.toggle(
+        "hunt-fullscreen-active",
+        huntFullscreen
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "Fullscreen nativo indisponível:",
+      error
+    );
+
+    huntFullscreen =
+      !huntFullscreen;
+
+    document.body.classList.toggle(
+      "hunt-fullscreen-active",
+      huntFullscreen
+    );
+  }
+
+  updateFullscreenButtons();
 }
 
+/* =========================================================
+   FULLSCREEN CHANGE
+========================================================= */
 
-/* ========================================
+document.addEventListener(
+  "fullscreenchange",
+  () => {
+    huntFullscreen =
+      !!document.fullscreenElement;
+
+    document.body.classList.toggle(
+      "hunt-fullscreen-active",
+      huntFullscreen
+    );
+
+    updateFullscreenButtons();
+  }
+);
+
+document.addEventListener(
+  "webkitfullscreenchange",
+  () => {
+    huntFullscreen =
+      !!document.webkitFullscreenElement;
+
+    document.body.classList.toggle(
+      "hunt-fullscreen-active",
+      huntFullscreen
+    );
+
+    updateFullscreenButtons();
+  }
+);
+
+/* =========================================================
+   FULLSCREEN BUTTON
+========================================================= */
+
+function updateFullscreenButtons() {
+  const button =
+    document.getElementById(
+      "fullscreenButton"
+    );
+
+  if (!button) {
+    return;
+  }
+
+  const nativeFullscreen =
+    document.fullscreenElement ||
+    document.webkitFullscreenElement;
+
+  if (
+    nativeFullscreen ||
+    huntFullscreen
+  ) {
+    button.textContent =
+      "⛶ SAIR DA TELA CHEIA";
+  } else {
+    button.textContent =
+      "⛶ TELA CHEIA";
+  }
+}
+
+/* =========================================================
    INICIALIZAÇÃO
-======================================== */
+========================================================= */
 
 initializeDiscordSDK();
 
-
 showHome();
-
-
-console.log(
-  "HUNT: aplicação iniciada"
-);
