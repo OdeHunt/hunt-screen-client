@@ -62,6 +62,7 @@ async function initializeDiscordSDK() {
       );
 
       return discordSdk;
+
     } catch (error) {
       console.error(
         "Erro ao inicializar Discord SDK:",
@@ -248,9 +249,42 @@ async function openProVersion() {
   const url =
     PRO_VERSION_URL;
 
-  /* FORA DO DISCORD */
+  console.log(
+    "================================="
+  );
+
+  console.log(
+    "🚀 BOTÃO VERSÃO PRO CLICADO"
+  );
+
+  console.log(
+    "URL:",
+    url
+  );
+
+  console.log(
+    "Discord Activity:",
+    isDiscordActivity
+  );
+
+  console.log(
+    "SDK atual:",
+    discordSdk
+  );
+
+  console.log(
+    "================================="
+  );
+
+  /* =====================================================
+     FORA DO DISCORD
+  ===================================================== */
 
   if (!isDiscordActivity) {
+    console.log(
+      "🌐 Abrindo fora do Discord..."
+    );
+
     window.open(
       url,
       "_blank",
@@ -260,40 +294,84 @@ async function openProVersion() {
     return;
   }
 
-  /* DENTRO DO DISCORD */
+  /* =====================================================
+     DENTRO DO DISCORD
+  ===================================================== */
 
   try {
+    console.log(
+      "🔵 Inicializando Discord SDK..."
+    );
+
     const sdk =
       await initializeDiscordSDK();
 
-    if (
-      !sdk ||
-      !sdk.commands ||
-      !sdk.commands.openExternalLink
-    ) {
+    if (!sdk) {
       console.error(
-        "Discord SDK não está disponível."
+        "❌ Discord SDK não foi inicializado."
       );
 
       alert(
-        "Não foi possível abrir a Versão Pro."
+        "Não foi possível conectar ao Discord."
       );
 
       return;
     }
 
+    console.log(
+      "✅ Discord SDK inicializado:",
+      sdk
+    );
+
+    if (!sdk.commands) {
+      console.error(
+        "❌ sdk.commands não existe."
+      );
+
+      alert(
+        "O Discord SDK não disponibilizou os comandos."
+      );
+
+      return;
+    }
+
+    if (
+      typeof sdk.commands.openExternalLink !==
+      "function"
+    ) {
+      console.error(
+        "❌ openExternalLink não está disponível."
+      );
+
+      console.log(
+        "Comandos disponíveis:",
+        Object.keys(sdk.commands)
+      );
+
+      alert(
+        "O Discord não disponibilizou a abertura de links externos."
+      );
+
+      return;
+    }
+
+    console.log(
+      "🟢 Abrindo link externo..."
+    );
+
     const result =
       await sdk.commands.openExternalLink({
-        url
+        url: url
       });
 
     console.log(
-      "Resultado openExternalLink:",
+      "✅ openExternalLink executado:",
       result
     );
+
   } catch (error) {
     console.error(
-      "Erro ao abrir Versão Pro:",
+      "❌ ERRO AO ABRIR VERSÃO PRO:",
       error
     );
 
@@ -970,6 +1048,7 @@ socket.on(
       console.log(
         "Resposta WebRTC enviada."
       );
+
     } catch (error) {
       console.error(
         "Erro ao processar oferta WebRTC:",
@@ -1011,6 +1090,7 @@ socket.on(
           candidate
         )
       );
+
     } catch (error) {
       console.warn(
         "Erro ao adicionar ICE:",
@@ -1100,11 +1180,13 @@ async function toggleFullscreen() {
         document.exitFullscreen
       ) {
         await document.exitFullscreen();
+
       } else if (
         document.webkitExitFullscreen
       ) {
         await document.webkitExitFullscreen();
       }
+
     } catch (error) {
       console.warn(
         "Erro ao sair do fullscreen:",
@@ -1134,6 +1216,7 @@ async function toggleFullscreen() {
       document.body.classList.add(
         "hunt-fullscreen-active"
       );
+
     } else if (
       viewerScreen.webkitRequestFullscreen
     ) {
@@ -1144,6 +1227,7 @@ async function toggleFullscreen() {
       document.body.classList.add(
         "hunt-fullscreen-active"
       );
+
     } else {
       huntFullscreen =
         !huntFullscreen;
@@ -1153,6 +1237,7 @@ async function toggleFullscreen() {
         huntFullscreen
       );
     }
+
   } catch (error) {
     console.warn(
       "Fullscreen nativo indisponível:",
