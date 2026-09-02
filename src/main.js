@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 import {
-  patchUrlMappings,
-  openExternalLink
+  DiscordSDK,
+  patchUrlMappings
 } from "@discord/embedded-app-sdk";
 import "./style.css";
 
@@ -18,6 +18,19 @@ const ROOM_ID =
 const PRO_VERSION_URL =
   "https://hunt-screen-client.onrender.com/";
 
+/*
+  Client ID da aplicação Discord.
+
+  No Vite, coloque no .env:
+
+  VITE_DISCORD_CLIENT_ID=SEU_CLIENT_ID
+
+  No Render, coloque a mesma variável
+  nas Environment Variables.
+*/
+const DISCORD_CLIENT_ID =
+  import.meta.env.VITE_DISCORD_CLIENT_ID || "";
+
 
 /* ========================================
    DISCORD ACTIVITY
@@ -32,6 +45,91 @@ console.log(
   "HUNT: Discord Activity:",
   isDiscordActivity
 );
+
+
+/* ========================================
+   DISCORD SDK
+======================================== */
+
+let discordSdk =
+  null;
+
+let discordSdkReady =
+  false;
+
+
+/*
+  O SDK só é inicializado dentro
+  da Discord Activity.
+*/
+
+async function initializeDiscordSDK() {
+
+  if (!isDiscordActivity) {
+
+    console.log(
+      "HUNT: navegador normal - Discord SDK não necessário."
+    );
+
+    return;
+
+  }
+
+
+  if (!DISCORD_CLIENT_ID) {
+
+    console.warn(
+      "HUNT: VITE_DISCORD_CLIENT_ID não configurado."
+    );
+
+    return;
+
+  }
+
+
+  try {
+
+    console.log(
+      "HUNT: inicializando Discord SDK..."
+    );
+
+
+    discordSdk =
+      new DiscordSDK(
+        DISCORD_CLIENT_ID
+      );
+
+
+    await discordSdk.ready();
+
+
+    discordSdkReady =
+      true;
+
+
+    console.log(
+      "HUNT: Discord SDK pronto."
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "HUNT: erro inicializando Discord SDK:",
+      error
+    );
+
+
+    discordSdk =
+      null;
+
+    discordSdkReady =
+      false;
+
+  }
+
+}
 
 
 /* ========================================
@@ -54,8 +152,9 @@ if (isDiscordActivity) {
 
     ]);
 
+
     console.log(
-      "HUNT: URL Mapping configurado"
+      "HUNT: URL Mapping configurado."
     );
 
   }
@@ -202,14 +301,18 @@ function showHome() {
     return;
   }
 
+
   closeViewer();
+
 
   huntFullscreen =
     false;
 
+
   document.body.classList.remove(
     "hunt-fullscreen-active"
   );
+
 
   app.innerHTML = `
 
@@ -233,6 +336,7 @@ function showHome() {
 
         </button>
 
+
         <button
           id="broadcastButton"
           class="hunt-button">
@@ -242,6 +346,7 @@ function showHome() {
         </button>
 
       </div>
+
 
       <div
         id="homeStatus"
@@ -337,6 +442,7 @@ function openBroadcaster() {
     "HUNT: abrindo broadcaster"
   );
 
+
   window.location.href =
     "/broadcaster.html";
 
@@ -347,54 +453,168 @@ function openBroadcaster() {
    ABRIR VERSÃO PRO
 ======================================== */
 
-function openProVersion() {
+async function openProVersion() {
 
   console.log(
-    "HUNT: abrindo Versão Pro"
+    "HUNT: abrindo Versão Pro..."
   );
 
 
+  /*
+    FORA DO DISCORD
+
+    Continua usando nova aba normalmente.
+  */
+
+  if (!isDiscordActivity) {
+
+    try {
+
+      const newWindow =
+        window.open(
+          PRO_VERSION_URL,
+          "_blank",
+          "noopener,noreferrer"
+        );
+
+
+      /*
+        Alguns navegadores podem bloquear
+        window.open.
+      */
+
+      if (!newWindow) {
+
+        window.location.href =
+          PRO_VERSION_URL;
+
+      }
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "HUNT: erro abrindo Versão Pro:",
+        error
+      );
+
+
+      window.location.href =
+        PRO_VERSION_URL;
+
+    }
+
+
+    return;
+
+  }
+
+
+  /*
+    DENTRO DO DISCORD
+
+    O Activity é sandboxed.
+
+    Por isso usamos:
+
+    discordSdk.commands.openExternalLink()
+  */
+
   try {
 
-    if (isDiscordActivity) {
+    /*
+      Se o SDK ainda não estiver pronto,
+      tentamos inicializá-lo.
+    */
 
-      openExternalLink({
-        url:
-          PRO_VERSION_URL
-      });
+    if (
+      !discordSdkReady ||
+      !discordSdk
+    ) {
 
-      console.log(
-        "HUNT: link externo enviado ao Discord"
+      await initializeDiscordSDK();
+
+    }
+
+
+    if (
+      !discordSdk ||
+      !discordSdkReady
+    ) {
+
+      console.error(
+        "HUNT: Discord SDK não está disponível."
       );
+
+
+      /*
+        Não usamos window.open() como
+        método principal dentro da Activity,
+        porque o Discord bloqueia links externos
+        sem o comando RPC apropriado.
+      */
+
+      alert(
+        "Não foi possível abrir a Versão Pro pelo Discord. O Discord SDK ainda não está pronto."
+      );
+
 
       return;
 
     }
 
 
-    window.open(
-      PRO_VERSION_URL,
-      "_blank",
-      "noopener,noreferrer"
+    console.log(
+      "HUNT: enviando OPEN_EXTERNAL_LINK para Discord..."
     );
+
+
+    const result =
+      await discordSdk.commands.openExternalLink({
+
+        url:
+          PRO_VERSION_URL
+
+      });
+
+
+    console.log(
+      "HUNT: resultado openExternalLink:",
+      result
+    );
+
+
+    if (
+      result &&
+      result.opened === false
+    ) {
+
+      console.warn(
+        "HUNT: Discord não abriu o link."
+      );
+
+    }
 
   }
 
   catch (error) {
 
     console.error(
-      "HUNT: erro ao abrir Versão Pro:",
+      "HUNT: erro ao abrir Versão Pro no Discord:",
       error
     );
 
 
     /*
-      Último recurso caso o método
-      anterior seja bloqueado.
-    */
+      Não fazemos window.location.href
+      automaticamente dentro do Discord,
+      porque isso pode tentar tirar a Activity
+      do ambiente sandbox.
 
-    window.location.href =
-      PRO_VERSION_URL;
+      O erro fica registrado no console
+      para podermos identificar o problema.
+    */
 
   }
 
@@ -419,8 +639,10 @@ function startViewer() {
 
   closeViewer();
 
+
   huntFullscreen =
     false;
+
 
   document.body.classList.remove(
     "hunt-fullscreen-active"
@@ -747,6 +969,7 @@ function startViewer() {
       ROOM_ID
     );
 
+
     console.log(
       "HUNT: viewer entrou na sala"
     );
@@ -796,6 +1019,7 @@ async function enterHuntFullscreen() {
       "viewerScreen"
     );
 
+
   const container =
     document.getElementById(
       "viewerContainer"
@@ -806,11 +1030,6 @@ async function enterHuntFullscreen() {
     return;
   }
 
-
-  /*
-    Primeiro tentamos o fullscreen
-    real do navegador.
-  */
 
   try {
 
@@ -825,6 +1044,7 @@ async function enterHuntFullscreen() {
       ) {
 
         await viewerScreen.requestFullscreen();
+
 
         console.log(
           "HUNT: Fullscreen API ativada"
@@ -845,12 +1065,6 @@ async function enterHuntFullscreen() {
 
   }
 
-
-  /*
-    Ativa também o modo visual.
-    Isso funciona como fallback dentro
-    da Discord Activity.
-  */
 
   huntFullscreen =
     true;
@@ -892,15 +1106,12 @@ async function exitHuntFullscreen() {
       "viewerScreen"
     );
 
+
   const container =
     document.getElementById(
       "viewerContainer"
     );
 
-
-  /*
-    Sai do fullscreen REAL.
-  */
 
   try {
 
@@ -930,10 +1141,6 @@ async function exitHuntFullscreen() {
 
   }
 
-
-  /*
-    Remove o fallback visual.
-  */
 
   huntFullscreen =
     false;
@@ -985,16 +1192,12 @@ document.addEventListener(
         "viewerScreen"
       );
 
+
     const container =
       document.getElementById(
         "viewerContainer"
       );
 
-
-    /*
-      O usuário apertou ESC ou saiu pelo
-      controle do navegador.
-    */
 
     if (
       !document.fullscreenElement
@@ -1005,9 +1208,11 @@ document.addEventListener(
         huntFullscreen =
           false;
 
+
         document.body.classList.remove(
           "hunt-fullscreen-active"
         );
+
 
         if (viewerScreen) {
 
@@ -1017,6 +1222,7 @@ document.addEventListener(
 
         }
 
+
         if (container) {
 
           container.classList.remove(
@@ -1024,6 +1230,7 @@ document.addEventListener(
           );
 
         }
+
 
         updateFullscreenButtons();
 
@@ -1033,16 +1240,14 @@ document.addEventListener(
 
     else {
 
-      /*
-        Fullscreen real confirmado.
-      */
-
       huntFullscreen =
         true;
+
 
       document.body.classList.add(
         "hunt-fullscreen-active"
       );
+
 
       if (viewerScreen) {
 
@@ -1052,6 +1257,7 @@ document.addEventListener(
 
       }
 
+
       if (container) {
 
         container.classList.add(
@@ -1059,6 +1265,7 @@ document.addEventListener(
         );
 
       }
+
 
       updateFullscreenButtons();
 
@@ -1257,6 +1464,7 @@ function refreshViewer() {
 
     message.textContent =
       "PROCURANDO TRANSMISSÃO...";
+
 
     message.style.display =
       "flex";
@@ -1479,6 +1687,7 @@ socket.on(
       console.warn(
         "HUNT: broadcasterId não recebido"
       );
+
 
       return;
 
@@ -2128,6 +2337,9 @@ function showViewerMessage(
 /* ========================================
    INICIALIZAÇÃO
 ======================================== */
+
+initializeDiscordSDK();
+
 
 showHome();
 
