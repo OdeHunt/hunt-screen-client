@@ -1,226 +1,945 @@
+/* ========================================
+   HUNT SCREEN
+   ESTILO GLOBAL
+======================================== */
+
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html,
-body,
-#app {
-  margin: 0;
+body {
   width: 100%;
-  min-width: 100%;
   min-height: 100%;
-  background: #000;
-}
-
-html {
-  background: #000;
 }
 
 body {
-  min-height: 100vh;
-  min-height: 100dvh;
-  background: #000;
-  color: #fff;
+  background: #050505;
+  color: #ffffff;
   font-family: Arial, Helvetica, sans-serif;
   overflow-x: hidden;
 }
 
 button,
+input,
 select {
-  font-family: inherit;
+  font: inherit;
 }
 
+button {
+  border: none;
+  outline: none;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #ff6a00;
+  outline-offset: 3px;
+}
 
 /* ========================================
-   TELA PRINCIPAL
+   VARIÁVEIS
 ======================================== */
+
+:root {
+  --hunt-orange: #ff6a00;
+  --hunt-orange-dark: #cc5200;
+  --hunt-black: #050505;
+  --hunt-black-2: #0a0a0a;
+  --hunt-black-3: #111111;
+  --hunt-border: #252525;
+  --hunt-border-orange: rgba(255, 106, 0, 0.35);
+  --hunt-text: #ffffff;
+  --hunt-text-muted: #888888;
+  --hunt-danger: #ff3030;
+}
+
+/* ========================================
+   CONTAINER PRINCIPAL
+======================================== */
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+}
 
 .hunt-screen {
   width: 100%;
   min-height: 100vh;
-  min-height: 100dvh;
-  background: #000;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      rgba(255, 106, 0, 0.08),
+      transparent 35%
+    ),
+    #050505;
 }
-
 
 /* ========================================
    HOME
 ======================================== */
 
 .home-screen {
-  justify-content: center;
-  padding: 30px 20px;
-}
+  min-height: 100vh;
 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 40px 20px;
+
+  text-align: center;
+}
 
 /* ========================================
    LOGO
 ======================================== */
 
 .hunt-logo {
-  color: #ff8c00;
+  color: var(--hunt-orange);
 
   font-size: clamp(
-    42px,
-    8vw,
-    70px
+    70px,
+    13vw,
+    150px
   );
 
   font-weight: 900;
-  letter-spacing: 12px;
-  line-height: 1;
+
+  line-height: 0.8;
+
+  letter-spacing: -6px;
+
+  text-shadow:
+    0 0 25px rgba(255, 106, 0, 0.25);
+
+  user-select: none;
 }
 
 .hunt-subtitle {
-  margin-top: 10px;
+  margin-top: 12px;
 
-  color: #555;
+  color: #ffffff;
 
-  font-size: 13px;
-  letter-spacing: 9px;
+  font-size: clamp(
+    18px,
+    3vw,
+    30px
+  );
+
+  font-weight: 700;
+
+  letter-spacing: 12px;
+
+  padding-left: 12px;
+
+  opacity: 0.85;
 }
 
-
 /* ========================================
-   MENU
+   MENU HOME
 ======================================== */
 
 .hunt-menu {
   width: min(
-    500px,
-    90%
+    440px,
+    100%
   );
-
-  margin-top: 45px;
 
   display: flex;
   flex-direction: column;
 
   gap: 14px;
-}
 
+  margin-top: 55px;
+}
 
 /* ========================================
    BOTÕES
 ======================================== */
 
 .hunt-button {
-  border: 0;
-  border-radius: 7px;
+  min-height: 52px;
 
-  background: #ff8c00;
-  color: #000;
+  padding: 13px 24px;
 
-  padding: 14px 22px;
+  border-radius: 8px;
+
+  background: var(--hunt-orange);
+
+  color: #ffffff;
 
   font-size: 14px;
+
   font-weight: 900;
+
+  letter-spacing: 0.7px;
 
   cursor: pointer;
 
   transition:
-    transform .15s ease,
-    filter .15s ease,
-    background .15s ease,
-    box-shadow .15s ease;
+    transform 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .hunt-button:hover {
-  filter: brightness(1.12);
+  background: #ff791d;
 
-  transform:
-    translateY(-1px);
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 25px
+    rgba(255, 106, 0, 0.18);
 }
 
 .hunt-button:active {
-  transform:
-    translateY(0);
+  transform: translateY(0);
+}
+
+.hunt-button:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+
+  transform: none;
+
+  box-shadow: none;
 }
 
 .hunt-button.secondary {
   background: #171717;
-  color: #fff;
 
-  border:
-    1px solid #292929;
+  border: 1px solid #303030;
+
+  color: #ffffff;
+}
+
+.hunt-button.secondary:hover {
+  background: #202020;
+
+  border-color:
+    rgba(255, 106, 0, 0.5);
 }
 
 .small-button {
-  min-width: 130px;
-}
+  min-height: 42px;
 
+  padding:
+    10px 17px;
+
+  font-size: 12px;
+}
 
 /* ========================================
    STATUS
 ======================================== */
 
 .hunt-status {
-  margin-top: 15px;
+  margin-top: 25px;
 
-  color: #666;
+  color: #777777;
 
-  font-size: 10px;
+  font-size: 11px;
+
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+/* ========================================
+   SALAS
+======================================== */
+
+.rooms-screen {
+  min-height: 100vh;
+
+  padding:
+    35px
+    clamp(18px, 5vw, 80px)
+    45px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================================
+   HEADER SALAS
+======================================== */
+
+.rooms-header {
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding-bottom: 24px;
+
+  border-bottom:
+    1px solid #1d1d1d;
+}
+
+.rooms-title {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  user-select: none;
+}
+
+.rooms-title-main {
+  color: var(--hunt-orange);
+
+  font-size: 28px;
+
+  font-weight: 900;
+
+  letter-spacing: -1px;
+}
+
+.rooms-title-divider {
+  color: #444444;
+
+  font-size: 25px;
+
+  font-weight: 300;
+}
+
+.rooms-title-sub {
+  color: #ffffff;
+
+  font-size: 20px;
+
+  font-weight: 800;
+
   letter-spacing: 2px;
+}
+
+/* ========================================
+   FUNÇÃO / ROLE
+======================================== */
+
+.rooms-role {
+  margin-top: 25px;
+
+  color: #888888;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 1px;
 
   text-align: center;
 }
 
+/* ========================================
+   LISTA DE SALAS
+======================================== */
+
+.rooms-list {
+  width: min(
+    900px,
+    100%
+  );
+
+  margin:
+    28px
+    auto
+    0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 10px;
+
+  flex: 1;
+}
+
+/* ========================================
+   CARD DA SALA
+======================================== */
+
+.room-card {
+  width: 100%;
+
+  min-height: 76px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding:
+    14px
+    18px;
+
+  border-radius: 10px;
+
+  background: #0d0d0d;
+
+  border:
+    1px solid #222222;
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  text-align: left;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.room-card:hover {
+  background: #131313;
+
+  border-color:
+    var(--hunt-border-orange);
+
+  transform:
+    translateX(3px);
+}
+
+.room-card:active {
+  transform:
+    translateX(1px);
+}
+
+/* ========================================
+   LADO ESQUERDO DO CARD
+======================================== */
+
+.room-card-left {
+  min-width: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+}
+
+.room-card-icon {
+  width: 40px;
+
+  height: 40px;
+
+  flex: 0 0 40px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 8px;
+
+  background: #181818;
+
+  font-size: 16px;
+}
+
+.room-card-info {
+  min-width: 0;
+}
+
+.room-card-name {
+  overflow: hidden;
+
+  color: #ffffff;
+
+  font-size: 15px;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+.room-card-meta {
+  margin-top: 5px;
+
+  overflow: hidden;
+
+  color: #666666;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+
+  letter-spacing: 0.5px;
+}
+
+.room-card-arrow {
+  color: var(--hunt-orange);
+
+  font-size: 23px;
+
+  font-weight: 300;
+
+  flex: 0 0 auto;
+}
+
+/* ========================================
+   SALAS VAZIAS
+======================================== */
+
+.rooms-empty {
+  width: 100%;
+
+  min-height: 260px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  border:
+    1px dashed #242424;
+
+  border-radius: 12px;
+
+  background: #090909;
+
+  color: #777777;
+
+  text-align: center;
+
+  padding: 30px;
+}
+
+.rooms-empty-icon {
+  font-size: 32px;
+
+  margin-bottom: 5px;
+
+  opacity: 0.7;
+}
+
+.rooms-empty-title {
+  color: #dddddd;
+
+  font-size: 14px;
+
+  font-weight: 900;
+
+  letter-spacing: 1px;
+}
+
+.rooms-empty-text {
+  color: #666666;
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+.rooms-loading {
+  width: 100%;
+
+  min-height: 200px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  color: #666666;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 1px;
+}
+
+/* ========================================
+   BOTÃO +
+======================================== */
+
+.create-room-button {
+  position: fixed;
+
+  right: 35px;
+
+  bottom: 35px;
+
+  width: 58px;
+
+  height: 58px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: var(--hunt-orange);
+
+  color: #ffffff;
+
+  font-size: 34px;
+
+  font-weight: 300;
+
+  line-height: 1;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 30px
+    rgba(0, 0, 0, 0.45);
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.create-room-button:hover {
+  background: #ff791d;
+
+  transform:
+    scale(1.06);
+
+  box-shadow:
+    0 10px 35px
+    rgba(255, 106, 0, 0.25);
+}
+
+.create-room-button:active {
+  transform:
+    scale(0.98);
+}
+
+/* ========================================
+   CRIAR SALA
+======================================== */
+
+.create-room-screen {
+  min-height: 100vh;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 30px 20px;
+}
+
+.create-room-box {
+  width: min(
+    470px,
+    100%
+  );
+
+  padding: 35px;
+
+  border:
+    1px solid #242424;
+
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #101010,
+      #090909
+    );
+
+  box-shadow:
+    0 20px 70px
+    rgba(0, 0, 0, 0.45);
+}
+
+.create-room-logo {
+  color: var(--hunt-orange);
+
+  font-size: 42px;
+
+  font-weight: 900;
+
+  letter-spacing: -2px;
+
+  text-align: center;
+}
+
+.create-room-title {
+  margin-top: 12px;
+
+  color: #ffffff;
+
+  font-size: 21px;
+
+  font-weight: 900;
+
+  letter-spacing: 1px;
+
+  text-align: center;
+}
+
+.create-room-subtitle {
+  margin-top: 8px;
+
+  color: #666666;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+
+  text-align: center;
+
+  line-height: 1.5;
+}
+
+/* ========================================
+   FORMULÁRIO
+======================================== */
+
+.room-form-label {
+  display: block;
+
+  margin-top: 25px;
+
+  margin-bottom: 8px;
+
+  color: #aaaaaa;
+
+  font-size: 10px;
+
+  font-weight: 900;
+
+  letter-spacing: 1px;
+}
+
+.room-form-input {
+  width: 100%;
+
+  height: 48px;
+
+  padding:
+    0
+    14px;
+
+  border:
+    1px solid #292929;
+
+  border-radius: 7px;
+
+  background: #070707;
+
+  color: #ffffff;
+
+  font-size: 13px;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.room-form-input::placeholder {
+  color: #4f4f4f;
+}
+
+.room-form-input:focus {
+  border-color:
+    var(--hunt-orange);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(255, 106, 0, 0.08);
+}
+
+/* ========================================
+   ERRO FORMULÁRIO
+======================================== */
+
+.room-form-error {
+  min-height: 18px;
+
+  margin-top: 10px;
+
+  color: #ff4a4a;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  line-height: 1.5;
+}
+
+/* ========================================
+   AÇÕES FORM
+======================================== */
+
+.create-room-actions {
+  display: flex;
+
+  gap: 10px;
+
+  margin-top: 20px;
+}
+
+.create-room-actions .hunt-button {
+  flex: 1;
+}
+
+/* ========================================
+   SENHA
+======================================== */
+
+.password-screen {
+  min-height: 100vh;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 30px 20px;
+}
+
+.password-box {
+  width: min(
+    450px,
+    100%
+  );
+
+  padding: 35px;
+
+  border:
+    1px solid #242424;
+
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #101010,
+      #090909
+    );
+
+  box-shadow:
+    0 20px 70px
+    rgba(0, 0, 0, 0.45);
+
+  text-align: center;
+}
+
+.password-room-icon {
+  font-size: 35px;
+
+  margin-bottom: 15px;
+}
+
+.password-title {
+  overflow: hidden;
+
+  color: #ffffff;
+
+  font-size: 21px;
+
+  font-weight: 900;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+}
+
+.password-subtitle {
+  margin-top: 7px;
+
+  color: #666666;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.7px;
+}
+
+.password-box .room-form-label {
+  text-align: left;
+}
 
 /* ========================================
    VIEWER
 ======================================== */
 
 .viewer-screen {
-  width: 100%;
-
   min-height: 100vh;
-  min-height: 100dvh;
 
-  justify-content: flex-start;
+  display: flex;
 
-  padding: 0;
+  flex-direction: column;
 
-  background: #000;
+  background: #000000;
 }
 
-
 /* ========================================
-   HEADER
+   HEADER VIEWER
 ======================================== */
 
 .viewer-header {
-  width: 100%;
-
-  min-height: 54px;
-
-  padding:
-    8px 18px;
+  min-height: 62px;
 
   display: flex;
 
   align-items: center;
+
   justify-content: space-between;
 
   gap: 15px;
 
-  background: #0b0b0b;
+  padding:
+    10px
+    18px;
+
+  background: #080808;
 
   border-bottom:
-    1px solid #1c1c1c;
+    1px solid #191919;
 
-  flex-shrink: 0;
-
-  z-index: 20;
+  z-index: 10;
 }
-
-
-/* ========================================
-   MARCA
-======================================== */
 
 .viewer-brand {
   display: flex;
@@ -229,35 +948,37 @@ select {
 
   gap: 8px;
 
-  white-space: nowrap;
+  min-width: 0;
 }
 
 .viewer-logo {
-  color: #ff8c00;
+  color: var(--hunt-orange);
 
-  font-size: 18px;
+  font-size: 21px;
+
   font-weight: 900;
 
-  letter-spacing: 4px;
+  letter-spacing: -1px;
 }
 
 .viewer-brand-divider {
-  color: #333;
+  color: #3d3d3d;
 
-  font-size: 18px;
+  font-size: 17px;
 }
 
 .viewer-brand-screen {
-  color: #666;
+  color: #aaaaaa;
 
-  font-size: 10px;
+  font-size: 12px;
 
-  letter-spacing: 3px;
+  font-weight: 800;
+
+  letter-spacing: 2px;
 }
 
-
 /* ========================================
-   SELETOR DE MODO
+   MODO WIDE / NORMAL
 ======================================== */
 
 .viewer-mode-selector {
@@ -265,55 +986,58 @@ select {
 
   align-items: center;
 
-  gap: 4px;
+  gap: 5px;
 
-  padding: 3px;
+  padding: 4px;
 
-  background: #151515;
+  background: #111111;
 
   border:
-    1px solid #252525;
+    1px solid #222222;
 
   border-radius: 7px;
 }
 
 .mode-button {
-  border: 0;
+  min-width: 65px;
 
-  background: transparent;
-
-  color: #666;
+  height: 30px;
 
   padding:
-    7px 13px;
+    0
+    10px;
 
   border-radius: 5px;
 
-  font-size: 10px;
+  background: transparent;
+
+  color: #555555;
+
+  font-size: 9px;
 
   font-weight: 900;
 
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 
   cursor: pointer;
 
   transition:
-    background .15s ease,
-    color .15s ease;
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .mode-button:hover {
-  color: #aaa;
+  color: #bbbbbb;
 }
 
 .mode-button.active {
-  background: #ff8c00;
-  color: #000;
+  background: var(--hunt-orange);
+
+  color: #ffffff;
 }
 
-
 /* ========================================
-   CONTAINER DO VÍDEO
+   CONTAINER PLAYER
 ======================================== */
 
 .viewer-container {
@@ -321,421 +1045,84 @@ select {
 
   width: 100%;
 
-  background: #000;
+  background: #000000;
 
   overflow: hidden;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  flex-shrink: 0;
-}
-
-
-/* ========================================
-   WIDE
-======================================== */
-
-.viewer-container.wide-mode {
-  width: 100%;
-
-  height:
-    calc(100vh - 54px);
-
-  height:
-    calc(100dvh - 54px);
-
-  min-height: 0;
-
-  margin: 0;
-
-  border: 0;
-
-  border-radius: 0;
-
-  background: #000;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-}
-
-
-/* ========================================
-   VÍDEO WIDE
-======================================== */
-
-.viewer-container.wide-mode #remoteVideo {
-  width: 100%;
-  height: 100%;
-
-  display: block;
-
-  background: #000;
-
-  /*
-     IMPORTANTE:
-
-     CONTAIN preserva completamente
-     a proporção original do vídeo.
-
-     A imagem não é esticada.
-
-     Podem aparecer faixas pretas,
-     mas a transmissão permanece
-     proporcional.
-  */
-
-  object-fit: contain;
-
-  object-position:
-    center center;
-}
-
-
-/* ========================================
-   NORMAL
-======================================== */
-
-.viewer-container.normal-mode {
-  width:
-    min(
-      1000px,
-      92vw
-    );
-
-  aspect-ratio:
-    16 / 9;
-
-  margin-top: 35px;
-
-  border:
-    1px solid #222;
-
-  border-radius: 9px;
-
-  box-shadow:
-    0 15px 50px
-    rgba(
-      0,
-      0,
-      0,
-      .45
-    );
-
-  background: #000;
-}
-
-
-/* ========================================
-   VÍDEO NORMAL
-======================================== */
-
-.viewer-container.normal-mode #remoteVideo {
-  width: 100%;
-  height: 100%;
-
-  display: block;
-
-  background: #000;
-
-  object-fit: contain;
-
-  object-position:
-    center center;
-}
-
-
-/* ========================================
-   VÍDEO
-======================================== */
-
-#remoteVideo {
-  display: block;
-
-  background: #000;
-
-  cursor: pointer;
-
-  max-width: 100%;
-  max-height: 100%;
-}
-
-
-/* ========================================
-   BOTÃO DE FULLSCREEN
-   DENTRO DO PLAYER
-======================================== */
-
-.hunt-fullscreen-button,
-.hunt-exit-fullscreen-button {
-  position: absolute;
-
-  right: 14px;
-  bottom: 14px;
-
-  width: 44px;
-  height: 44px;
-
-  border: 1px solid rgba(
-    255,
-    255,
-    255,
-    .12
-  );
-
-  border-radius: 8px;
-
-  background: rgba(
-    15,
-    15,
-    15,
-    .90
-  );
-
-  color: #fff;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  font-size: 22px;
-
-  line-height: 1;
-
-  cursor: pointer;
-
-  z-index: 30;
-
-  backdrop-filter: blur(8px);
-
-  -webkit-backdrop-filter: blur(8px);
-
-  box-shadow:
-    0 6px 20px
-    rgba(
-      0,
-      0,
-      0,
-      .45
-    );
-
-  transition:
-    background .15s ease,
-    color .15s ease,
-    border-color .15s ease,
-    transform .15s ease,
-    opacity .15s ease;
-}
-
-
-/* ========================================
-   HOVER FULLSCREEN
-======================================== */
-
-.hunt-fullscreen-button:hover,
-.hunt-exit-fullscreen-button:hover {
-  background: #ff8c00;
-
-  color: #000;
-
-  border-color: #ff8c00;
-
-  transform:
-    translateY(-1px);
-}
-
-
-/* ========================================
-   ACTIVE FULLSCREEN
-======================================== */
-
-.hunt-fullscreen-button:active,
-.hunt-exit-fullscreen-button:active {
-  transform:
-    translateY(0);
-}
-
-
-/* ========================================
-   ESCONDER BOTÃO DE SAIR POR PADRÃO
-======================================== */
-
-.hunt-exit-fullscreen-button {
-  display: none;
-}
-
-
-/* ========================================
-   FULLSCREEN HUNT
-======================================== */
-
-body.hunt-fullscreen-active {
-  overflow: hidden;
-
-  width: 100vw;
-  width: 100dvw;
-
-  height: 100vh;
-  height: 100dvh;
-
-  background: #000;
-}
-
-
-/* ========================================
-   VIEWER EM FULLSCREEN
-======================================== */
-
-.viewer-screen.hunt-player-fullscreen {
-  position: fixed;
-
-  inset: 0;
-
-  width: 100vw;
-  width: 100dvw;
-
-  height: 100vh;
-  height: 100dvh;
-
-  min-height: 100vh;
-  min-height: 100dvh;
-
-  z-index: 99999;
-
-  margin: 0;
-  padding: 0;
-
-  background: #000;
-
-  display: flex;
-
-  flex-direction: column;
-}
-
-
-/* ========================================
-   HEADER NO FULLSCREEN
-======================================== */
-
-.viewer-screen.hunt-player-fullscreen
-.viewer-header {
-  display: none;
-}
-
-
-/* ========================================
-   CONTAINER FULLSCREEN
-======================================== */
-
-.viewer-container.hunt-fullscreen-container {
-  position: relative;
-
-  width: 100vw;
-  width: 100dvw;
-
-  height: 100vh;
-  height: 100dvh;
-
-  min-width: 100vw;
-  min-width: 100dvw;
-
-  min-height: 100vh;
-  min-height: 100dvh;
-
-  margin: 0;
-  padding: 0;
-
-  border: 0;
-
-  border-radius: 0;
-
-  background: #000;
 
   flex: 1;
 
   display: flex;
 
   align-items: center;
-  justify-content: center;
 
-  overflow: hidden;
+  justify-content: center;
 }
 
-
 /* ========================================
-   VÍDEO NO FULLSCREEN
+   WIDE
 ======================================== */
 
-.viewer-container.hunt-fullscreen-container
+.viewer-container.wide-mode {
+  min-height: 0;
+
+  aspect-ratio: 16 / 9;
+
+  max-height: calc(
+    100vh - 130px
+  );
+
+  margin:
+    auto
+    0;
+}
+
+/* ========================================
+   NORMAL
+======================================== */
+
+.viewer-container.normal-mode {
+  min-height: 0;
+
+  max-width: 1100px;
+
+  max-height: calc(
+    100vh - 130px
+  );
+
+  aspect-ratio: 16 / 9;
+
+  margin:
+    auto;
+}
+
+/* ========================================
+   VÍDEO REMOTO
+======================================== */
+
 #remoteVideo {
-  width: 100%;
-  height: 100%;
-
-  max-width: 100%;
-  max-height: 100%;
-
   display: block;
 
-  background: #000;
+  width: 100%;
 
-  /*
-     Nunca estica a transmissão.
-  */
+  height: 100%;
 
   object-fit: contain;
 
-  object-position:
-    center center;
+  background: #000000;
+
+  outline: none;
 }
 
-
-/* ========================================
-   BOTÃO ENTRAR FULLSCREEN
-======================================== */
-
-.hunt-player-fullscreen
-.hunt-fullscreen-button {
-  display: none;
+.viewer-container.wide-mode #remoteVideo {
+  object-fit: contain;
 }
 
-
-/* ========================================
-   BOTÃO SAIR FULLSCREEN
-======================================== */
-
-.hunt-player-fullscreen
-.hunt-exit-fullscreen-button {
-  display: flex;
-
-  position: fixed;
-
-  right: 18px;
-  bottom: 18px;
-
-  width: 46px;
-  height: 46px;
-
-  z-index: 100000;
+.viewer-container.normal-mode #remoteVideo {
+  object-fit: contain;
 }
 
-
 /* ========================================
-   CONTROLES INFERIORES NO FULLSCREEN
-======================================== */
-
-.viewer-screen.hunt-player-fullscreen
-.viewer-bottom {
-  display: none;
-}
-
-
-/* ========================================
-   MENSAGEM
+   MENSAGEM VIEWER
 ======================================== */
 
 .viewer-message {
@@ -743,406 +1130,470 @@ body.hunt-fullscreen-active {
 
   inset: 0;
 
-  z-index: 5;
+  z-index: 3;
 
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
   padding: 30px;
 
   background:
-    rgba(
-      0,
-      0,
-      0,
-      .35
-    );
+    radial-gradient(
+      circle,
+      rgba(255, 106, 0, 0.05),
+      transparent 55%
+    ),
+    #000000;
 
-  color: #666;
+  color: #666666;
 
   font-size: 12px;
 
-  letter-spacing: 2px;
+  font-weight: 900;
+
+  letter-spacing: 1px;
 
   text-align: center;
-
-  pointer-events: none;
 }
 
-
 /* ========================================
-   PARTE INFERIOR
+   FULLSCREEN PLAYER BUTTON
 ======================================== */
 
-.viewer-bottom {
-  width: 100%;
+.hunt-fullscreen-button,
+.hunt-exit-fullscreen-button {
+  position: absolute;
 
-  padding:
-    10px 18px 15px;
+  z-index: 5;
+
+  right: 15px;
+
+  bottom: 15px;
+
+  width: 42px;
+
+  height: 42px;
 
   display: flex;
 
-  flex-direction: column;
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 7px;
+
+  background:
+    rgba(10, 10, 10, 0.85);
+
+  border:
+    1px solid #292929;
+
+  color: #ffffff;
+
+  font-size: 19px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.hunt-fullscreen-button:hover,
+.hunt-exit-fullscreen-button:hover {
+  background:
+    rgba(255, 106, 0, 0.9);
+
+  border-color:
+    var(--hunt-orange);
+
+  transform:
+    scale(1.05);
+}
+
+.hunt-exit-fullscreen-button {
+  display: none;
+}
+
+/* ========================================
+   PARTE INFERIOR VIEWER
+======================================== */
+
+.viewer-bottom {
+  min-height: 68px;
+
+  display: flex;
 
   align-items: center;
 
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding:
+    10px
+    18px;
+
   background: #080808;
 
-  flex-shrink: 0;
+  border-top:
+    1px solid #191919;
+
+  z-index: 10;
 }
-
-
-/* ========================================
-   CONTROLES
-======================================== */
 
 .viewer-controls {
   display: flex;
 
   align-items: center;
-  justify-content: center;
 
   gap: 8px;
+
+  flex-wrap: wrap;
 }
 
+.viewer-bottom .hunt-status {
+  margin:
+    0
+    0
+    0
+    auto;
+}
 
 /* ========================================
-   BOTÃO FULLSCREEN INFERIOR
+   FULLSCREEN
 ======================================== */
 
-.fullscreen-control-button {
-  min-width: 150px;
+.hunt-player-fullscreen {
+  position: fixed !important;
+
+  inset: 0 !important;
+
+  z-index: 99999 !important;
+
+  width: 100vw !important;
+
+  height: 100vh !important;
+
+  min-height: 100vh !important;
+
+  background: #000000 !important;
+
+  display: flex !important;
+
+  flex-direction: column !important;
 }
 
+.hunt-fullscreen-container {
+  width: 100vw !important;
+
+  height: 100vh !important;
+
+  max-width: none !important;
+
+  max-height: none !important;
+
+  aspect-ratio: auto !important;
+
+  flex: 1 !important;
+
+  margin: 0 !important;
+}
+
+.hunt-fullscreen-active {
+  overflow: hidden !important;
+}
+
+/* ========================================
+   SCROLLBAR
+======================================== */
+
+::-webkit-scrollbar {
+  width: 7px;
+
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080808;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #292929;
+
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background:
+    var(--hunt-orange);
+}
+
+/* ========================================
+   SELEÇÃO
+======================================== */
+
+::selection {
+  background:
+    rgba(255, 106, 0, 0.35);
+
+  color: #ffffff;
+}
 
 /* ========================================
    RESPONSIVO
 ======================================== */
 
-@media (max-width: 900px) {
-
-  .viewer-header {
-    padding:
-      8px 12px;
-  }
-
-  .viewer-brand-screen {
-    display: none;
-  }
-
-  .viewer-brand-divider {
-    display: none;
-  }
-
-  .viewer-logo {
-    font-size: 15px;
-  }
-
-  .viewer-container.normal-mode {
-    width: 94vw;
-  }
-
-  .viewer-controls {
-    flex-wrap: wrap;
-  }
-
-}
-
-
-/* ========================================
-   CELULAR
-======================================== */
-
-@media (max-width: 600px) {
+@media (
+  max-width: 700px
+) {
 
   .home-screen {
     padding:
-      20px 14px;
+      30px
+      18px;
   }
 
   .hunt-logo {
-    font-size: 42px;
+    font-size: 80px;
 
-    letter-spacing: 8px;
+    letter-spacing: -4px;
   }
 
   .hunt-subtitle {
-    font-size: 11px;
+    font-size: 17px;
 
-    letter-spacing: 6px;
+    letter-spacing: 8px;
+
+    padding-left: 8px;
   }
 
   .hunt-menu {
-    width: 100%;
-
-    margin-top: 35px;
+    margin-top: 40px;
   }
 
+  .rooms-screen {
+    padding:
+      22px
+      14px
+      30px;
+  }
 
-  /* HEADER */
+  .rooms-header {
+    align-items: flex-start;
+  }
 
-  .viewer-header {
-    min-height: 50px;
+  .rooms-title-main {
+    font-size: 23px;
+  }
+
+  .rooms-title-sub {
+    font-size: 16px;
+  }
+
+  .rooms-role {
+    font-size: 9px;
+
+    line-height: 1.5;
+  }
+
+  .rooms-list {
+    margin-top: 20px;
+  }
+
+  .room-card {
+    min-height: 70px;
 
     padding:
-      7px 9px;
+      12px;
   }
 
+  .room-card-icon {
+    width: 35px;
 
-  .viewer-mode-selector {
-    gap: 2px;
+    height: 35px;
+
+    flex-basis: 35px;
   }
 
+  .room-card-name {
+    font-size: 13px;
+  }
 
-  .mode-button {
-    padding:
-      7px 11px;
+  .room-card-meta {
+    max-width: 220px;
 
     font-size: 9px;
   }
 
+  .create-room-button {
+    right: 20px;
 
-  /* NORMAL */
+    bottom: 20px;
 
-  .viewer-container.normal-mode {
-    width: 100vw;
+    width: 54px;
 
-    aspect-ratio:
-      16 / 9;
+    height: 54px;
 
-    margin-top: 18px;
-
-    border-left: 0;
-    border-right: 0;
-
-    border-radius: 0;
+    font-size: 30px;
   }
 
-
-  /* WIDE */
-
-  .viewer-container.wide-mode {
-    width: 100vw;
-
-    height:
-      calc(100vh - 50px);
-
-    height:
-      calc(100dvh - 50px);
-
-    margin: 0;
+  .create-room-box,
+  .password-box {
+    padding:
+      27px
+      20px;
   }
 
-
-  .viewer-container.wide-mode #remoteVideo {
-    object-fit: contain;
-
-    object-position:
-      center center;
+  .create-room-actions {
+    flex-direction: column;
   }
 
+  .viewer-header {
+    min-height: 56px;
 
-  /* PARTE INFERIOR */
+    padding:
+      8px
+      10px;
+  }
+
+  .viewer-logo {
+    font-size: 18px;
+  }
+
+  .viewer-brand-screen {
+    font-size: 9px;
+
+    letter-spacing: 1.5px;
+  }
+
+  .mode-button {
+    min-width: 52px;
+
+    height: 27px;
+
+    font-size: 8px;
+  }
 
   .viewer-bottom {
-    padding:
-      8px 10px 12px;
-  }
+    min-height: auto;
 
+    padding:
+      9px
+      10px;
+
+    flex-direction: column;
+
+    align-items: stretch;
+  }
 
   .viewer-controls {
-    width: 100%;
+    justify-content: center;
   }
 
+  .viewer-bottom .hunt-status {
+    margin:
+      2px
+      0
+      0;
 
-  .small-button {
-    flex: 1;
-
-    min-width: 0;
+    text-align: center;
   }
 
-
-  /* FULLSCREEN */
+  .fullscreen-control-button {
+    display: none;
+  }
 
   .hunt-fullscreen-button,
   .hunt-exit-fullscreen-button {
-    width: 42px;
-    height: 42px;
-
     right: 10px;
+
     bottom: 10px;
+  }
 
-    border-radius: 8px;
+}
 
+/* ========================================
+   TELAS MUITO PEQUENAS
+======================================== */
+
+@media (
+  max-width: 400px
+) {
+
+  .hunt-button {
+    min-height: 48px;
+
+    padding:
+      11px
+      15px;
+
+    font-size: 11px;
+  }
+
+  .small-button {
+    min-height: 38px;
+
+    padding:
+      8px
+      11px;
+
+    font-size: 9px;
+  }
+
+  .rooms-header {
+    gap: 10px;
+  }
+
+  .rooms-title {
+    gap: 6px;
+  }
+
+  .rooms-title-main {
     font-size: 20px;
   }
 
-
-  .hunt-player-fullscreen
-  .hunt-exit-fullscreen-button {
-    width: 42px;
-    height: 42px;
-
-    right: 10px;
-    bottom: 10px;
+  .rooms-title-sub {
+    font-size: 13px;
   }
 
-}
-
-
-/* ========================================
-   CELULAR DEITADO
-======================================== */
-
-@media (max-width: 900px)
-and (orientation: landscape) {
-
-  .viewer-header {
-    min-height: 46px;
-  }
-
-  .viewer-container.wide-mode {
-    height:
-      calc(100vh - 46px);
-
-    height:
-      calc(100dvh - 46px);
-  }
-
-  .viewer-container.wide-mode #remoteVideo {
-    object-fit: contain;
-  }
-
-  .viewer-bottom {
+  .rooms-header .small-button {
     padding:
-      5px 10px;
+      8px
+      10px;
   }
 
-
-  /* FULLSCREEN DEITADO */
-
-  .viewer-container.hunt-fullscreen-container {
-    width: 100vw;
-    width: 100dvw;
-
-    height: 100vh;
-    height: 100dvh;
+  .room-card-meta {
+    max-width: 170px;
   }
 
 }
 
-
 /* ========================================
-   ACTIVITY / DISPLAY MODE
+   REDUÇÃO DE MOVIMENTO
 ======================================== */
 
-@media (display-mode: fullscreen) {
+@media (
+  prefers-reduced-motion: reduce
+) {
 
-  html,
-  body,
-  #app {
-    width: 100%;
-    height: 100%;
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
 
-    min-width: 100%;
-    min-height: 100%;
+    transition-duration:
+      0.01ms !important;
 
-    margin: 0;
-    padding: 0;
+    animation-duration:
+      0.01ms !important;
 
-    background: #000;
+    animation-iteration-count:
+      1 !important;
   }
 
-
-  .viewer-screen {
-    width: 100%;
-    height: 100%;
-
-    min-height: 100%;
-  }
-
-
-  .viewer-container.wide-mode {
-    width: 100%;
-
-    height:
-      calc(100% - 54px);
-
-    margin: 0;
-  }
-
-
-  .viewer-container.wide-mode #remoteVideo {
-    width: 100%;
-    height: 100%;
-
-    object-fit: contain;
-  }
-
-}
-
-
-/* ========================================
-   PROTEÇÃO EXTRA CONTRA SCROLL HORIZONTAL
-======================================== */
-
-html,
-body,
-#app,
-.hunt-screen {
-  max-width: 100%;
-}
-
-
-/* ========================================
-   FULLSCREEN — NÃO DEIXAR O PLAYER ESTICAR
-======================================== */
-
-.hunt-player-fullscreen
-#remoteVideo {
-  object-fit: contain !important;
-
-  object-position:
-    center center !important;
-}
-
-
-/* ========================================
-   FULLSCREEN — FUNDO SEMPRE PRETO
-======================================== */
-
-.hunt-player-fullscreen,
-.hunt-player-fullscreen
-.viewer-container,
-.hunt-player-fullscreen
-#remoteVideo {
-  background: #000;
-}
-
-
-/* ========================================
-   ACESSIBILIDADE / FOCO
-======================================== */
-
-button:focus-visible {
-  outline:
-    2px solid #ff8c00;
-
-  outline-offset: 2px;
-}
-
-
-/* ========================================
-   EVITAR SELEÇÃO DOS CONTROLES
-======================================== */
-
-.viewer-header,
-.viewer-mode-selector,
-.viewer-controls,
-.hunt-fullscreen-button,
-.hunt-exit-fullscreen-button {
-  user-select: none;
-  -webkit-user-select: none;
 }
