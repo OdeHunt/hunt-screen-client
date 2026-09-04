@@ -8,6 +8,9 @@ import "./style.css";
 const SERVER_URL =
   "https://hunt-screen-server.onrender.com";
 
+const SOCKET_PATH =
+  "/hunt-socket";
+
 /* ========================================
    SOCKET.IO
 ======================================== */
@@ -15,7 +18,7 @@ const SERVER_URL =
 const socket = io(
   SERVER_URL,
   {
-    path: "/hunt-socket",
+    path: SOCKET_PATH,
 
     transports: [
       "polling",
@@ -34,7 +37,10 @@ const socket = io(
       5000,
 
     timeout:
-      20000
+      20000,
+
+    autoConnect:
+      true
   }
 );
 
@@ -43,14 +49,14 @@ const socket = io(
 ======================================== */
 
 const app =
-  document.getElementById("app");
+  document.getElementById(
+    "app"
+  );
 
 if (!app) {
-
   console.error(
     "HUNT: elemento #app não encontrado."
   );
-
 }
 
 /* ========================================
@@ -69,10 +75,14 @@ let currentRoom =
 let currentAccessToken =
   null;
 
-let rooms = [];
+let rooms =
+  [];
 
 let roomsRefreshInterval =
   null;
+
+let viewerJoinPending =
+  false;
 
 /* ========================================
    WEBRTC
@@ -92,9 +102,7 @@ let pendingCandidates =
 ======================================== */
 
 const rtcConfig = {
-
   iceServers: [
-
     {
       urls:
         "stun:stun.l.google.com:19302"
@@ -104,9 +112,7 @@ const rtcConfig = {
       urls:
         "stun:stun1.l.google.com:19302"
     }
-
   ]
-
 };
 
 console.log(
@@ -135,48 +141,70 @@ let huntFullscreen =
 socket.on(
   "connect",
   () => {
-
     console.log(
       "HUNT SERVER conectado:",
       socket.id
     );
 
     updateGlobalStatus();
-
     updateRoomStatus();
 
+    /*
+     * Se o viewer estava esperando
+     * o Socket.IO conectar, entra
+     * automaticamente agora.
+     */
+
+    if (
+      currentScreen ===
+        "viewer" &&
+      currentRoom &&
+      currentAccessToken &&
+      currentRole ===
+        "viewer"
+    ) {
+      joinCurrentViewerRoom();
+    }
   }
 );
 
 socket.on(
   "disconnect",
   reason => {
-
     console.warn(
       "HUNT: servidor desconectado:",
       reason
     );
 
     updateGlobalStatus();
-
     updateRoomStatus();
 
+    if (
+      currentScreen ===
+      "viewer"
+    ) {
+      updateViewerStatus();
+    }
   }
 );
 
 socket.on(
   "connect_error",
   error => {
-
     console.error(
       "HUNT: erro de conexão:",
       error
     );
 
     updateGlobalStatus();
-
     updateRoomStatus();
 
+    if (
+      currentScreen ===
+      "viewer"
+    ) {
+      updateViewerStatus();
+    }
   }
 );
 
@@ -185,6 +213,12 @@ socket.on(
 ======================================== */
 
 function showHome() {
+  /*
+   * Se estiver em uma sala,
+   * avisa o servidor antes de sair.
+   */
+
+  leaveCurrentRoom();
 
   currentScreen =
     "home";
@@ -198,6 +232,9 @@ function showHome() {
   currentAccessToken =
     null;
 
+  viewerJoinPending =
+    false;
+
   stopRoomsRefresh();
 
   closeViewer();
@@ -210,7 +247,6 @@ function showHome() {
   );
 
   app.innerHTML = `
-
     <div class="hunt-screen home-screen">
 
       <div class="hunt-logo">
@@ -225,7 +261,8 @@ function showHome() {
 
         <button
           id="viewerButton"
-          class="hunt-button">
+          class="hunt-button"
+          type="button">
 
           👁️ ESPECTADOR
 
@@ -233,7 +270,8 @@ function showHome() {
 
         <button
           id="broadcastButton"
-          class="hunt-button">
+          class="hunt-button"
+          type="button">
 
           📺 TRANSMITIR
 
@@ -250,7 +288,6 @@ function showHome() {
       </div>
 
     </div>
-
   `;
 
   const viewerButton =
@@ -264,37 +301,28 @@ function showHome() {
     );
 
   if (viewerButton) {
-
     viewerButton.addEventListener(
       "click",
       () => {
-
         openRooms(
           "viewer"
         );
-
       }
     );
-
   }
 
   if (broadcastButton) {
-
     broadcastButton.addEventListener(
       "click",
       () => {
-
         openRooms(
           "broadcaster"
         );
-
       }
     );
-
   }
 
   updateGlobalStatus();
-
 }
 
 /* ========================================
@@ -302,28 +330,22 @@ function showHome() {
 ======================================== */
 
 function updateGlobalStatus() {
-
   const status =
     document.getElementById(
       "homeStatus"
     );
 
-  if (!status) return;
+  if (!status) {
+    return;
+  }
 
   if (socket.connected) {
-
     status.textContent =
       "● SERVIDOR ONLINE";
-
-  }
-
-  else {
-
+  } else {
     status.textContent =
       "● CONECTANDO...";
-
   }
-
 }
 
 /* ========================================
@@ -333,6 +355,14 @@ function updateGlobalStatus() {
 async function openRooms(
   role
 ) {
+  /*
+   * Se já estava em um viewer,
+   * sai corretamente da sala.
+   */
+
+  leaveCurrentRoom();
+
+  closeViewer();
 
   currentRole =
     role;
@@ -340,7 +370,14 @@ async function openRooms(
   currentScreen =
     "rooms";
 
-  closeViewer();
+  currentRoom =
+    null;
+
+  currentAccessToken =
+    null;
+
+  viewerJoinPending =
+    false;
 
   huntFullscreen =
     false;
@@ -353,8 +390,17 @@ async function openRooms(
 
   await loadRooms();
 
-  startRoomsRefresh();
+  /*
+   * Só mantém atualização automática
+   * enquanto estiver na tela de salas.
+   */
 
+  if (
+    currentScreen ===
+    "rooms"
+  ) {
+    startRoomsRefresh();
+  }
 }
 
 /* ========================================
@@ -362,9 +408,7 @@ async function openRooms(
 ======================================== */
 
 function renderRoomsScreen() {
-
   app.innerHTML = `
-
     <div class="hunt-screen rooms-screen">
 
       <div class="rooms-header">
@@ -387,14 +431,14 @@ function renderRoomsScreen() {
 
         <button
           id="roomsBackButton"
-          class="hunt-button secondary small-button">
+          class="hunt-button secondary small-button"
+          type="button">
 
           ← VOLTAR
 
         </button>
 
       </div>
-
 
       <div class="rooms-role">
 
@@ -409,7 +453,6 @@ function renderRoomsScreen() {
 
       </div>
 
-
       <div
         id="roomsList"
         class="rooms-list">
@@ -422,7 +465,6 @@ function renderRoomsScreen() {
 
       </div>
 
-
       <button
         id="createRoomButton"
         class="create-room-button"
@@ -433,7 +475,6 @@ function renderRoomsScreen() {
 
       </button>
 
-
       <div
         id="roomsStatus"
         class="hunt-status">
@@ -443,7 +484,6 @@ function renderRoomsScreen() {
       </div>
 
     </div>
-
   `;
 
   const backButton =
@@ -457,31 +497,22 @@ function renderRoomsScreen() {
     );
 
   if (backButton) {
-
     backButton.addEventListener(
       "click",
       () => {
-
-        stopRoomsRefresh();
-
         showHome();
-
       }
     );
-
   }
 
   if (createButton) {
-
     createButton.addEventListener(
       "click",
       showCreateRoom
     );
-
   }
 
   updateRoomStatus();
-
 }
 
 /* ========================================
@@ -489,28 +520,22 @@ function renderRoomsScreen() {
 ======================================== */
 
 function updateRoomStatus() {
-
   const status =
     document.getElementById(
       "roomsStatus"
     );
 
-  if (!status) return;
+  if (!status) {
+    return;
+  }
 
   if (socket.connected) {
-
     status.textContent =
       "● SERVIDOR ONLINE";
-
-  }
-
-  else {
-
+  } else {
     status.textContent =
       "● CONECTANDO...";
-
   }
-
 }
 
 /* ========================================
@@ -518,16 +543,16 @@ function updateRoomStatus() {
 ======================================== */
 
 async function loadRooms() {
-
   const list =
     document.getElementById(
       "roomsList"
     );
 
-  if (!list) return;
+  if (!list) {
+    return;
+  }
 
   try {
-
     const response =
       await fetch(
         `${SERVER_URL}/api/rooms`,
@@ -541,48 +566,52 @@ async function loadRooms() {
       );
 
     if (!response.ok) {
-
       throw new Error(
         `HTTP ${response.status}`
       );
-
     }
 
     const data =
       await response.json();
 
     rooms =
-      Array.isArray(data.rooms)
+      Array.isArray(
+        data.rooms
+      )
         ? data.rooms
         : [];
 
-    renderRoomsList();
+    /*
+     * O novo servidor não envia
+     * quantidade de espectadores.
+     */
 
+    renderRoomsList();
   }
 
   catch (error) {
-
     console.error(
       "HUNT: erro carregando salas:",
       error
     );
 
     list.innerHTML = `
-
       <div class="rooms-empty">
 
-        NÃO FOI POSSÍVEL CARREGAR AS SALAS
+        <div class="rooms-empty-title">
+          NÃO FOI POSSÍVEL CARREGAR AS SALAS
+        </div>
 
         <button
           id="retryRoomsButton"
-          class="hunt-button small-button">
+          class="hunt-button small-button"
+          type="button">
 
           🔄 TENTAR NOVAMENTE
 
         </button>
 
       </div>
-
     `;
 
     const retryButton =
@@ -591,16 +620,12 @@ async function loadRooms() {
       );
 
     if (retryButton) {
-
       retryButton.addEventListener(
         "click",
         loadRooms
       );
-
     }
-
   }
-
 }
 
 /* ========================================
@@ -608,18 +633,17 @@ async function loadRooms() {
 ======================================== */
 
 function renderRoomsList() {
-
   const list =
     document.getElementById(
       "roomsList"
     );
 
-  if (!list) return;
+  if (!list) {
+    return;
+  }
 
   if (!rooms.length) {
-
     list.innerHTML = `
-
       <div class="rooms-empty">
 
         <div class="rooms-empty-icon">
@@ -644,11 +668,9 @@ function renderRoomsList() {
         </div>
 
       </div>
-
     `;
 
     return;
-
   }
 
   list.innerHTML =
@@ -662,7 +684,6 @@ function renderRoomsList() {
             );
 
           return `
-
             <button
               class="room-card"
               data-room-id="${escapeHtml(room.id)}"
@@ -696,8 +717,6 @@ function renderRoomsList() {
                         : "AGUARDANDO TRANSMISSÃO"
                     }
 
-                    • ${room.viewers || 0} espectador(es)
-
                   </div>
 
                 </div>
@@ -711,9 +730,7 @@ function renderRoomsList() {
               </div>
 
             </button>
-
           `;
-
         }
       )
       .join("");
@@ -740,18 +757,18 @@ function renderRoomsList() {
                 roomId
             );
 
-          if (!room) return;
+          if (!room) {
+            return;
+          }
 
           selectRoom(
             room
           );
-
         }
       );
 
     }
   );
-
 }
 
 /* ========================================
@@ -761,7 +778,6 @@ function renderRoomsList() {
 function escapeHtml(
   value
 ) {
-
   return String(
     value ?? ""
   )
@@ -785,15 +801,13 @@ function escapeHtml(
       "'",
       "&#039;"
     );
-
 }
 
 /* ========================================
-   ATUALIZAÇÃO AUTOMÁTICA DAS SALAS
+   ATUALIZAÇÃO AUTOMÁTICA
 ======================================== */
 
 function startRoomsRefresh() {
-
   stopRoomsRefresh();
 
   roomsRefreshInterval =
@@ -804,15 +818,12 @@ function startRoomsRefresh() {
           currentScreen ===
           "rooms"
         ) {
-
           loadRooms();
-
         }
 
       },
       5000
     );
-
 }
 
 /* ========================================
@@ -820,7 +831,6 @@ function startRoomsRefresh() {
 ======================================== */
 
 function stopRoomsRefresh() {
-
   if (
     roomsRefreshInterval
   ) {
@@ -831,9 +841,7 @@ function stopRoomsRefresh() {
 
     roomsRefreshInterval =
       null;
-
   }
-
 }
 
 /* ========================================
@@ -841,11 +849,9 @@ function stopRoomsRefresh() {
 ======================================== */
 
 function showCreateRoom() {
-
   stopRoomsRefresh();
 
   app.innerHTML = `
-
     <div class="hunt-screen create-room-screen">
 
       <div class="create-room-box">
@@ -861,7 +867,6 @@ function showCreateRoom() {
         <div class="create-room-subtitle">
           CRIE UMA SALA PARA SUA TRANSMISSÃO
         </div>
-
 
         <label
           class="room-form-label"
@@ -880,7 +885,6 @@ function showCreateRoom() {
           autocomplete="off"
         >
 
-
         <label
           class="room-form-label"
           for="roomPassword">
@@ -898,18 +902,17 @@ function showCreateRoom() {
           autocomplete="new-password"
         >
 
-
         <div
           id="createRoomError"
           class="room-form-error">
         </div>
 
-
         <div class="create-room-actions">
 
           <button
             id="cancelCreateRoomButton"
-            class="hunt-button secondary">
+            class="hunt-button secondary"
+            type="button">
 
             ← VOLTAR
 
@@ -917,7 +920,8 @@ function showCreateRoom() {
 
           <button
             id="confirmCreateRoomButton"
-            class="hunt-button">
+            class="hunt-button"
+            type="button">
 
             + CRIAR SALA
 
@@ -928,7 +932,6 @@ function showCreateRoom() {
       </div>
 
     </div>
-
   `;
 
   const cancelButton =
@@ -942,7 +945,6 @@ function showCreateRoom() {
     );
 
   if (cancelButton) {
-
     cancelButton.addEventListener(
       "click",
       () => {
@@ -953,25 +955,44 @@ function showCreateRoom() {
 
       }
     );
-
   }
 
   if (confirmButton) {
-
     confirmButton.addEventListener(
       "click",
       createRoom
     );
-
   }
+
+  const nameInput =
+    document.getElementById(
+      "roomName"
+    );
 
   const passwordInput =
     document.getElementById(
       "roomPassword"
     );
 
-  if (passwordInput) {
+  if (nameInput) {
+    nameInput.focus();
 
+    nameInput.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key ===
+          "Enter"
+        ) {
+          passwordInput?.focus();
+        }
+
+      }
+    );
+  }
+
+  if (passwordInput) {
     passwordInput.addEventListener(
       "keydown",
       event => {
@@ -980,16 +1001,12 @@ function showCreateRoom() {
           event.key ===
           "Enter"
         ) {
-
           createRoom();
-
         }
 
       }
     );
-
   }
-
 }
 
 /* ========================================
@@ -997,7 +1014,6 @@ function showCreateRoom() {
 ======================================== */
 
 async function createRoom() {
-
   const nameInput =
     document.getElementById(
       "roomName"
@@ -1021,7 +1037,9 @@ async function createRoom() {
   if (
     !nameInput ||
     !passwordInput
-  ) return;
+  ) {
+    return;
+  }
 
   const name =
     nameInput.value.trim();
@@ -1030,161 +1048,178 @@ async function createRoom() {
     passwordInput.value;
 
   if (!name) {
-
     showCreateRoomError(
       "Digite o nome da sala."
     );
 
     return;
-
   }
 
-  if (password.length < 4) {
+  if (
+    name.length >
+    50
+  ) {
+    showCreateRoomError(
+      "O nome da sala deve ter no máximo 50 caracteres."
+    );
 
+    return;
+  }
+
+  if (
+    password.length <
+    4
+  ) {
     showCreateRoomError(
       "A senha precisa ter pelo menos 4 caracteres."
     );
 
     return;
+  }
 
+  if (
+    password.length >
+    100
+  ) {
+    showCreateRoomError(
+      "A senha é muito longa."
+    );
+
+    return;
   }
 
   if (button) {
-
     button.disabled =
       true;
 
     button.textContent =
       "CRIANDO...";
-
   }
 
   if (errorElement) {
-
     errorElement.textContent =
       "";
-
   }
 
   try {
+    /* ================================
+       CRIAR SALA
+    ================================= */
 
     const response =
       await fetch(
         `${SERVER_URL}/api/rooms`,
         {
-
           method:
             "POST",
 
           headers: {
-
             "Content-Type":
               "application/json"
-
           },
 
           body:
             JSON.stringify({
-
               name,
               password
-
             })
-
         }
       );
 
     const data =
-      await response.json()
+      await response
+        .json()
         .catch(
           () => ({})
         );
 
     if (!response.ok) {
-
       throw new Error(
         data.error ||
         "Não foi possível criar a sala."
       );
-
     }
 
     if (
       !data.room ||
       !data.room.id
     ) {
-
       throw new Error(
         "O servidor não retornou a sala criada."
       );
-
     }
+
+    /*
+     * O criador sempre é transmissor.
+     */
 
     currentRoom =
       data.room;
 
     /*
-     * O servidor atual retorna o token
-     * apenas ao entrar pela senha.
+     * IMPORTANTE:
+     * agora enviamos role: broadcaster.
      *
-     * Para o transmissor, usamos a mesma
-     * senha criada para entrar imediatamente.
+     * Sem isso o servidor criaria
+     * um token de viewer.
      */
 
     const joinResponse =
       await fetch(
         `${SERVER_URL}/api/rooms/${encodeURIComponent(data.room.id)}/join`,
         {
-
           method:
             "POST",
 
           headers: {
-
             "Content-Type":
               "application/json"
-
           },
 
           body:
             JSON.stringify({
+              password,
 
-              password
-
+              role:
+                "broadcaster"
             })
-
         }
       );
 
     const joinData =
-      await joinResponse.json()
+      await joinResponse
+        .json()
         .catch(
           () => ({})
         );
 
-    if (!joinResponse.ok) {
-
+    if (
+      !joinResponse.ok
+    ) {
       throw new Error(
         joinData.error ||
         "Sala criada, mas não foi possível liberar o acesso."
       );
+    }
 
+    if (
+      !joinData.accessToken
+    ) {
+      throw new Error(
+        "O servidor não retornou um token de acesso."
+      );
     }
 
     currentAccessToken =
       joinData.accessToken;
 
     /*
-     * Agora que temos o token,
-     * vamos para broadcaster.html.
+     * Salvar sessão do transmissor.
      */
-
-    stopRoomsRefresh();
 
     sessionStorage.setItem(
       "HUNT_ROOM",
       JSON.stringify({
-
         id:
           data.room.id,
 
@@ -1196,17 +1231,20 @@ async function createRoom() {
 
         role:
           "broadcaster"
-
       })
     );
 
+    stopRoomsRefresh();
+
+    /*
+     * Abrir tela do transmissor.
+     */
+
     window.location.href =
       "/broadcaster.html";
-
   }
 
   catch (error) {
-
     console.error(
       "HUNT: erro criando sala:",
       error
@@ -1218,17 +1256,13 @@ async function createRoom() {
     );
 
     if (button) {
-
       button.disabled =
         false;
 
       button.textContent =
         "+ CRIAR SALA";
-
     }
-
   }
-
 }
 
 /* ========================================
@@ -1238,17 +1272,17 @@ async function createRoom() {
 function showCreateRoomError(
   message
 ) {
-
   const element =
     document.getElementById(
       "createRoomError"
     );
 
-  if (!element) return;
+  if (!element) {
+    return;
+  }
 
   element.textContent =
     message;
-
 }
 
 /* ========================================
@@ -1258,11 +1292,9 @@ function showCreateRoomError(
 function selectRoom(
   room
 ) {
-
   stopRoomsRefresh();
 
   app.innerHTML = `
-
     <div class="hunt-screen password-screen">
 
       <div class="password-box">
@@ -1296,7 +1328,6 @@ function selectRoom(
 
         </div>
 
-
         <label
           class="room-form-label"
           for="joinPassword">
@@ -1309,22 +1340,22 @@ function selectRoom(
           id="joinPassword"
           class="room-form-input"
           type="password"
+          maxlength="100"
           placeholder="Digite a senha"
           autocomplete="current-password"
         >
-
 
         <div
           id="joinRoomError"
           class="room-form-error">
         </div>
 
-
         <div class="create-room-actions">
 
           <button
             id="cancelJoinButton"
-            class="hunt-button secondary">
+            class="hunt-button secondary"
+            type="button">
 
             ← VOLTAR
 
@@ -1332,7 +1363,8 @@ function selectRoom(
 
           <button
             id="joinRoomButton"
-            class="hunt-button">
+            class="hunt-button"
+            type="button">
 
             ENTRAR
 
@@ -1343,7 +1375,6 @@ function selectRoom(
       </div>
 
     </div>
-
   `;
 
   const cancelButton =
@@ -1357,7 +1388,6 @@ function selectRoom(
     );
 
   if (cancelButton) {
-
     cancelButton.addEventListener(
       "click",
       () => {
@@ -1368,11 +1398,9 @@ function selectRoom(
 
       }
     );
-
   }
 
   if (joinButton) {
-
     joinButton.addEventListener(
       "click",
       () => {
@@ -1383,7 +1411,6 @@ function selectRoom(
 
       }
     );
-
   }
 
   const passwordInput =
@@ -1392,7 +1419,6 @@ function selectRoom(
     );
 
   if (passwordInput) {
-
     passwordInput.focus();
 
     passwordInput.addEventListener(
@@ -1403,18 +1429,14 @@ function selectRoom(
           event.key ===
           "Enter"
         ) {
-
           joinRoom(
             room
           );
-
         }
 
       }
     );
-
   }
-
 }
 
 /* ========================================
@@ -1424,7 +1446,6 @@ function selectRoom(
 async function joinRoom(
   room
 ) {
-
   const passwordInput =
     document.getElementById(
       "joinPassword"
@@ -1448,82 +1469,75 @@ async function joinRoom(
     passwordInput.value;
 
   if (!password) {
-
     showJoinRoomError(
       "Digite a senha da sala."
     );
 
     return;
-
   }
 
   if (button) {
-
     button.disabled =
       true;
 
     button.textContent =
       "VERIFICANDO...";
-
   }
 
   if (errorElement) {
-
     errorElement.textContent =
       "";
-
   }
 
   try {
+    /*
+     * IMPORTANTE:
+     * enviamos o papel escolhido
+     * para o servidor.
+     */
 
     const response =
       await fetch(
         `${SERVER_URL}/api/rooms/${encodeURIComponent(room.id)}/join`,
         {
-
           method:
             "POST",
 
           headers: {
-
             "Content-Type":
               "application/json"
-
           },
 
           body:
             JSON.stringify({
+              password,
 
-              password
-
+              role:
+                currentRole
             })
-
         }
       );
 
     const data =
-      await response.json()
+      await response
+        .json()
         .catch(
           () => ({})
         );
 
     if (!response.ok) {
-
       throw new Error(
         data.error ||
         "Não foi possível entrar na sala."
       );
-
     }
 
     if (
       !data.accessToken
     ) {
-
       throw new Error(
         "O servidor não retornou um token de acesso."
       );
-
     }
 
     currentRoom =
@@ -1533,15 +1547,17 @@ async function joinRoom(
     currentAccessToken =
       data.accessToken;
 
+    /* ================================
+       TRANSMISSOR
+    ================================= */
+
     if (
       currentRole ===
       "broadcaster"
     ) {
-
       sessionStorage.setItem(
         "HUNT_ROOM",
         JSON.stringify({
-
           id:
             currentRoom.id,
 
@@ -1553,7 +1569,6 @@ async function joinRoom(
 
           role:
             "broadcaster"
-
         })
       );
 
@@ -1561,18 +1576,19 @@ async function joinRoom(
         "/broadcaster.html";
 
       return;
-
     }
+
+    /* ================================
+       VIEWER
+    ================================= */
 
     startViewer(
       currentRoom,
       currentAccessToken
     );
-
   }
 
   catch (error) {
-
     console.error(
       "HUNT: erro entrando na sala:",
       error
@@ -1584,17 +1600,13 @@ async function joinRoom(
     );
 
     if (button) {
-
       button.disabled =
         false;
 
       button.textContent =
         "ENTRAR";
-
     }
-
   }
-
 }
 
 /* ========================================
@@ -1604,17 +1616,17 @@ async function joinRoom(
 function showJoinRoomError(
   message
 ) {
-
   const element =
     document.getElementById(
       "joinRoomError"
     );
 
-  if (!element) return;
+  if (!element) {
+    return;
+  }
 
   element.textContent =
     message;
-
 }
 
 /* ========================================
@@ -1625,8 +1637,10 @@ function startViewer(
   room,
   accessToken
 ) {
-
   currentScreen =
+    "viewer";
+
+  currentRole =
     "viewer";
 
   currentRoom =
@@ -1634,6 +1648,9 @@ function startViewer(
 
   currentAccessToken =
     accessToken;
+
+  viewerJoinPending =
+    false;
 
   closeViewer();
 
@@ -1645,7 +1662,6 @@ function startViewer(
   );
 
   app.innerHTML = `
-
     <div
       class="hunt-screen viewer-screen"
       id="viewerScreen">
@@ -1672,7 +1688,8 @@ function startViewer(
 
           <button
             id="wideModeButton"
-            class="mode-button active">
+            class="mode-button active"
+            type="button">
 
             WIDE
 
@@ -1680,7 +1697,8 @@ function startViewer(
 
           <button
             id="normalModeButton"
-            class="mode-button">
+            class="mode-button"
+            type="button">
 
             NORMAL
 
@@ -1689,7 +1707,6 @@ function startViewer(
         </div>
 
       </div>
-
 
       <div
         id="viewerContainer"
@@ -1739,14 +1756,14 @@ function startViewer(
 
       </div>
 
-
       <div class="viewer-bottom">
 
         <div class="viewer-controls">
 
           <button
             id="refreshButton"
-            class="hunt-button small-button">
+            class="hunt-button small-button"
+            type="button">
 
             🔄 ATUALIZAR
 
@@ -1754,7 +1771,8 @@ function startViewer(
 
           <button
             id="fullscreenButton"
-            class="hunt-button small-button fullscreen-control-button">
+            class="hunt-button small-button fullscreen-control-button"
+            type="button">
 
             ⛶ TELA CHEIA
 
@@ -1762,14 +1780,14 @@ function startViewer(
 
           <button
             id="backButton"
-            class="hunt-button secondary small-button">
+            class="hunt-button secondary small-button"
+            type="button">
 
             ← SALAS
 
           </button>
 
         </div>
-
 
         <div
           id="viewerStatus"
@@ -1782,7 +1800,6 @@ function startViewer(
       </div>
 
     </div>
-
   `;
 
   const refreshButton =
@@ -1821,35 +1838,34 @@ function startViewer(
     );
 
   if (refreshButton) {
-
     refreshButton.addEventListener(
       "click",
       refreshViewer
     );
-
   }
 
   if (backButton) {
-
     backButton.addEventListener(
       "click",
       async () => {
 
         await exitHuntFullscreen();
 
+        leaveCurrentRoom();
+
         closeViewer();
+
+        currentScreen =
+          "rooms";
 
         openRooms(
           "viewer"
         );
-
       }
     );
-
   }
 
   if (wideButton) {
-
     wideButton.addEventListener(
       "click",
       () => {
@@ -1860,11 +1876,9 @@ function startViewer(
 
       }
     );
-
   }
 
   if (normalButton) {
-
     normalButton.addEventListener(
       "click",
       () => {
@@ -1875,34 +1889,27 @@ function startViewer(
 
       }
     );
-
   }
 
   if (fullscreenButton) {
-
     fullscreenButton.addEventListener(
       "click",
       toggleHuntFullscreen
     );
-
   }
 
   if (huntFullscreenButton) {
-
     huntFullscreenButton.addEventListener(
       "click",
       toggleHuntFullscreen
     );
-
   }
 
   if (huntExitFullscreenButton) {
-
     huntExitFullscreenButton.addEventListener(
       "click",
       exitHuntFullscreen
     );
-
   }
 
   const video =
@@ -1911,13 +1918,11 @@ function startViewer(
     );
 
   if (video) {
-
     video.volume =
       1;
 
     video.muted =
       false;
-
   }
 
   setPlayerMode(
@@ -1929,43 +1934,94 @@ function startViewer(
   updateViewerStatus();
 
   /*
-   * Entrar na sala através do
-   * Socket.IO com o token.
+   * Tenta entrar imediatamente.
+   * Se ainda não estiver conectado,
+   * o evento "connect" fará isso.
    */
 
-  if (socket.connected) {
+  joinCurrentViewerRoom();
+}
 
-    socket.emit(
-      "join-room",
-      {
+/* ========================================
+   ENTRAR NO VIEWER PELO SOCKET
+======================================== */
 
-        roomId:
-          room.id,
-
-        accessToken:
-          accessToken,
-
-        role:
-          "viewer"
-
-      }
-    );
-
-    console.log(
-      "HUNT: viewer entrou na sala:",
-      room.id
-    );
-
+function joinCurrentViewerRoom() {
+  if (
+    currentScreen !==
+    "viewer"
+  ) {
+    return;
   }
 
-  else {
-
-    console.log(
-      "HUNT: aguardando Socket.IO..."
-    );
-
+  if (
+    currentRole !==
+    "viewer"
+  ) {
+    return;
   }
 
+  if (
+    !currentRoom ||
+    !currentAccessToken
+  ) {
+    return;
+  }
+
+  if (
+    !socket.connected
+  ) {
+    viewerJoinPending =
+      true;
+
+    console.log(
+      "HUNT: aguardando Socket.IO para entrar na sala..."
+    );
+
+    updateViewerStatus();
+
+    return;
+  }
+
+  if (
+    viewerJoinPending
+  ) {
+    /*
+     * Continua normalmente.
+     */
+  }
+
+  viewerJoinPending =
+    false;
+
+  socket.emit(
+    "join-room",
+    {
+      roomId:
+        currentRoom.id,
+
+      accessToken:
+        currentAccessToken,
+
+      role:
+        "viewer"
+    }
+  );
+
+  console.log(
+    "HUNT: viewer entrou na sala:",
+    currentRoom.id
+  );
+
+  const status =
+    document.getElementById(
+      "viewerStatus"
+    );
+
+  if (status) {
+    status.textContent =
+      "● CONECTADO À SALA";
+  }
 }
 
 /* ========================================
@@ -1973,17 +2029,20 @@ function startViewer(
 ======================================== */
 
 function refreshViewer() {
-
   if (
     !currentRoom ||
     !currentAccessToken
   ) {
-
     return;
-
   }
 
   closeViewer();
+
+  broadcasterId =
+    null;
+
+  pendingCandidates =
+    [];
 
   const message =
     document.getElementById(
@@ -1991,13 +2050,11 @@ function refreshViewer() {
     );
 
   if (message) {
-
     message.textContent =
       "PROCURANDO TRANSMISSÃO...";
 
     message.style.display =
       "flex";
-
   }
 
   const status =
@@ -2006,32 +2063,15 @@ function refreshViewer() {
     );
 
   if (status) {
-
     status.textContent =
       "● PROCURANDO...";
-
   }
 
-  if (socket.connected) {
+  /*
+   * Solicita nova entrada.
+   */
 
-    socket.emit(
-      "join-room",
-      {
-
-        roomId:
-          currentRoom.id,
-
-        accessToken:
-          currentAccessToken,
-
-        role:
-          "viewer"
-
-      }
-    );
-
-  }
-
+  joinCurrentViewerRoom();
 }
 
 /* ========================================
@@ -2039,28 +2079,62 @@ function refreshViewer() {
 ======================================== */
 
 function updateViewerStatus() {
-
   const status =
     document.getElementById(
       "viewerStatus"
     );
 
-  if (!status) return;
-
-  if (socket.connected) {
-
-    status.textContent =
-      "● CONECTADO";
-
+  if (!status) {
+    return;
   }
 
-  else {
+  if (
+    socket.connected
+  ) {
+
+    if (
+      !peer &&
+      currentScreen ===
+        "viewer"
+    ) {
+      status.textContent =
+        "● CONECTADO À SALA";
+    }
+
+  } else {
 
     status.textContent =
       "● CONECTANDO...";
+  }
+}
 
+/* ========================================
+   SAIR DA SALA ATUAL
+======================================== */
+
+function leaveCurrentRoom() {
+  if (
+    !currentRoom
+  ) {
+    return;
   }
 
+  if (
+    socket.connected
+  ) {
+    socket.emit(
+      "leave-room",
+      {
+        roomId:
+          currentRoom.id
+      }
+    );
+
+    console.log(
+      "HUNT: saindo da sala:",
+      currentRoom.id
+    );
+  }
 }
 
 /* ========================================
@@ -2068,7 +2142,6 @@ function updateViewerStatus() {
 ======================================== */
 
 function closeViewer() {
-
   console.log(
     "HUNT: fechando viewer"
   );
@@ -2076,7 +2149,6 @@ function closeViewer() {
   if (peer) {
 
     try {
-
       peer.ontrack =
         null;
 
@@ -2090,18 +2162,14 @@ function closeViewer() {
         null;
 
       peer.close();
-
     }
 
     catch (error) {
-
       console.warn(
         "HUNT: erro fechando Peer:",
         error
       );
-
     }
-
   }
 
   peer =
@@ -2121,18 +2189,14 @@ function closeViewer() {
   if (video) {
 
     try {
-
       video.pause();
-
     }
 
     catch {}
 
     video.srcObject =
       null;
-
   }
-
 }
 
 /* ========================================
@@ -2148,13 +2212,30 @@ socket.on(
       data
     );
 
+    /*
+     * Ignorar confirmação local do
+     * transmissor caso algum dia esse
+     * arquivo seja reutilizado.
+     */
+
+    if (
+      data?.local
+    ) {
+      return;
+    }
+
+    if (
+      currentScreen !==
+      "viewer"
+    ) {
+      return;
+    }
+
     if (
       !data ||
       !data.broadcasterId
     ) {
-
       return;
-
     }
 
     broadcasterId =
@@ -2166,13 +2247,21 @@ socket.on(
       );
 
     if (message) {
-
       message.textContent =
         "CONECTANDO À TRANSMISSÃO...";
 
       message.style.display =
         "flex";
+    }
 
+    const status =
+      document.getElementById(
+        "viewerStatus"
+      );
+
+    if (status) {
+      status.textContent =
+        "● CONECTANDO À TRANSMISSÃO";
     }
 
     if (
@@ -2180,11 +2269,8 @@ socket.on(
         "remoteVideo"
       )
     ) {
-
       createViewerPeer();
-
     }
-
   }
 );
 
@@ -2193,21 +2279,18 @@ socket.on(
 ======================================== */
 
 function createViewerPeer() {
-
   console.log(
     "HUNT: criando RTCPeerConnection..."
   );
 
-  if (peer) {
-
+  if (
+    peer
+  ) {
     try {
-
       peer.close();
-
     }
 
     catch {}
-
   }
 
   peer =
@@ -2231,7 +2314,6 @@ function createViewerPeer() {
     typeof RTCCtor !==
     "function"
   ) {
-
     console.error(
       "HUNT: RTCPeerConnection não disponível."
     );
@@ -2241,20 +2323,16 @@ function createViewerPeer() {
     );
 
     return;
-
   }
 
   try {
-
     peer =
       new RTCCtor(
         rtcConfig
       );
-
   }
 
   catch (error) {
-
     console.error(
       "HUNT: erro criando Peer:",
       error
@@ -2268,8 +2346,11 @@ function createViewerPeer() {
     );
 
     return;
-
   }
+
+  /* ====================================
+     TRACK
+  ==================================== */
 
   peer.ontrack =
     event => {
@@ -2283,11 +2364,14 @@ function createViewerPeer() {
           "remoteVideo"
         );
 
-      if (!video) return;
+      if (!video) {
+        return;
+      }
 
       if (
         event.streams &&
-        event.streams.length > 0
+        event.streams.length >
+          0
       ) {
 
         video.srcObject =
@@ -2321,7 +2405,6 @@ function createViewerPeer() {
           );
 
         }
-
       }
 
       video.volume =
@@ -2361,13 +2444,14 @@ function createViewerPeer() {
         );
 
       if (status) {
-
         status.textContent =
           "🔴 TRANSMISSÃO AO VIVO";
-
       }
-
     };
+
+  /* ====================================
+     ICE LOCAL
+  ==================================== */
 
   peer.onicecandidate =
     event => {
@@ -2376,30 +2460,37 @@ function createViewerPeer() {
         !event.candidate ||
         !broadcasterId
       ) {
-
         return;
+      }
 
+      if (
+        !socket.connected
+      ) {
+        return;
       }
 
       socket.emit(
         "webrtc-ice-candidate",
         {
-
           target:
             broadcasterId,
 
           candidate:
             event.candidate
-
         }
       );
-
     };
+
+  /* ====================================
+     ESTADO CONNECTION
+  ==================================== */
 
   peer.onconnectionstatechange =
     () => {
 
-      if (!peer) return;
+      if (!peer) {
+        return;
+      }
 
       console.log(
         "HUNT: estado WebRTC:",
@@ -2417,12 +2508,9 @@ function createViewerPeer() {
       ) {
 
         if (status) {
-
           status.textContent =
             "🔴 TRANSMISSÃO AO VIVO";
-
         }
-
       }
 
       if (
@@ -2431,12 +2519,9 @@ function createViewerPeer() {
       ) {
 
         if (status) {
-
           status.textContent =
             "● CONECTANDO À TRANSMISSÃO";
-
         }
-
       }
 
       if (
@@ -2447,7 +2532,6 @@ function createViewerPeer() {
         showViewerMessage(
           "FALHA NA CONEXÃO COM A TRANSMISSÃO"
         );
-
       }
 
       if (
@@ -2458,23 +2542,25 @@ function createViewerPeer() {
         showViewerMessage(
           "TRANSMISSÃO DESCONECTADA"
         );
-
       }
-
     };
+
+  /* ====================================
+     ICE STATE
+  ==================================== */
 
   peer.oniceconnectionstatechange =
     () => {
 
-      if (!peer) return;
+      if (!peer) {
+        return;
+      }
 
       console.log(
         "HUNT: ICE:",
         peer.iceConnectionState
       );
-
     };
-
 }
 
 /* ========================================
@@ -2491,13 +2577,18 @@ socket.on(
     );
 
     if (
+      currentScreen !==
+      "viewer"
+    ) {
+      return;
+    }
+
+    if (
       !data ||
       !data.sender ||
       !data.offer
     ) {
-
       return;
-
     }
 
     const video =
@@ -2505,24 +2596,36 @@ socket.on(
         "remoteVideo"
       );
 
-    if (!video) return;
+    if (!video) {
+      return;
+    }
+
+    /*
+     * Garantir que a oferta pertence
+     * ao transmissor atual.
+     */
 
     broadcasterId =
       data.sender;
 
     if (!peer) {
-
       createViewerPeer();
-
     }
 
-    if (!peer) return;
+    if (!peer) {
+      return;
+    }
 
     try {
 
       await peer.setRemoteDescription(
         data.offer
       );
+
+      /*
+       * Aplicar ICE que chegou antes
+       * da descrição remota.
+       */
 
       if (
         pendingCandidates.length >
@@ -2550,12 +2653,10 @@ socket.on(
             );
 
           }
-
         }
 
         pendingCandidates =
           [];
-
       }
 
       const answer =
@@ -2565,16 +2666,20 @@ socket.on(
         answer
       );
 
+      if (
+        !socket.connected
+      ) {
+        return;
+      }
+
       socket.emit(
         "webrtc-answer",
         {
-
           target:
             data.sender,
 
           answer:
             peer.localDescription
-
         }
       );
 
@@ -2594,9 +2699,7 @@ socket.on(
       showViewerMessage(
         "ERRO AO CONECTAR À TRANSMISSÃO"
       );
-
     }
-
   }
 );
 
@@ -2609,13 +2712,31 @@ socket.on(
   async data => {
 
     if (
+      currentScreen !==
+      "viewer"
+    ) {
+      return;
+    }
+
+    if (
       !data ||
       !data.sender ||
       !data.candidate
     ) {
-
       return;
+    }
 
+    /*
+     * Só aceitar ICE do transmissor
+     * atual.
+     */
+
+    if (
+      broadcasterId &&
+      data.sender !==
+        broadcasterId
+    ) {
+      return;
     }
 
     if (!peer) {
@@ -2625,7 +2746,6 @@ socket.on(
       );
 
       return;
-
     }
 
     if (
@@ -2637,7 +2757,6 @@ socket.on(
       );
 
       return;
-
     }
 
     try {
@@ -2656,7 +2775,6 @@ socket.on(
       );
 
     }
-
   }
 );
 
@@ -2673,6 +2791,13 @@ socket.on(
       data
     );
 
+    if (
+      currentScreen !==
+      "viewer"
+    ) {
+      return;
+    }
+
     closeViewer();
 
     showViewerMessage(
@@ -2685,12 +2810,9 @@ socket.on(
       );
 
     if (status) {
-
       status.textContent =
         "● TRANSMISSÃO ENCERRADA";
-
     }
-
   }
 );
 
@@ -2708,30 +2830,36 @@ socket.on(
     );
 
     if (
-      currentScreen ===
+      currentScreen !==
       "viewer"
     ) {
-
-      closeViewer();
-
-      showViewerMessage(
-        "ESTA SALA FOI ENCERRADA"
-      );
-
-      const status =
-        document.getElementById(
-          "viewerStatus"
-        );
-
-      if (status) {
-
-        status.textContent =
-          "● SALA ENCERRADA";
-
-      }
-
+      return;
     }
 
+    closeViewer();
+
+    currentRoom =
+      null;
+
+    currentAccessToken =
+      null;
+
+    viewerJoinPending =
+      false;
+
+    showViewerMessage(
+      "ESTA SALA FOI ENCERRADA"
+    );
+
+    const status =
+      document.getElementById(
+        "viewerStatus"
+      );
+
+    if (status) {
+      status.textContent =
+        "● SALA ENCERRADA";
+    }
   }
 );
 
@@ -2742,13 +2870,14 @@ socket.on(
 function showViewerMessage(
   message
 ) {
-
   const element =
     document.getElementById(
       "viewerMessage"
     );
 
-  if (!element) return;
+  if (!element) {
+    return;
+  }
 
   element.textContent =
     message;
@@ -2757,7 +2886,6 @@ function showViewerMessage(
     message
       ? "flex"
       : "none";
-
 }
 
 /* ========================================
@@ -2765,8 +2893,9 @@ function showViewerMessage(
 ======================================== */
 
 async function toggleHuntFullscreen() {
-
-  if (huntFullscreen) {
+  if (
+    huntFullscreen
+  ) {
 
     await exitHuntFullscreen();
 
@@ -2777,7 +2906,6 @@ async function toggleHuntFullscreen() {
     await enterHuntFullscreen();
 
   }
-
 }
 
 /* ========================================
@@ -2785,7 +2913,6 @@ async function toggleHuntFullscreen() {
 ======================================== */
 
 async function enterHuntFullscreen() {
-
   const viewerScreen =
     document.getElementById(
       "viewerScreen"
@@ -2800,9 +2927,7 @@ async function enterHuntFullscreen() {
     !viewerScreen ||
     !container
   ) {
-
     return;
-
   }
 
   try {
@@ -2820,7 +2945,6 @@ async function enterHuntFullscreen() {
         await viewerScreen.requestFullscreen();
 
       }
-
     }
 
   }
@@ -2850,7 +2974,6 @@ async function enterHuntFullscreen() {
   );
 
   updateFullscreenButtons();
-
 }
 
 /* ========================================
@@ -2858,7 +2981,6 @@ async function enterHuntFullscreen() {
 ======================================== */
 
 async function exitHuntFullscreen() {
-
   const viewerScreen =
     document.getElementById(
       "viewerScreen"
@@ -2883,7 +3005,6 @@ async function exitHuntFullscreen() {
         await document.exitFullscreen();
 
       }
-
     }
 
   }
@@ -2909,7 +3030,6 @@ async function exitHuntFullscreen() {
     viewerScreen.classList.remove(
       "hunt-player-fullscreen"
     );
-
   }
 
   if (container) {
@@ -2917,11 +3037,9 @@ async function exitHuntFullscreen() {
     container.classList.remove(
       "hunt-fullscreen-container"
     );
-
   }
 
   updateFullscreenButtons();
-
 }
 
 /* ========================================
@@ -2942,9 +3060,13 @@ document.addEventListener(
         "viewerContainer"
       );
 
-    if (!document.fullscreenElement) {
+    if (
+      !document.fullscreenElement
+    ) {
 
-      if (huntFullscreen) {
+      if (
+        huntFullscreen
+      ) {
 
         huntFullscreen =
           false;
@@ -2958,7 +3080,6 @@ document.addEventListener(
           viewerScreen.classList.remove(
             "hunt-player-fullscreen"
           );
-
         }
 
         if (container) {
@@ -2966,13 +3087,10 @@ document.addEventListener(
           container.classList.remove(
             "hunt-fullscreen-container"
           );
-
         }
 
         updateFullscreenButtons();
-
       }
-
     }
 
     else {
@@ -2989,7 +3107,6 @@ document.addEventListener(
         viewerScreen.classList.add(
           "hunt-player-fullscreen"
         );
-
       }
 
       if (container) {
@@ -2997,13 +3114,10 @@ document.addEventListener(
         container.classList.add(
           "hunt-fullscreen-container"
         );
-
       }
 
       updateFullscreenButtons();
-
     }
-
   }
 );
 
@@ -3012,7 +3126,6 @@ document.addEventListener(
 ======================================== */
 
 function updateFullscreenButtons() {
-
   const fullscreenButton =
     document.getElementById(
       "fullscreenButton"
@@ -3034,7 +3147,6 @@ function updateFullscreenButtons() {
       huntFullscreen
         ? "✕ SAIR DA TELA CHEIA"
         : "⛶ TELA CHEIA";
-
   }
 
   if (enterButton) {
@@ -3043,7 +3155,6 @@ function updateFullscreenButtons() {
       huntFullscreen
         ? "none"
         : "flex";
-
   }
 
   if (exitButton) {
@@ -3052,9 +3163,7 @@ function updateFullscreenButtons() {
       huntFullscreen
         ? "flex"
         : "none";
-
   }
-
 }
 
 /* ========================================
@@ -3067,14 +3176,13 @@ document.addEventListener(
 
     if (
       event.key ===
-      "Escape" &&
+        "Escape" &&
       huntFullscreen
     ) {
 
       await exitHuntFullscreen();
 
     }
-
   }
 );
 
@@ -3085,7 +3193,6 @@ document.addEventListener(
 function setPlayerMode(
   mode
 ) {
-
   if (
     mode !== "wide" &&
     mode !== "normal"
@@ -3093,7 +3200,6 @@ function setPlayerMode(
 
     mode =
       "wide";
-
   }
 
   currentPlayerMode =
@@ -3114,7 +3220,9 @@ function setPlayerMode(
       "normalModeButton"
     );
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
 
   container.classList.remove(
     "wide-mode",
@@ -3129,24 +3237,23 @@ function setPlayerMode(
 
     wideButton.classList.toggle(
       "active",
-      mode === "wide"
+      mode ===
+        "wide"
     );
-
   }
 
   if (normalButton) {
 
     normalButton.classList.toggle(
       "active",
-      mode === "normal"
+      mode ===
+        "normal"
     );
-
   }
-
 }
 
 /* ========================================
-   EVENTO USER JOINED
+   USER JOINED
 ======================================== */
 
 socket.on(
@@ -3158,6 +3265,12 @@ socket.on(
       data
     );
 
+    /*
+     * O transmissor possui o
+     * broadcaster.js separado.
+     *
+     * Não fazemos nada aqui.
+     */
   }
 );
 
@@ -3181,12 +3294,31 @@ socket.on(
 
       closeViewer();
 
-      showViewerMessage(
-        "ACESSO À SALA NEGADO"
-      );
+      const message =
+        document.getElementById(
+          "viewerMessage"
+        );
 
+      if (message) {
+
+        message.textContent =
+          "ACESSO À SALA NEGADO";
+
+        message.style.display =
+          "flex";
+      }
+
+      const status =
+        document.getElementById(
+          "viewerStatus"
+        );
+
+      if (status) {
+
+        status.textContent =
+          "● ACESSO NEGADO";
+      }
     }
-
   }
 );
 
@@ -3202,6 +3334,53 @@ socket.on(
       "HUNT: sala já possui transmissão:",
       data
     );
+
+    if (
+      currentScreen ===
+      "viewer"
+    ) {
+
+      /*
+       * O servidor pode mandar esse
+       * evento para situações em que
+       * existe outro transmissor.
+       */
+
+      const status =
+        document.getElementById(
+          "viewerStatus"
+        );
+
+      if (status) {
+
+        status.textContent =
+          "● TRANSMISSÃO JÁ ATIVA";
+      }
+    }
+  }
+);
+
+/* ========================================
+   LIMPEZA AO FECHAR / RECARREGAR
+======================================== */
+
+window.addEventListener(
+  "beforeunload",
+  () => {
+
+    if (
+      currentRoom &&
+      socket.connected
+    ) {
+
+      socket.emit(
+        "leave-room",
+        {
+          roomId:
+            currentRoom.id
+        }
+      );
+    }
 
   }
 );
