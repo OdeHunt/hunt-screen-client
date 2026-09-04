@@ -96,7 +96,7 @@ video {
 
   max-height: 560px;
 
-  display: none;
+  display: block;
 
   background: #000;
 
