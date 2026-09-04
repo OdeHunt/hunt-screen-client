@@ -252,12 +252,6 @@ function connectSocket() {
         reason
       );
 
-      /*
-       * Se perder a conexão,
-       * as conexões WebRTC antigas
-       * não são mais confiáveis.
-       */
-
       closeAllViewerPeers();
 
       if (!isStreaming) {
@@ -491,31 +485,10 @@ function connectSocket() {
         data
       );
 
-      /*
-       * IMPORTANTE:
-       *
-       * O server.js atual envia para o
-       * próprio broadcaster:
-       *
-       * {
-       *   broadcasterId: socket.id,
-       *   local: true
-       * }
-       *
-       * Ele NÃO envia roomId.
-       *
-       * Portanto não podemos exigir
-       * data.roomId aqui.
-       */
-
       const eventBroadcasterId =
         data?.broadcasterId ||
         null;
 
-
-      /*
-       * Evento vindo do próprio transmissor.
-       */
 
       if (
         data?.local === true ||
@@ -545,12 +518,6 @@ function connectSocket() {
 
       }
 
-
-      /*
-       * Se outro transmissor estiver
-       * transmitindo, não assumimos
-       * controle.
-       */
 
       if (
         eventBroadcasterId &&
@@ -689,14 +656,6 @@ function connectSocket() {
         "HUNT BROADCASTER: stream-stopped:",
         data
       );
-
-      /*
-       * O server atual não envia
-       * roomId neste evento.
-       *
-       * Portanto não filtramos pelo
-       * roomId aqui.
-       */
 
       if (isStreaming) {
 
@@ -898,8 +857,32 @@ async function chooseScreen() {
     );
 
 
+    /* ======================================
+       PREVIEW DA TELA
+       
+       ALTERAÇÃO SOMENTE AQUI:
+       garantir que o MediaStream
+       seja carregado e reproduzido
+       corretamente no vídeo.
+    ====================================== */
+
+    if (!preview) {
+
+      throw new Error(
+        "Elemento de preview não encontrado."
+      );
+
+    }
+
+
+    preview.pause();
+
+    preview.removeAttribute(
+      "src"
+    );
+
     preview.srcObject =
-      localStream;
+      null;
 
     preview.muted =
       true;
@@ -910,27 +893,157 @@ async function chooseScreen() {
     preview.playsInline =
       true;
 
+    preview.setAttribute(
+      "autoplay",
+      ""
+    );
 
-    try {
+    preview.setAttribute(
+      "muted",
+      ""
+    );
 
-      await preview.play();
+    preview.setAttribute(
+      "playsinline",
+      ""
+    );
 
-    }
 
-    catch (error) {
-
-      console.warn(
-        "HUNT BROADCASTER: preview não iniciou automaticamente:",
-        error
-      );
-
-    }
+    preview.srcObject =
+      localStream;
 
 
     if (emptyPreview) {
 
       emptyPreview.style.display =
         "none";
+
+    }
+
+
+    /*
+     * Espera o vídeo realmente
+     * receber os metadados da captura
+     * antes de tentar reproduzir.
+     */
+
+    const playPreview =
+      async () => {
+
+        try {
+
+          await preview.play();
+
+          console.log(
+            "HUNT BROADCASTER: preview iniciado."
+          );
+
+        }
+
+        catch (error) {
+
+          console.warn(
+            "HUNT BROADCASTER: preview não iniciou automaticamente:",
+            error
+          );
+
+          /*
+           * Segunda tentativa depois
+           * que o navegador processar
+           * o MediaStream.
+           */
+
+          setTimeout(
+            async () => {
+
+              try {
+
+                await preview.play();
+
+                console.log(
+                  "HUNT BROADCASTER: preview iniciado na segunda tentativa."
+                );
+
+              }
+
+              catch (retryError) {
+
+                console.warn(
+                  "HUNT BROADCASTER: segunda tentativa do preview falhou:",
+                  retryError
+                );
+
+              }
+
+            },
+            100
+          );
+
+        }
+
+      };
+
+
+    if (
+      preview.readyState >=
+      HTMLMediaElement.HAVE_METADATA
+    ) {
+
+      await playPreview();
+
+    }
+
+    else {
+
+      await new Promise(
+        resolve => {
+
+          let resolved =
+            false;
+
+
+          const finish =
+            () => {
+
+              if (resolved) {
+
+                return;
+
+              }
+
+              resolved =
+                true;
+
+              preview.removeEventListener(
+                "loadedmetadata",
+                finish
+              );
+
+              resolve();
+
+            };
+
+
+          preview.addEventListener(
+            "loadedmetadata",
+            finish,
+            {
+              once:
+                true
+            }
+          );
+
+
+          setTimeout(
+            finish,
+            1000
+          );
+
+        }
+      );
+
+
+      await playPreview();
 
     }
 
@@ -1153,21 +1266,6 @@ async function startStreaming() {
           roomData.accessToken
       }
     );
-
-
-    /*
-     * NÃO usamos mais timeout
-     * artificial de 1,2 segundos.
-     *
-     * O servidor atual envia:
-     *
-     * stream-started
-     *
-     * para o próprio broadcaster.
-     *
-     * O listener acima recebe o evento
-     * e muda isStreaming para true.
-     */
 
   }
 
