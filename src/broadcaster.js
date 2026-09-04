@@ -75,10 +75,12 @@ let startRequestPending = false;
 const rtcConfig = {
   iceServers: [
     {
-      urls: "stun:stun.l.google.com:19302"
+      urls:
+        "stun:stun.l.google.com:19302"
     },
     {
-      urls: "stun:stun1.l.google.com:19302"
+      urls:
+        "stun:stun1.l.google.com:19302"
     }
   ]
 };
@@ -93,7 +95,9 @@ function loadRoomData() {
   try {
 
     const stored =
-      sessionStorage.getItem("HUNT_ROOM");
+      sessionStorage.getItem(
+        "HUNT_ROOM"
+      );
 
     if (!stored) {
 
@@ -118,7 +122,8 @@ function loadRoomData() {
 
     }
 
-    roomData = data;
+    roomData =
+      data;
 
     console.log(
       "HUNT BROADCASTER: sala carregada:",
@@ -161,36 +166,47 @@ function connectSocket() {
   if (socket) {
 
     try {
+
       socket.disconnect();
+
     }
 
     catch {}
 
   }
 
-  socket = io(
-    SERVER_URL,
-    {
-      path: SOCKET_PATH,
 
-      transports: [
-        "polling",
-        "websocket"
-      ],
+  socket =
+    io(
+      SERVER_URL,
+      {
+        path:
+          SOCKET_PATH,
 
-      reconnection: true,
+        transports: [
+          "polling",
+          "websocket"
+        ],
 
-      reconnectionAttempts: Infinity,
+        reconnection:
+          true,
 
-      reconnectionDelay: 1000,
+        reconnectionAttempts:
+          Infinity,
 
-      reconnectionDelayMax: 5000,
+        reconnectionDelay:
+          1000,
 
-      timeout: 20000,
+        reconnectionDelayMax:
+          5000,
 
-      autoConnect: true
-    }
-  );
+        timeout:
+          20000,
+
+        autoConnect:
+          true
+      }
+    );
 
 
   /* ======================================
@@ -215,6 +231,8 @@ function connectSocket() {
           : "● CONECTADO"
       );
 
+      clearError();
+
       joinBroadcasterRoom();
 
     }
@@ -233,6 +251,14 @@ function connectSocket() {
         "HUNT BROADCASTER: desconectado:",
         reason
       );
+
+      /*
+       * Se perder a conexão,
+       * as conexões WebRTC antigas
+       * não são mais confiáveis.
+       */
+
+      closeAllViewerPeers();
 
       if (!isStreaming) {
 
@@ -296,6 +322,10 @@ function connectSocket() {
         !isStreaming ||
         !localStream
       ) {
+
+        console.log(
+          "HUNT BROADCASTER: viewer entrou antes da transmissão."
+        );
 
         return;
 
@@ -378,6 +408,11 @@ function connectSocket() {
           data.answer
         );
 
+        console.log(
+          "HUNT BROADCASTER: ANSWER aplicada:",
+          data.sender
+        );
+
       }
 
       catch (error) {
@@ -451,54 +486,48 @@ function connectSocket() {
     "stream-started",
     data => {
 
-      if (
-        !roomData ||
-        data?.roomId !== roomData.id
-      ) {
-
-        return;
-
-      }
+      console.log(
+        "HUNT BROADCASTER: stream-started recebido:",
+        data
+      );
 
       /*
-       * Se o evento veio de outro broadcaster,
-       * não devemos assumir o controle da transmissão.
+       * IMPORTANTE:
+       *
+       * O server.js atual envia para o
+       * próprio broadcaster:
+       *
+       * {
+       *   broadcasterId: socket.id,
+       *   local: true
+       * }
+       *
+       * Ele NÃO envia roomId.
+       *
+       * Portanto não podemos exigir
+       * data.roomId aqui.
+       */
+
+      const eventBroadcasterId =
+        data?.broadcasterId ||
+        null;
+
+
+      /*
+       * Evento vindo do próprio transmissor.
        */
 
       if (
-        data?.broadcasterId &&
-        data.broadcasterId !== socket.id
+        data?.local === true ||
+        eventBroadcasterId ===
+        socket.id
       ) {
 
-        console.warn(
-          "HUNT BROADCASTER: sala já possui outro transmissor."
-        );
+        isStreaming =
+          true;
 
-        if (!isStreaming) {
-
-          showError(
-            "Esta sala já possui uma transmissão."
-          );
-
-        }
-
-        return;
-
-      }
-
-      /*
-       * Alguns servidores enviam o evento
-       * também para quem iniciou a transmissão.
-       */
-
-      if (
-        data?.broadcasterId === socket.id ||
-        !data?.broadcasterId
-      ) {
-
-        isStreaming = true;
-
-        startRequestPending = false;
+        startRequestPending =
+          false;
 
         updateStatus(
           "🔴 TRANSMITINDO"
@@ -508,40 +537,35 @@ function connectSocket() {
 
         clearError();
 
-      }
-
-    }
-  );
-
-
-  /* ======================================
-     CONFIRMAÇÃO ESPECÍFICA
-  ====================================== */
-
-  socket.on(
-    "stream-started-confirmed",
-    data => {
-
-      if (
-        !roomData ||
-        data?.roomId !== roomData.id
-      ) {
+        console.log(
+          "HUNT BROADCASTER: transmissão confirmada."
+        );
 
         return;
 
       }
 
-      isStreaming = true;
 
-      startRequestPending = false;
+      /*
+       * Se outro transmissor estiver
+       * transmitindo, não assumimos
+       * controle.
+       */
 
-      updateStatus(
-        "🔴 TRANSMITINDO"
-      );
+      if (
+        eventBroadcasterId &&
+        eventBroadcasterId !==
+        socket.id
+      ) {
 
-      updateButtons();
+        console.log(
+          "HUNT BROADCASTER: transmissão existente de outro usuário:",
+          eventBroadcasterId
+        );
 
-      clearError();
+        return;
+
+      }
 
     }
   );
@@ -560,9 +584,11 @@ function connectSocket() {
         data
       );
 
-      isStreaming = false;
+      isStreaming =
+        false;
 
-      startRequestPending = false;
+      startRequestPending =
+        false;
 
       updateButtons();
 
@@ -591,11 +617,19 @@ function connectSocket() {
         data
       );
 
-      isStreaming = false;
+      isStreaming =
+        false;
 
-      startRequestPending = false;
+      startRequestPending =
+        false;
+
+      closeAllViewerPeers();
 
       updateButtons();
+
+      updateStatus(
+        "⚠ ACESSO NEGADO"
+      );
 
       showError(
         "O acesso à sala foi negado."
@@ -620,7 +654,8 @@ function connectSocket() {
 
       if (
         roomData &&
-        data?.roomId === roomData.id
+        data?.roomId ===
+        roomData.id
       ) {
 
         stopStreaming(
@@ -650,25 +685,26 @@ function connectSocket() {
     "stream-stopped",
     data => {
 
-      if (
-        !roomData ||
-        data?.roomId !== roomData.id
-      ) {
-
-        return;
-
-      }
+      console.log(
+        "HUNT BROADCASTER: stream-stopped:",
+        data
+      );
 
       /*
-       * Se o próprio broadcaster recebeu
-       * stream-stopped, limpamos somente o estado.
+       * O server atual não envia
+       * roomId neste evento.
+       *
+       * Portanto não filtramos pelo
+       * roomId aqui.
        */
 
       if (isStreaming) {
 
-        isStreaming = false;
+        isStreaming =
+          false;
 
-        startRequestPending = false;
+        startRequestPending =
+          false;
 
         closeAllViewerPeers();
 
@@ -740,7 +776,8 @@ async function chooseScreen() {
 
   }
 
-  isSelectingScreen = true;
+  isSelectingScreen =
+    true;
 
   clearError();
 
@@ -760,6 +797,7 @@ async function chooseScreen() {
       );
 
     }
+
 
     const selectedQuality =
       Number(
@@ -801,7 +839,8 @@ async function chooseScreen() {
             }
           },
 
-          audio: true
+          audio:
+            true
         }
       );
 
@@ -1032,6 +1071,7 @@ async function startStreaming() {
 
   }
 
+
   clearError();
 
 
@@ -1098,15 +1138,10 @@ async function startStreaming() {
     updateButtons();
 
 
-    /*
-     * O servidor verifica:
-     *
-     * 1. socket conectado
-     * 2. accessToken
-     * 3. papel de broadcaster
-     * 4. sala
-     * 5. se já existe transmissão
-     */
+    console.log(
+      "HUNT BROADCASTER: enviando start-stream..."
+    );
+
 
     socket.emit(
       "start-stream",
@@ -1121,64 +1156,18 @@ async function startStreaming() {
 
 
     /*
-     * IMPORTANTE:
+     * NÃO usamos mais timeout
+     * artificial de 1,2 segundos.
      *
-     * Não colocamos isStreaming = true aqui.
+     * O servidor atual envia:
      *
-     * O estado só será alterado quando o servidor
-     * responder com stream-started ou
-     * stream-started-confirmed.
+     * stream-started
+     *
+     * para o próprio broadcaster.
+     *
+     * O listener acima recebe o evento
+     * e muda isStreaming para true.
      */
-
-
-    /*
-     * Fallback de segurança.
-     *
-     * Se o backend atual não envia nenhum evento
-     * de confirmação para o próprio broadcaster,
-     * não deixamos a interface travada para sempre.
-     *
-     * O servidor ainda é quem autoriza o comando.
-     */
-
-    setTimeout(
-      () => {
-
-        if (
-          startRequestPending &&
-          socket &&
-          socket.connected &&
-          roomData
-        ) {
-
-          console.warn(
-            "HUNT BROADCASTER: servidor não enviou confirmação explícita."
-          );
-
-          /*
-           * O backend atual pode processar o comando
-           * sem enviar confirmação ao próprio transmissor.
-           *
-           * Nesse caso liberamos a transmissão local.
-           */
-
-          isStreaming =
-            true;
-
-          startRequestPending =
-            false;
-
-          updateStatus(
-            "🔴 TRANSMITINDO"
-          );
-
-          updateButtons();
-
-        }
-
-      },
-      1200
-    );
 
   }
 
@@ -1195,6 +1184,10 @@ async function startStreaming() {
     showError(
       error?.message ||
       "Não foi possível iniciar a transmissão."
+    );
+
+    updateStatus(
+      "● TRANSMISSÃO NÃO INICIADA"
     );
 
     updateButtons();
@@ -1239,11 +1232,6 @@ async function createOfferForViewer(
     viewerId
   );
 
-
-  /*
-   * Se já existe uma conexão com esse viewer,
-   * fechamos a antiga antes de criar outra.
-   */
 
   const oldPeer =
     viewerPeers.get(
@@ -1338,6 +1326,11 @@ async function createOfferForViewer(
         }
       );
 
+      console.log(
+        "HUNT BROADCASTER: ICE enviada:",
+        viewerId
+      );
+
     };
 
 
@@ -1376,9 +1369,17 @@ async function createOfferForViewer(
         "closed"
       ) {
 
-        viewerPeers.delete(
-          viewerId
-        );
+        if (
+          viewerPeers.get(
+            viewerId
+          ) === peer
+        ) {
+
+          viewerPeers.delete(
+            viewerId
+          );
+
+        }
 
       }
 
@@ -1387,12 +1388,6 @@ async function createOfferForViewer(
         peer.connectionState ===
         "disconnected"
       ) {
-
-        /*
-         * Não removemos imediatamente.
-         *
-         * A conexão pode se recuperar.
-         */
 
         setTimeout(
           () => {
@@ -1432,21 +1427,13 @@ async function createOfferForViewer(
 
 
   /* ======================================
-     OFFER
+     NEGOTIAÇÃO
   ====================================== */
 
   try {
 
     const offer =
-      await peer.createOffer(
-        {
-          offerToReceiveAudio:
-            false,
-
-          offerToReceiveVideo:
-            false
-        }
-      );
+      await peer.createOffer();
 
 
     await peer.setLocalDescription(
@@ -1531,11 +1518,9 @@ function closeAllViewerPeers() {
 
     catch {}
 
-    viewerPeers.delete(
-      viewerId
-    );
-
   }
+
+  viewerPeers.clear();
 
 }
 
@@ -1558,16 +1543,8 @@ function stopStreaming(
     false;
 
 
-  /*
-   * Fecha todas as conexões WebRTC.
-   */
-
   closeAllViewerPeers();
 
-
-  /*
-   * Informa ao servidor.
-   */
 
   if (
     notifyServer &&
@@ -1606,14 +1583,6 @@ function stopStreaming(
   isStreaming =
     false;
 
-
-  /*
-   * Só encerramos as tracks quando
-   * realmente queremos parar a captura.
-   *
-   * Isso evita problemas quando a sala
-   * é encerrada pelo servidor.
-   */
 
   if (
     stopCapture &&
@@ -1744,7 +1713,9 @@ function clearSelectedScreen() {
 function updateButtons() {
 
   if (!chooseButton) {
+
     return;
+
   }
 
 
@@ -1950,11 +1921,6 @@ async function goBack() {
   }
 
 
-  /*
-   * Dá um pequeno tempo para o servidor
-   * processar o stop-stream antes de sair.
-   */
-
   await wait(
     150
   );
@@ -2075,7 +2041,7 @@ if (fps) {
 
 
 /* ========================================
-   VISIBILIDADE DA PÁGINA
+   VISIBILIDADE
 ======================================== */
 
 document.addEventListener(
@@ -2178,7 +2144,10 @@ function initialize() {
 
 
   updateStatus(
-    `● SALA: ${roomData.name || roomData.id}`
+    `● SALA: ${
+      roomData.name ||
+      roomData.id
+    }`
   );
 
 

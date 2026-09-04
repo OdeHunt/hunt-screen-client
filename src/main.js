@@ -84,6 +84,9 @@ let roomsRefreshInterval =
 let viewerJoinPending =
   false;
 
+let viewerJoinedRoomId =
+  null;
+
 /* ========================================
    WEBRTC
 ======================================== */
@@ -150,9 +153,9 @@ socket.on(
     updateRoomStatus();
 
     /*
-     * Se o viewer estava esperando
-     * o Socket.IO conectar, entra
-     * automaticamente agora.
+     * Se o viewer estava dentro de uma sala
+     * e o Socket.IO reconectou, precisamos
+     * registrar o novo socket novamente.
      */
 
     if (
@@ -163,6 +166,9 @@ socket.on(
       currentRole ===
         "viewer"
     ) {
+      viewerJoinedRoomId =
+        null;
+
       joinCurrentViewerRoom();
     }
   }
@@ -175,6 +181,17 @@ socket.on(
       "HUNT: servidor desconectado:",
       reason
     );
+
+    /*
+     * O socket antigo não está mais
+     * registrado no servidor.
+     *
+     * O novo socket será registrado
+     * novamente no evento connect.
+     */
+
+    viewerJoinedRoomId =
+      null;
 
     updateGlobalStatus();
     updateRoomStatus();
@@ -234,6 +251,9 @@ function showHome() {
 
   viewerJoinPending =
     false;
+
+  viewerJoinedRoomId =
+    null;
 
   stopRoomsRefresh();
 
@@ -356,8 +376,8 @@ async function openRooms(
   role
 ) {
   /*
-   * Se já estava em um viewer,
-   * sai corretamente da sala.
+   * Se já estava em uma sala,
+   * sai corretamente.
    */
 
   leaveCurrentRoom();
@@ -378,6 +398,9 @@ async function openRooms(
 
   viewerJoinPending =
     false;
+
+  viewerJoinedRoomId =
+    null;
 
   huntFullscreen =
     false;
@@ -580,11 +603,6 @@ async function loadRooms() {
       )
         ? data.rooms
         : [];
-
-    /*
-     * O novo servidor não envia
-     * quantidade de espectadores.
-     */
 
     renderRoomsList();
   }
@@ -1102,10 +1120,6 @@ async function createRoom() {
   }
 
   try {
-    /* ================================
-       CRIAR SALA
-    ================================= */
-
     const response =
       await fetch(
         `${SERVER_URL}/api/rooms`,
@@ -1149,20 +1163,8 @@ async function createRoom() {
       );
     }
 
-    /*
-     * O criador sempre é transmissor.
-     */
-
     currentRoom =
       data.room;
-
-    /*
-     * IMPORTANTE:
-     * agora enviamos role: broadcaster.
-     *
-     * Sem isso o servidor criaria
-     * um token de viewer.
-     */
 
     const joinResponse =
       await fetch(
@@ -1213,10 +1215,6 @@ async function createRoom() {
     currentAccessToken =
       joinData.accessToken;
 
-    /*
-     * Salvar sessão do transmissor.
-     */
-
     sessionStorage.setItem(
       "HUNT_ROOM",
       JSON.stringify({
@@ -1235,10 +1233,6 @@ async function createRoom() {
     );
 
     stopRoomsRefresh();
-
-    /*
-     * Abrir tela do transmissor.
-     */
 
     window.location.href =
       "/broadcaster.html";
@@ -1490,12 +1484,6 @@ async function joinRoom(
   }
 
   try {
-    /*
-     * IMPORTANTE:
-     * enviamos o papel escolhido
-     * para o servidor.
-     */
-
     const response =
       await fetch(
         `${SERVER_URL}/api/rooms/${encodeURIComponent(room.id)}/join`,
@@ -1546,6 +1534,14 @@ async function joinRoom(
 
     currentAccessToken =
       data.accessToken;
+
+    /*
+     * Novo socket ainda não foi
+     * registrado como viewer.
+     */
+
+    viewerJoinedRoomId =
+      null;
 
     /* ================================
        TRANSMISSOR
@@ -1651,6 +1647,9 @@ function startViewer(
 
   viewerJoinPending =
     false;
+
+  viewerJoinedRoomId =
+    null;
 
   closeViewer();
 
@@ -1858,6 +1857,21 @@ function startViewer(
         currentScreen =
           "rooms";
 
+        currentRole =
+          "viewer";
+
+        currentRoom =
+          null;
+
+        currentAccessToken =
+          null;
+
+        viewerJoinPending =
+          false;
+
+        viewerJoinedRoomId =
+          null;
+
         openRooms(
           "viewer"
         );
@@ -1974,6 +1988,9 @@ function joinCurrentViewerRoom() {
     viewerJoinPending =
       true;
 
+    viewerJoinedRoomId =
+      null;
+
     console.log(
       "HUNT: aguardando Socket.IO para entrar na sala..."
     );
@@ -1983,16 +2000,24 @@ function joinCurrentViewerRoom() {
     return;
   }
 
+  /*
+   * Evita mandar join-room repetidamente
+   * para o mesmo socket.
+   */
+
   if (
-    viewerJoinPending
+    viewerJoinedRoomId ===
+    currentRoom.id
   ) {
-    /*
-     * Continua normalmente.
-     */
+    console.log(
+      "HUNT: viewer já está registrado nesta sala."
+    );
+
+    return;
   }
 
   viewerJoinPending =
-    false;
+    true;
 
   socket.emit(
     "join-room",
@@ -2007,6 +2032,12 @@ function joinCurrentViewerRoom() {
         "viewer"
     }
   );
+
+  viewerJoinedRoomId =
+    currentRoom.id;
+
+  viewerJoinPending =
+    false;
 
   console.log(
     "HUNT: viewer entrou na sala:",
@@ -2068,10 +2099,21 @@ function refreshViewer() {
   }
 
   /*
-   * Solicita nova entrada.
+   * O viewer continua registrado
+   * no servidor.
+   *
+   * Se a conexão foi perdida,
+   * viewerJoinedRoomId estará null
+   * e o connect fará a entrada novamente.
    */
 
-  joinCurrentViewerRoom();
+  if (
+    socket.connected &&
+    viewerJoinedRoomId !==
+      currentRoom.id
+  ) {
+    joinCurrentViewerRoom();
+  }
 }
 
 /* ========================================
@@ -2098,7 +2140,10 @@ function updateViewerStatus() {
         "viewer"
     ) {
       status.textContent =
-        "● CONECTADO À SALA";
+        viewerJoinedRoomId ===
+        currentRoom?.id
+          ? "● CONECTADO À SALA"
+          : "● CONECTANDO À SALA";
     }
 
   } else {
@@ -2135,6 +2180,12 @@ function leaveCurrentRoom() {
       currentRoom.id
     );
   }
+
+  viewerJoinedRoomId =
+    null;
+
+  viewerJoinPending =
+    false;
 }
 
 /* ========================================
@@ -2214,8 +2265,7 @@ socket.on(
 
     /*
      * Ignorar confirmação local do
-     * transmissor caso algum dia esse
-     * arquivo seja reutilizado.
+     * transmissor.
      */
 
     if (
@@ -2234,6 +2284,20 @@ socket.on(
     if (
       !data ||
       !data.broadcasterId
+    ) {
+      return;
+    }
+
+    /*
+     * Se o servidor informou a sala,
+     * garantir que é a sala atual.
+     */
+
+    if (
+      data.roomId &&
+      currentRoom &&
+      data.roomId !==
+        currentRoom.id
     ) {
       return;
     }
@@ -2798,6 +2862,15 @@ socket.on(
       return;
     }
 
+    if (
+      data?.roomId &&
+      currentRoom &&
+      data.roomId !==
+        currentRoom.id
+    ) {
+      return;
+    }
+
     closeViewer();
 
     showViewerMessage(
@@ -2836,6 +2909,15 @@ socket.on(
       return;
     }
 
+    if (
+      data?.roomId &&
+      currentRoom &&
+      data.roomId !==
+        currentRoom.id
+    ) {
+      return;
+    }
+
     closeViewer();
 
     currentRoom =
@@ -2846,6 +2928,9 @@ socket.on(
 
     viewerJoinPending =
       false;
+
+    viewerJoinedRoomId =
+      null;
 
     showViewerMessage(
       "ESTA SALA FOI ENCERRADA"
@@ -3107,6 +3192,7 @@ document.addEventListener(
         viewerScreen.classList.add(
           "hunt-player-fullscreen"
         );
+
       }
 
       if (container) {
@@ -3114,6 +3200,7 @@ document.addEventListener(
         container.classList.add(
           "hunt-fullscreen-container"
         );
+
       }
 
       updateFullscreenButtons();
@@ -3294,6 +3381,9 @@ socket.on(
 
       closeViewer();
 
+      viewerJoinedRoomId =
+        null;
+
       const message =
         document.getElementById(
           "viewerMessage"
@@ -3340,21 +3430,64 @@ socket.on(
       "viewer"
     ) {
 
+      if (
+        data?.roomId &&
+        currentRoom &&
+        data.roomId !==
+          currentRoom.id
+      ) {
+        return;
+      }
+
       /*
-       * O servidor pode mandar esse
-       * evento para situações em que
-       * existe outro transmissor.
+       * Se o servidor mandar esse evento,
+       * também podemos aproveitar o ID
+       * do transmissor para preparar o peer.
        */
 
-      const status =
-        document.getElementById(
-          "viewerStatus"
-        );
+      if (
+        data?.broadcasterId
+      ) {
 
-      if (status) {
+        broadcasterId =
+          data.broadcasterId;
 
-        status.textContent =
-          "● TRANSMISSÃO JÁ ATIVA";
+        const message =
+          document.getElementById(
+            "viewerMessage"
+          );
+
+        if (message) {
+          message.textContent =
+            "CONECTANDO À TRANSMISSÃO...";
+
+          message.style.display =
+            "flex";
+        }
+
+        const status =
+          document.getElementById(
+            "viewerStatus"
+          );
+
+        if (status) {
+          status.textContent =
+            "● CONECTANDO À TRANSMISSÃO";
+        }
+      }
+
+      else {
+
+        const status =
+          document.getElementById(
+            "viewerStatus"
+          );
+
+        if (status) {
+
+          status.textContent =
+            "● TRANSMISSÃO JÁ ATIVA";
+        }
       }
     }
   }
