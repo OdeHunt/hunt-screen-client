@@ -140,7 +140,6 @@ select:focus-visible {
 
   font-weight: 700;
   letter-spacing: 12px;
-
   padding-left: 12px;
 
   opacity: 0.85;
@@ -210,6 +209,7 @@ select:focus-visible {
 
 .hunt-button:disabled {
   opacity: 0.5;
+
   cursor: not-allowed;
 
   transform: none;
@@ -306,7 +306,6 @@ select:focus-visible {
 
   font-size: 28px;
   font-weight: 900;
-
   letter-spacing: -1px;
 }
 
@@ -462,6 +461,7 @@ select:focus-visible {
   font-weight: 800;
 
   white-space: nowrap;
+
   text-overflow: ellipsis;
 }
 
@@ -476,6 +476,7 @@ select:focus-visible {
   font-weight: 700;
 
   white-space: nowrap;
+
   text-overflow: ellipsis;
 
   letter-spacing: 0.5px;
@@ -633,7 +634,9 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
 
-  padding: 30px 20px;
+  padding:
+    30px
+    20px;
 }
 
 .create-room-box {
@@ -802,7 +805,9 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
 
-  padding: 30px 20px;
+  padding:
+    30px
+    20px;
 }
 
 .password-box {
@@ -847,6 +852,7 @@ select:focus-visible {
   font-weight: 900;
 
   white-space: nowrap;
+
   text-overflow: ellipsis;
 }
 
@@ -870,21 +876,31 @@ select:focus-visible {
 ======================================== */
 
 .viewer-screen {
+  position: relative;
+
   width: 100%;
 
+  /*
+     Não força uma altura artificial
+     que roube espaço do vídeo.
+  */
   min-height: 100vh;
   min-height: 100dvh;
 
   display: flex;
+
   flex-direction: column;
 
-  /*
-     Fundo do HUNT SCREEN.
-  */
   background: #050505;
 
   overflow-x: hidden;
-  overflow-y: visible;
+  overflow-y: auto;
+
+  /*
+     Permite que conteúdo abaixo do
+     player continue gerando scroll.
+  */
+  isolation: isolate;
 }
 
 /* ========================================
@@ -892,35 +908,40 @@ select:focus-visible {
 ======================================== */
 
 .viewer-header {
-  min-height: 62px;
+  min-height: 46px;
+  height: 46px;
 
   display: flex;
 
   align-items: center;
   justify-content: space-between;
 
-  gap: 15px;
+  gap: 12px;
 
   padding:
-    10px
+    6px
     18px;
 
-  background: #080808;
+  background: rgba(8, 8, 8, 0.96);
 
   border-bottom:
     1px solid #191919;
 
   z-index: 10;
 
-  flex: 0 0 auto;
+  flex: 0 0 46px;
 }
+
+/* ========================================
+   MARCA VIEWER
+======================================== */
 
 .viewer-brand {
   display: flex;
 
   align-items: center;
 
-  gap: 8px;
+  gap: 7px;
 
   min-width: 0;
 }
@@ -928,7 +949,7 @@ select:focus-visible {
 .viewer-logo {
   color: var(--hunt-orange);
 
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 900;
 
   letter-spacing: -1px;
@@ -937,16 +958,16 @@ select:focus-visible {
 .viewer-brand-divider {
   color: #3d3d3d;
 
-  font-size: 17px;
+  font-size: 15px;
 }
 
 .viewer-brand-screen {
   color: #aaaaaa;
 
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 800;
 
-  letter-spacing: 2px;
+  letter-spacing: 1.8px;
 }
 
 /* ========================================
@@ -958,9 +979,9 @@ select:focus-visible {
 
   align-items: center;
 
-  gap: 5px;
+  gap: 4px;
 
-  padding: 4px;
+  padding: 3px;
 
   background: #111111;
 
@@ -973,13 +994,13 @@ select:focus-visible {
 }
 
 .mode-button {
-  min-width: 65px;
+  min-width: 60px;
 
-  height: 30px;
+  height: 27px;
 
   padding:
     0
-    10px;
+    9px;
 
   border-radius: 5px;
 
@@ -987,7 +1008,7 @@ select:focus-visible {
 
   color: #555555;
 
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 900;
 
   letter-spacing: 0.5px;
@@ -1027,7 +1048,12 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
 
-  flex: 0 0 auto;
+  /*
+     Pode crescer ou diminuir dinamicamente.
+  */
+  flex: 1 1 auto;
+
+  min-height: 0;
 }
 
 /* ========================================
@@ -1035,12 +1061,13 @@ select:focus-visible {
 ======================================== */
 
 /*
-   WIDE É O MODO EXPANDIDO.
+   WIDE:
 
-   Ele não deve reservar espaço para
-   header nem para os controles inferiores.
+   O vídeo usa todo o espaço que o
+   Activity realmente possui.
 
-   O vídeo ocupa toda a área do Activity.
+   Header e bottom são compactos,
+   então o vídeo ganha muito mais altura.
 */
 
 .viewer-container.wide-mode {
@@ -1048,7 +1075,11 @@ select:focus-visible {
 
   max-width: none;
 
-  height: 100dvh;
+  /*
+     O tamanho é definido pelo flexbox,
+     e não por uma altura fixa.
+  */
+  height: auto;
 
   min-height: 0;
 
@@ -1058,21 +1089,13 @@ select:focus-visible {
 
   flex: 1 1 auto;
 
+  aspect-ratio: auto;
+
   background: #050505;
 }
 
-@supports not (height: 100dvh) {
-  .viewer-container.wide-mode {
-    height: 100vh;
-  }
-}
-
 /*
-   WIDE mantém a proporção original
-   da transmissão.
-
-   NÃO estica.
-   NÃO corta.
+   A transmissão inteira continua visível.
 */
 
 .viewer-container.wide-mode #remoteVideo {
@@ -1087,87 +1110,23 @@ select:focus-visible {
 }
 
 /* ========================================
-   ESCONDER HEADER NO WIDE
-======================================== */
-
-/*
-   Quando existir um player WIDE dentro
-   do viewer, o cabeçalho do site some.
-
-   O :has() permite fazer isso sem
-   alterar o JavaScript.
-*/
-
-.viewer-screen:has(.viewer-container.wide-mode)
-  .viewer-header {
-  display: none !important;
-}
-
-/* ========================================
-   ESCONDER BARRA INFERIOR NO WIDE
-======================================== */
-
-.viewer-screen:has(.viewer-container.wide-mode)
-  .viewer-bottom {
-  display: none !important;
-}
-
-/*
-   Com header e bottom escondidos,
-   o player realmente ganha toda
-   a área disponível.
-*/
-
-.viewer-screen:has(.viewer-container.wide-mode) {
-  min-height: 100dvh;
-
-  height: 100dvh;
-
-  overflow: hidden;
-}
-
-@supports not (height: 100dvh) {
-  .viewer-screen:has(.viewer-container.wide-mode) {
-    min-height: 100vh;
-    height: 100vh;
-  }
-}
-
-/*
-   O WIDE passa a ser o único elemento
-   ocupando a tela.
-*/
-
-.viewer-screen:has(.viewer-container.wide-mode)
-  .viewer-container.wide-mode {
-  width: 100% !important;
-
-  height: 100dvh !important;
-
-  min-height: 0 !important;
-
-  margin: 0 !important;
-
-  flex: 1 1 auto !important;
-
-  background: #050505 !important;
-}
-
-@supports not (height: 100dvh) {
-  .viewer-screen:has(.viewer-container.wide-mode)
-    .viewer-container.wide-mode {
-    height: 100vh !important;
-  }
-}
-
-/* ========================================
    NORMAL
 ======================================== */
+
+/*
+   NORMAL funciona como um player comum
+   do YouTube:
+
+   - proporção 16:9
+   - largura máxima de 1100px
+   - centralizado
+   - não ocupa a tela inteira
+*/
 
 .viewer-container.normal-mode {
   width: min(
     1100px,
-    100%
+    calc(100% - 36px)
   );
 
   max-width: 1100px;
@@ -1212,9 +1171,11 @@ select:focus-visible {
 
   object-fit: contain;
 
+  object-position: center center;
+
   /*
-     Nunca mais pintar as faixas
-     de preto puro.
+     O próprio vídeo NÃO pinta as faixas.
+     O fundo vem do container.
   */
   background: transparent;
 
@@ -1321,27 +1282,28 @@ select:focus-visible {
 ======================================== */
 
 .viewer-bottom {
-  min-height: 68px;
+  min-height: 50px;
+  height: 50px;
 
   display: flex;
 
   align-items: center;
   justify-content: space-between;
 
-  gap: 15px;
+  gap: 10px;
 
   padding:
-    10px
+    6px
     18px;
 
-  background: #080808;
+  background: rgba(8, 8, 8, 0.97);
 
   border-top:
     1px solid #191919;
 
   z-index: 10;
 
-  flex: 0 0 auto;
+  flex: 0 0 50px;
 }
 
 .viewer-controls {
@@ -1349,7 +1311,7 @@ select:focus-visible {
 
   align-items: center;
 
-  gap: 8px;
+  gap: 7px;
 
   flex-wrap: wrap;
 }
@@ -1367,18 +1329,22 @@ select:focus-visible {
 ======================================== */
 
 /*
-   FULLSCREEN REAL.
+   Quando fullscreen é ativado:
 
-   Aqui não queremos header,
-   controles ou barras.
-
-   Somente o vídeo.
+   - ocupa toda a viewport
+   - título desaparece
+   - botões inferiores desaparecem
+   - sobra somente o vídeo
+   - fundo continua sendo o fundo do site
 */
 
 .hunt-player-fullscreen {
   position: fixed !important;
 
-  inset: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
 
   z-index: 99999 !important;
 
@@ -1410,7 +1376,8 @@ select:focus-visible {
 }
 
 /*
-   ESCONDE O HEADER NO FULLSCREEN.
+   ESCONDE O TÍTULO / HEADER
+   NO FULLSCREEN.
 */
 
 .hunt-player-fullscreen .viewer-header {
@@ -1418,7 +1385,7 @@ select:focus-visible {
 }
 
 /*
-   ESCONDE OS CONTROLES INFERIORES
+   ESCONDE A BARRA DE BOTÕES
    NO FULLSCREEN.
 */
 
@@ -1427,8 +1394,8 @@ select:focus-visible {
 }
 
 /*
-   O player passa a ocupar
-   absolutamente tudo.
+   O player passa a ocupar 100%
+   da tela disponível.
 */
 
 .hunt-player-fullscreen .viewer-container,
@@ -1442,11 +1409,9 @@ select:focus-visible {
   min-height: 0 !important;
 
   max-width: none !important;
-
   max-height: none !important;
 
   margin: 0 !important;
-
   padding: 0 !important;
 
   aspect-ratio: auto !important;
@@ -1463,23 +1428,17 @@ select:focus-visible {
   justify-content: center !important;
 }
 
-/* ========================================
-   VÍDEO EM FULLSCREEN
-======================================== */
-
 /*
-   FULLSCREEN É DIFERENTE DO WIDE.
+   =====================================
+   VÍDEO EM FULLSCREEN
+   =====================================
 
-   Aqui usamos COVER.
+   CONTAIN:
 
-   Isso faz o vídeo crescer para ocupar
-   completamente a tela.
-
-   Se a proporção da tela não for igual
-   à proporção da transmissão, apenas
-   o excesso é cortado.
-
-   A imagem NÃO é deformada.
+   - não corta a transmissão
+   - não deforma
+   - mantém a proporção
+   - faixas recebem o fundo do site
 */
 
 .hunt-player-fullscreen #remoteVideo {
@@ -1487,11 +1446,29 @@ select:focus-visible {
 
   height: 100% !important;
 
-  object-fit: cover !important;
+  object-fit: contain !important;
 
   object-position: center center !important;
 
   background: transparent !important;
+}
+
+/*
+   Quando o fullscreen estiver ativo,
+   o botão de sair continua disponível.
+*/
+
+.hunt-player-fullscreen .hunt-exit-fullscreen-button {
+  display: flex !important;
+}
+
+/*
+   O botão de fullscreen normal
+   fica escondido.
+*/
+
+.hunt-player-fullscreen .hunt-fullscreen-button {
+  display: none !important;
 }
 
 /* ========================================
@@ -1512,43 +1489,6 @@ select:focus-visible {
 
 :fullscreen .viewer-container {
   background: #050505;
-}
-
-/*
-   Caso o fullscreen real seja aplicado
-   ao viewer inteiro.
-*/
-
-:fullscreen .viewer-header {
-  display: none !important;
-}
-
-:fullscreen .viewer-bottom {
-  display: none !important;
-}
-
-:fullscreen .viewer-container {
-  width: 100% !important;
-
-  height: 100% !important;
-
-  max-width: none !important;
-
-  margin: 0 !important;
-
-  aspect-ratio: auto !important;
-
-  background: #050505 !important;
-}
-
-:fullscreen #remoteVideo {
-  width: 100% !important;
-
-  height: 100% !important;
-
-  object-fit: cover !important;
-
-  background: transparent !important;
 }
 
 /* ========================================
@@ -1593,6 +1533,9 @@ select:focus-visible {
 @media (
   max-width: 700px
 ) {
+
+  /* HOME */
+
   .home-screen {
     padding:
       30px
@@ -1616,6 +1559,8 @@ select:focus-visible {
   .hunt-menu {
     margin-top: 40px;
   }
+
+  /* SALAS */
 
   .rooms-screen {
     padding:
@@ -1680,6 +1625,8 @@ select:focus-visible {
     font-size: 30px;
   }
 
+  /* FORM */
+
   .create-room-box,
   .password-box {
     padding:
@@ -1691,44 +1638,63 @@ select:focus-visible {
     flex-direction: column;
   }
 
+  /* VIEWER HEADER */
+
   .viewer-header {
-    min-height: 56px;
+    min-height: 42px;
+    height: 42px;
+
+    flex-basis: 42px;
 
     padding:
-      8px
+      5px
       10px;
+
+    gap: 8px;
   }
 
   .viewer-logo {
-    font-size: 18px;
+    font-size: 17px;
+  }
+
+  .viewer-brand-divider {
+    font-size: 13px;
   }
 
   .viewer-brand-screen {
-    font-size: 9px;
+    font-size: 8px;
 
-    letter-spacing: 1.5px;
+    letter-spacing: 1.2px;
+  }
+
+  /* MODE */
+
+  .viewer-mode-selector {
+    gap: 3px;
+
+    padding: 3px;
   }
 
   .mode-button {
-    min-width: 52px;
+    min-width: 50px;
 
-    height: 27px;
+    height: 25px;
 
-    font-size: 8px;
+    padding:
+      0
+      8px;
+
+    font-size: 7px;
   }
 
-  /* ======================================
-     WIDE MOBILE
-  ====================================== */
+  /* WIDE */
 
   .viewer-container.wide-mode {
     width: 100%;
 
-    height: 100dvh;
+    height: auto;
 
     min-height: 0;
-
-    max-width: none;
 
     margin: 0;
 
@@ -1739,48 +1705,7 @@ select:focus-visible {
     background: #050505;
   }
 
-  @supports not (height: 100dvh) {
-    .viewer-container.wide-mode {
-      height: 100vh;
-    }
-  }
-
-  /*
-     Header e controles continuam
-     escondidos no WIDE mobile.
-  */
-
-  .viewer-screen:has(.viewer-container.wide-mode)
-    .viewer-header {
-    display: none !important;
-  }
-
-  .viewer-screen:has(.viewer-container.wide-mode)
-    .viewer-bottom {
-    display: none !important;
-  }
-
-  .viewer-screen:has(.viewer-container.wide-mode) {
-    height: 100dvh;
-
-    min-height: 100dvh;
-
-    overflow: hidden;
-  }
-
-  @supports not (height: 100dvh) {
-    .viewer-screen:has(.viewer-container.wide-mode) {
-      height: 100vh;
-
-      min-height: 100vh;
-    }
-  }
-
-  /*
-     NORMAL MOBILE
-
-     Continua como player 16:9.
-  */
+  /* NORMAL */
 
   .viewer-container.normal-mode {
     width: calc(100% - 20px);
@@ -1793,36 +1718,47 @@ select:focus-visible {
 
     aspect-ratio: 16 / 9;
 
-    height: auto;
-
     flex: 0 0 auto;
-
-    background: #050505;
   }
 
+  /* BOTTOM */
+
   .viewer-bottom {
-    min-height: auto;
+    min-height: 46px;
+    height: 46px;
+
+    flex-basis: 46px;
 
     padding:
-      9px
+      6px
       10px;
 
-    flex-direction: column;
+    gap: 6px;
 
-    align-items: stretch;
+    /*
+       Mantém compacto no celular.
+    */
+    flex-direction: row;
+
+    align-items: center;
   }
 
   .viewer-controls {
-    justify-content: center;
+    justify-content: flex-start;
+
+    gap: 5px;
   }
 
   .viewer-bottom .hunt-status {
     margin:
-      2px
       0
-      0;
+      0
+      0
+      auto;
 
-    text-align: center;
+    text-align: right;
+
+    font-size: 9px;
   }
 
   .fullscreen-control-button {
@@ -1832,15 +1768,20 @@ select:focus-visible {
   .hunt-fullscreen-button,
   .hunt-exit-fullscreen-button {
     right: 10px;
-
     bottom: 10px;
   }
 
   /*
      FULLSCREEN MOBILE
-
-     Ocupa toda a viewport.
   */
+
+  .hunt-player-fullscreen .viewer-header {
+    display: none !important;
+  }
+
+  .hunt-player-fullscreen .viewer-bottom {
+    display: none !important;
+  }
 
   .hunt-player-fullscreen .viewer-container,
   .hunt-fullscreen-container {
@@ -1858,7 +1799,7 @@ select:focus-visible {
 
     height: 100% !important;
 
-    object-fit: cover !important;
+    object-fit: contain !important;
 
     object-position: center center !important;
 
@@ -1873,6 +1814,7 @@ select:focus-visible {
 @media (
   max-width: 400px
 ) {
+
   .hunt-button {
     min-height: 48px;
 
@@ -1922,6 +1864,28 @@ select:focus-visible {
   .viewer-container.normal-mode {
     width: calc(100% - 14px);
   }
+
+  .viewer-header {
+    padding:
+      5px
+      8px;
+  }
+
+  .viewer-logo {
+    font-size: 16px;
+  }
+
+  .viewer-brand-screen {
+    display: none;
+  }
+
+  .mode-button {
+    min-width: 46px;
+
+    padding:
+      0
+      6px;
+  }
 }
 
 /* ========================================
@@ -1931,6 +1895,7 @@ select:focus-visible {
 @media (
   prefers-reduced-motion: reduce
 ) {
+
   *,
   *::before,
   *::after {
