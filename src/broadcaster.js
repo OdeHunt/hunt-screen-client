@@ -1,3 +1,4 @@
+js
 import { io } from "socket.io-client";
 import "./broadcaster.css";
 
@@ -10,21 +11,6 @@ const SERVER_URL =
 
 const SOCKET_PATH =
   "/hunt-socket";
-
-/*
- * Discord Activity não permite conexão
- * direta com domínios externos.
- *
- * Dentro da Activity:
- *
- * /hunt-socket
- *
- * é encaminhado pelo URL Mapping
- * configurado no Discord Developer Portal.
- *
- * Fora da Activity usamos diretamente
- * o servidor Render.
- */
 
 const isLocalHost =
   window.location.hostname === "localhost" ||
@@ -77,36 +63,24 @@ const errorElement =
 ======================================== */
 
 let socket = null;
-
 let localStream = null;
-
 let isStreaming = false;
-
 let isSelectingScreen = false;
-
 let roomData = null;
-
 let broadcasterId = null;
 
-const viewerPeers =
-  new Map();
+const viewerPeers = new Map();
 
-let startRequestPending =
-  false;
-
-/*
- * Controla se já estamos registrados
- * na sala com o socket atual.
- */
-let roomJoined =
-  false;
+let startRequestPending = false;
+let roomJoined = false;
+let roomJoinPending = false;
 
 /*
- * Evita várias tentativas simultâneas
- * de entrar na sala.
- */
-let roomJoinPending =
-  false;
+  Evita que várias alterações de qualidade
+  aconteçam simultaneamente.
+*/
+let qualityUpdateQueue =
+  Promise.resolve();
 
 /* ========================================
    RTC
@@ -118,7 +92,6 @@ const rtcConfig = {
       urls:
         "stun:stun.l.google.com:19302"
     },
-
     {
       urls:
         "stun:stun1.l.google.com:19302"
@@ -157,24 +130,110 @@ console.log(
 );
 
 /* ========================================
+   PERFIL DE QUALIDADE
+======================================== */
+
+function getQualityProfile(
+  qualityValue
+) {
+  switch (
+    Number(
+      qualityValue
+    )
+  ) {
+    case 360:
+      return {
+        width: 640,
+        height: 360,
+        bitrate: 800000
+      };
+
+    case 480:
+      return {
+        width: 854,
+        height: 480,
+        bitrate: 1500000
+      };
+
+    case 720:
+      return {
+        width: 1280,
+        height: 720,
+        bitrate: 3500000
+      };
+
+    case 1080:
+      return {
+        width: 1920,
+        height: 1080,
+        bitrate: 6000000
+      };
+
+    default:
+      return {
+        width: 1920,
+        height: 1080,
+        bitrate: 6000000
+      };
+  }
+}
+
+/* ========================================
+   RESOLUÇÃO
+======================================== */
+
+function getQualityWidth(
+  qualityValue
+) {
+  return getQualityProfile(
+    qualityValue
+  ).width;
+}
+
+function getQualityHeight(
+  qualityValue
+) {
+  return getQualityProfile(
+    qualityValue
+  ).height;
+}
+
+/* ========================================
+   FPS
+======================================== */
+
+function getSelectedFps() {
+  const selected =
+    Number(
+      fps?.value ||
+      60
+    );
+
+  if (
+    selected === 30 ||
+    selected === 60
+  ) {
+    return selected;
+  }
+
+  return 60;
+}
+
+/* ========================================
    CARREGAR SALA
 ======================================== */
 
 function loadRoomData() {
-
   try {
-
     const stored =
       sessionStorage.getItem(
         "HUNT_ROOM"
       );
 
     if (!stored) {
-
       throw new Error(
         "Nenhuma sala foi selecionada."
       );
-
     }
 
     const data =
@@ -185,11 +244,9 @@ function loadRoomData() {
       !data.id ||
       !data.accessToken
     ) {
-
       throw new Error(
         "Os dados da sala estão incompletos."
       );
-
     }
 
     roomData =
@@ -201,11 +258,7 @@ function loadRoomData() {
     );
 
     return true;
-
-  }
-
-  catch (error) {
-
+  } catch (error) {
     console.error(
       "HUNT BROADCASTER: erro carregando sala:",
       error
@@ -221,9 +274,7 @@ function loadRoomData() {
     );
 
     return false;
-
   }
-
 }
 
 /* ========================================
@@ -231,19 +282,11 @@ function loadRoomData() {
 ======================================== */
 
 function connectSocket() {
-
   if (socket) {
-
     try {
-
       socket.removeAllListeners();
-
       socket.disconnect();
-
-    }
-
-    catch {}
-
+    } catch {}
   }
 
   roomJoined =
@@ -252,23 +295,7 @@ function connectSocket() {
   roomJoinPending =
     false;
 
-  /*
-   * Dentro da Discord Activity:
-   *
-   * io({
-   *   path: "/hunt-socket"
-   * })
-   *
-   * Fora:
-   *
-   * io(
-   *   "https://hunt-screen-server.onrender.com",
-   *   {...}
-   * )
-   */
-
   const socketOptions = {
-
     path:
       SOCKET_PATH,
 
@@ -294,36 +321,28 @@ function connectSocket() {
 
     autoConnect:
       true
-
   };
 
   if (IS_DISCORD_ACTIVITY) {
-
     socket =
       io(
         socketOptions
       );
-
-  }
-
-  else {
-
+  } else {
     socket =
       io(
         SERVER_URL,
         socketOptions
       );
-
   }
 
   /* ======================================
-     CONECTADO
+     CONNECT
   ====================================== */
 
   socket.on(
     "connect",
     () => {
-
       console.log(
         "HUNT BROADCASTER: conectado:",
         socket.id
@@ -346,24 +365,17 @@ function connectSocket() {
 
       clearError();
 
-      /*
-       * Sempre registra o novo socket
-       * na sala após conectar/reconectar.
-       */
-
       joinBroadcasterRoom();
-
     }
   );
 
   /* ======================================
-     DESCONECTADO
+     DISCONNECT
   ====================================== */
 
   socket.on(
     "disconnect",
     reason => {
-
       console.warn(
         "HUNT BROADCASTER: desconectado:",
         reason
@@ -378,32 +390,24 @@ function connectSocket() {
       closeAllViewerPeers();
 
       if (!isStreaming) {
-
         updateStatus(
           "● DESCONECTADO"
         );
-
-      }
-
-      else {
-
+      } else {
         updateStatus(
           "⚠ CONEXÃO PERDIDA"
         );
-
       }
-
     }
   );
 
   /* ======================================
-     ERRO DE CONEXÃO
+     CONNECT ERROR
   ====================================== */
 
   socket.on(
     "connect_error",
     error => {
-
       console.error(
         "HUNT BROADCASTER: erro Socket.IO:",
         error
@@ -422,7 +426,6 @@ function connectSocket() {
       showError(
         "Não foi possível conectar ao servidor."
       );
-
     }
   );
 
@@ -433,7 +436,6 @@ function connectSocket() {
   socket.on(
     "user-joined",
     data => {
-
       console.log(
         "HUNT BROADCASTER: usuário entrou:",
         data
@@ -443,13 +445,11 @@ function connectSocket() {
         !isStreaming ||
         !localStream
       ) {
-
         console.log(
           "HUNT BROADCASTER: viewer entrou antes da transmissão."
         );
 
         return;
-
       }
 
       const viewerId =
@@ -458,13 +458,11 @@ function connectSocket() {
         data?.userId;
 
       if (!viewerId) {
-
         console.warn(
           "HUNT BROADCASTER: ID do viewer não recebido."
         );
 
         return;
-
       }
 
       if (
@@ -472,15 +470,12 @@ function connectSocket() {
         viewerId ===
         socket.id
       ) {
-
         return;
-
       }
 
       createOfferForViewer(
         viewerId
       );
-
     }
   );
 
@@ -491,15 +486,12 @@ function connectSocket() {
   socket.on(
     "webrtc-answer",
     async data => {
-
       if (
         !data ||
         !data.sender ||
         !data.answer
       ) {
-
         return;
-
       }
 
       console.log(
@@ -513,25 +505,20 @@ function connectSocket() {
         );
 
       if (!peer) {
-
         console.warn(
           "HUNT BROADCASTER: Peer do viewer não encontrado:",
           data.sender
         );
 
         return;
-
       }
 
       try {
-
         if (
           peer.signalingState ===
           "closed"
         ) {
-
           return;
-
         }
 
         await peer.setRemoteDescription(
@@ -542,37 +529,28 @@ function connectSocket() {
           "HUNT BROADCASTER: ANSWER aplicada:",
           data.sender
         );
-
-      }
-
-      catch (error) {
-
+      } catch (error) {
         console.error(
           "HUNT BROADCASTER: erro aplicando ANSWER:",
           error
         );
-
       }
-
     }
   );
 
   /* ======================================
-     ICE CANDIDATE
+     ICE
   ====================================== */
 
   socket.on(
     "webrtc-ice-candidate",
     async data => {
-
       if (
         !data ||
         !data.sender ||
         !data.candidate
       ) {
-
         return;
-
       }
 
       const peer =
@@ -581,53 +559,41 @@ function connectSocket() {
         );
 
       if (!peer) {
-
         console.log(
           "HUNT BROADCASTER: ICE recebida para Peer inexistente:",
           data.sender
         );
 
         return;
-
       }
 
       try {
-
         if (
           peer.signalingState ===
           "closed"
         ) {
-
           return;
-
         }
 
         await peer.addIceCandidate(
           data.candidate
         );
-
-      }
-
-      catch (error) {
-
+      } catch (error) {
         console.warn(
           "HUNT BROADCASTER: erro adicionando ICE:",
           error
         );
-
       }
-
     }
   );
 
   /* ======================================
-     STREAM INICIADA
+     STREAM STARTED
   ====================================== */
 
   socket.on(
     "stream-started",
     data => {
-
       console.log(
         "HUNT BROADCASTER: stream-started recebido:",
         data
@@ -637,17 +603,11 @@ function connectSocket() {
         data?.broadcasterId ||
         null;
 
-      /*
-       * Confirmação enviada pelo próprio
-       * servidor para este transmissor.
-       */
-
       if (
         data?.local === true ||
         eventBroadcasterId ===
         socket.id
       ) {
-
         isStreaming =
           true;
 
@@ -667,46 +627,36 @@ function connectSocket() {
         );
 
         /*
-         * O servidor também manda user-joined
-         * para os viewers já presentes na sala.
-         */
+          Garante que todos os peers existentes
+          recebam a configuração atual.
+        */
+        queueQualityUpdate();
 
         return;
-
       }
-
-      /*
-       * Se outro transmissor iniciou,
-       * este broadcaster não deve tentar
-       * assumir a transmissão.
-       */
 
       if (
         eventBroadcasterId &&
         eventBroadcasterId !==
         socket.id
       ) {
-
         console.log(
           "HUNT BROADCASTER: transmissão existente de outro usuário:",
           eventBroadcasterId
         );
 
         return;
-
       }
-
     }
   );
 
   /* ======================================
-     STREAM RECUSADA
+     STREAM ALREADY STARTED
   ====================================== */
 
   socket.on(
     "stream-already-started",
     data => {
-
       console.warn(
         "HUNT BROADCASTER: transmissão já existente:",
         data
@@ -729,18 +679,16 @@ function connectSocket() {
       showError(
         "Esta sala já possui uma transmissão."
       );
-
     }
   );
 
   /* ======================================
-     ACESSO NEGADO
+     ACCESS DENIED
   ====================================== */
 
   socket.on(
     "room-access-denied",
     data => {
-
       console.error(
         "HUNT BROADCASTER: acesso negado:",
         data
@@ -769,18 +717,16 @@ function connectSocket() {
       showError(
         "O acesso à sala foi negado."
       );
-
     }
   );
 
   /* ======================================
-     SALA FECHADA
+     ROOM CLOSED
   ====================================== */
 
   socket.on(
     "room-closed",
     data => {
-
       console.log(
         "HUNT BROADCASTER: sala fechada:",
         data
@@ -791,7 +737,6 @@ function connectSocket() {
         data?.roomId ===
         roomData.id
       ) {
-
         stopStreaming(
           false,
           false
@@ -807,28 +752,21 @@ function connectSocket() {
         updateStatus(
           "● SALA ENCERRADA"
         );
-
       }
-
     }
   );
 
   /* ======================================
-     STREAM PAROU
+     STREAM STOPPED
   ====================================== */
 
   socket.on(
     "stream-stopped",
     data => {
-
       console.log(
         "HUNT BROADCASTER: stream-stopped:",
         data
       );
-
-      /*
-       * Só reagir se for a sala atual.
-       */
 
       if (
         data?.roomId &&
@@ -836,13 +774,10 @@ function connectSocket() {
         data.roomId !==
         roomData.id
       ) {
-
         return;
-
       }
 
       if (isStreaming) {
-
         isStreaming =
           false;
 
@@ -856,12 +791,9 @@ function connectSocket() {
         updateStatus(
           "● TRANSMISSÃO ENCERRADA"
         );
-
       }
-
     }
   );
-
 }
 
 /* ========================================
@@ -869,24 +801,19 @@ function connectSocket() {
 ======================================== */
 
 function joinBroadcasterRoom() {
-
   if (
     !socket ||
     !socket.connected ||
     !roomData
   ) {
-
     return;
-
   }
 
   if (
     roomJoined ||
     roomJoinPending
   ) {
-
     return;
-
   }
 
   roomJoinPending =
@@ -911,16 +838,6 @@ function joinBroadcasterRoom() {
     }
   );
 
-  /*
-   * O servidor não possui um evento
-   * obrigatório de confirmação de join.
-   *
-   * Como o socket está conectado e o
-   * servidor validará o token no evento,
-   * consideramos o registro concluído
-   * após o envio.
-   */
-
   roomJoined =
     true;
 
@@ -930,7 +847,343 @@ function joinBroadcasterRoom() {
   console.log(
     "HUNT BROADCASTER: join-room enviado."
   );
+}
 
+/* ========================================
+   APLICAR QUALIDADE NA CAPTURA
+======================================== */
+
+async function applyVideoQualityToCapture() {
+  if (!localStream) {
+    return;
+  }
+
+  const videoTrack =
+    localStream.getVideoTracks()[0];
+
+  if (!videoTrack) {
+    return;
+  }
+
+  if (
+    videoTrack.readyState !==
+    "live"
+  ) {
+    return;
+  }
+
+  const selectedQuality =
+    Number(
+      quality?.value ||
+      1080
+    );
+
+  const selectedFps =
+    getSelectedFps();
+
+  const profile =
+    getQualityProfile(
+      selectedQuality
+    );
+
+  console.log(
+    "HUNT BROADCASTER: aplicando captura:",
+    {
+      quality:
+        selectedQuality,
+
+      width:
+        profile.width,
+
+      height:
+        profile.height,
+
+      fps:
+        selectedFps
+    }
+  );
+
+  try {
+    await videoTrack.applyConstraints(
+      {
+        width: {
+          ideal:
+            profile.width,
+
+          max:
+            profile.width
+        },
+
+        height: {
+          ideal:
+            profile.height,
+
+          max:
+            profile.height
+        },
+
+        frameRate: {
+          ideal:
+            selectedFps,
+
+          max:
+            selectedFps
+        }
+      }
+    );
+
+    /*
+      "detail" é apropriado para
+      compartilhamento de tela porque
+      prioriza detalhes visuais/texto.
+    */
+    try {
+      if (
+        "contentHint" in
+        videoTrack
+      ) {
+        videoTrack.contentHint =
+          "detail";
+      }
+    } catch {}
+
+    console.log(
+      "HUNT BROADCASTER: captura atualizada:",
+      videoTrack.getSettings()
+    );
+  } catch (error) {
+    console.warn(
+      "HUNT BROADCASTER: não foi possível aplicar todas as constraints:",
+      error
+    );
+
+    /*
+      Fallback:
+      tenta pelo menos controlar o FPS.
+    */
+    try {
+      await videoTrack.applyConstraints(
+        {
+          frameRate: {
+            ideal:
+              selectedFps,
+
+            max:
+              selectedFps
+          }
+        }
+      );
+
+      console.log(
+        "HUNT BROADCASTER: FPS aplicado pelo fallback."
+      );
+    } catch (fallbackError) {
+      console.warn(
+        "HUNT BROADCASTER: fallback de FPS também falhou:",
+        fallbackError
+      );
+    }
+  }
+}
+
+/* ========================================
+   CONFIGURAR SENDER DE VÍDEO
+======================================== */
+
+async function configureVideoSender(
+  sender
+) {
+  if (!sender) {
+    return;
+  }
+
+  if (
+    !sender.track ||
+    sender.track.kind !==
+      "video"
+  ) {
+    return;
+  }
+
+  const selectedQuality =
+    Number(
+      quality?.value ||
+      1080
+    );
+
+  const selectedFps =
+    getSelectedFps();
+
+  const profile =
+    getQualityProfile(
+      selectedQuality
+    );
+
+  try {
+    const parameters =
+      sender.getParameters();
+
+    if (
+      !parameters
+    ) {
+      return;
+    }
+
+    if (
+      !parameters.encodings ||
+      !parameters.encodings.length
+    ) {
+      parameters.encodings = [
+        {}
+      ];
+    }
+
+    const encoding =
+      parameters.encodings[0];
+
+    /*
+      Limite real de bitrate da transmissão.
+    */
+    encoding.maxBitrate =
+      profile.bitrate;
+
+    /*
+      Limite real de FPS enviado.
+    */
+    encoding.maxFramerate =
+      selectedFps;
+
+    /*
+      Para screen share, tentamos
+      preservar resolução/detalhes.
+    */
+    try {
+      parameters.degradationPreference =
+        "maintain-resolution";
+    } catch {}
+
+    await sender.setParameters(
+      parameters
+    );
+
+    console.log(
+      "HUNT BROADCASTER: sender configurado:",
+      {
+        bitrate:
+          profile.bitrate,
+
+        fps:
+          selectedFps,
+
+        quality:
+          selectedQuality
+      }
+    );
+  } catch (error) {
+    console.warn(
+      "HUNT BROADCASTER: erro configurando sender:",
+      error
+    );
+  }
+}
+
+/* ========================================
+   APLICAR QUALIDADE AOS PEERS
+======================================== */
+
+async function applyVideoQualityToPeers() {
+  if (
+    viewerPeers.size ===
+    0
+  ) {
+    return;
+  }
+
+  const jobs = [];
+
+  for (
+    const [
+      viewerId,
+      peer
+    ]
+    of viewerPeers
+  ) {
+    if (
+      !peer ||
+      peer.connectionState ===
+        "closed"
+    ) {
+      continue;
+    }
+
+    const senders =
+      peer.getSenders();
+
+    for (
+      const sender
+      of senders
+    ) {
+      if (
+        sender?.track?.kind ===
+        "video"
+      ) {
+        jobs.push(
+          configureVideoSender(
+            sender
+          )
+        );
+      }
+    }
+
+    console.log(
+      "HUNT BROADCASTER: atualizando qualidade do viewer:",
+      viewerId
+    );
+  }
+
+  if (
+    jobs.length
+  ) {
+    await Promise.allSettled(
+      jobs
+    );
+  }
+}
+
+/* ========================================
+   APLICAR QUALIDADE COMPLETA
+======================================== */
+
+async function applyVideoQuality() {
+  await applyVideoQualityToCapture();
+
+  await applyVideoQualityToPeers();
+}
+
+/* ========================================
+   FILA DE QUALIDADE
+======================================== */
+
+function queueQualityUpdate() {
+  qualityUpdateQueue =
+    qualityUpdateQueue
+      .then(
+        async () => {
+          try {
+            await applyVideoQuality();
+          } catch (error) {
+            console.warn(
+              "HUNT BROADCASTER: erro na atualização da qualidade:",
+              error
+            );
+          }
+        }
+      )
+      .catch(
+        () => {}
+      );
+
+  return qualityUpdateQueue;
 }
 
 /* ========================================
@@ -938,15 +1191,12 @@ function joinBroadcasterRoom() {
 ======================================== */
 
 async function chooseScreen() {
-
   if (
     isSelectingScreen ||
     isStreaming ||
     startRequestPending
   ) {
-
     return;
-
   }
 
   isSelectingScreen =
@@ -959,16 +1209,13 @@ async function chooseScreen() {
   );
 
   try {
-
     if (
       !navigator.mediaDevices ||
       !navigator.mediaDevices.getDisplayMedia
     ) {
-
       throw new Error(
         "Seu navegador não suporta captura de tela."
       );
-
     }
 
     const selectedQuality =
@@ -978,11 +1225,35 @@ async function chooseScreen() {
       );
 
     const selectedFps =
-      Number(
-        fps?.value ||
-        60
+      getSelectedFps();
+
+    const profile =
+      getQualityProfile(
+        selectedQuality
       );
 
+    console.log(
+      "HUNT BROADCASTER: iniciando captura:",
+      {
+        quality:
+          selectedQuality,
+
+        width:
+          profile.width,
+
+        height:
+          profile.height,
+
+        fps:
+          selectedFps
+      }
+    );
+
+    /*
+      As constraints são preferências da captura.
+      O navegador ainda controla a fonte que será
+      escolhida pelo usuário.
+    */
     const stream =
       await navigator.mediaDevices.getDisplayMedia(
         {
@@ -997,16 +1268,18 @@ async function chooseScreen() {
 
             width: {
               ideal:
-                getQualityWidth(
-                  selectedQuality
-                )
+                profile.width,
+
+              max:
+                profile.width
             },
 
             height: {
               ideal:
-                getQualityHeight(
-                  selectedQuality
-                )
+                profile.height,
+
+              max:
+                profile.height
             }
           },
 
@@ -1016,11 +1289,9 @@ async function chooseScreen() {
       );
 
     if (!stream) {
-
       throw new Error(
         "Nenhuma tela foi selecionada."
       );
-
     }
 
     localStream =
@@ -1030,36 +1301,50 @@ async function chooseScreen() {
       localStream.getVideoTracks()[0];
 
     if (!videoTrack) {
-
       throw new Error(
         "A captura não possui uma faixa de vídeo."
       );
-
     }
+
+    /*
+      Tenta aplicar novamente as constraints
+      depois que o usuário escolheu a fonte.
+    */
+    await applyVideoQualityToCapture();
+
+    /*
+      Indica ao navegador que é compartilhamento
+      de tela com prioridade para detalhes.
+    */
+    try {
+      if (
+        "contentHint" in
+        videoTrack
+      ) {
+        videoTrack.contentHint =
+          "detail";
+      }
+    } catch {}
+
+    /* ======================================
+       TRACK ENCERRADA
+    ====================================== */
 
     videoTrack.addEventListener(
       "ended",
       () => {
-
         console.log(
           "HUNT BROADCASTER: compartilhamento encerrado pelo navegador."
         );
 
         if (isStreaming) {
-
           stopStreaming(
             true,
             true
           );
-
-        }
-
-        else {
-
+        } else {
           clearSelectedScreen();
-
         }
-
       }
     );
 
@@ -1068,20 +1353,14 @@ async function chooseScreen() {
     ====================================== */
 
     if (!preview) {
-
       throw new Error(
         "Elemento de preview não encontrado."
       );
-
     }
 
     try {
-
       preview.pause();
-
-    }
-
-    catch {}
+    } catch {}
 
     preview.removeAttribute(
       "src"
@@ -1118,31 +1397,23 @@ async function chooseScreen() {
       localStream;
 
     if (emptyPreview) {
-
       emptyPreview.style.display =
         "none";
-
     }
 
-    /*
-     * Tenta reproduzir o preview.
-     */
+    /* ======================================
+       PLAY PREVIEW
+    ====================================== */
 
     const playPreview =
       async () => {
-
         try {
-
           await preview.play();
 
           console.log(
             "HUNT BROADCASTER: preview iniciado."
           );
-
-        }
-
-        catch (error) {
-
+        } catch (error) {
           console.warn(
             "HUNT BROADCASTER: preview não iniciou automaticamente:",
             error
@@ -1150,58 +1421,39 @@ async function chooseScreen() {
 
           setTimeout(
             async () => {
-
               try {
-
                 await preview.play();
 
                 console.log(
                   "HUNT BROADCASTER: preview iniciado na segunda tentativa."
                 );
-
-              }
-
-              catch (retryError) {
-
+              } catch (retryError) {
                 console.warn(
                   "HUNT BROADCASTER: segunda tentativa do preview falhou:",
                   retryError
                 );
-
               }
-
             },
             100
           );
-
         }
-
       };
 
     if (
       preview.readyState >=
       HTMLMediaElement.HAVE_METADATA
     ) {
-
       await playPreview();
-
-    }
-
-    else {
-
+    } else {
       await new Promise(
         resolve => {
-
           let resolved =
             false;
 
           const finish =
             () => {
-
               if (resolved) {
-
                 return;
-
               }
 
               resolved =
@@ -1213,7 +1465,6 @@ async function chooseScreen() {
               );
 
               resolve();
-
             };
 
           preview.addEventListener(
@@ -1229,12 +1480,10 @@ async function chooseScreen() {
             finish,
             1000
           );
-
         }
       );
 
       await playPreview();
-
     }
 
     updateStatus(
@@ -1247,10 +1496,11 @@ async function chooseScreen() {
       "HUNT BROADCASTER: tela selecionada."
     );
 
-  }
-
-  catch (error) {
-
+    console.log(
+      "HUNT BROADCASTER: configurações atuais:",
+      videoTrack.getSettings()
+    );
+  } catch (error) {
     console.error(
       "HUNT BROADCASTER: erro ao selecionar tela:",
       error
@@ -1260,15 +1510,10 @@ async function chooseScreen() {
       error?.name ===
       "NotAllowedError"
     ) {
-
       updateStatus(
         "● SELEÇÃO CANCELADA"
       );
-
-    }
-
-    else {
-
+    } else {
       showError(
         error?.message ||
         "Não foi possível selecionar a tela."
@@ -1277,82 +1522,13 @@ async function chooseScreen() {
       updateStatus(
         "● NENHUMA TELA SELECIONADA"
       );
-
     }
-
-  }
-
-  finally {
-
+  } finally {
     isSelectingScreen =
       false;
 
     updateButtons();
-
   }
-
-}
-
-/* ========================================
-   RESOLUÇÃO
-======================================== */
-
-function getQualityWidth(
-  qualityValue
-) {
-
-  switch (
-    Number(
-      qualityValue
-    )
-  ) {
-
-    case 360:
-      return 640;
-
-    case 480:
-      return 854;
-
-    case 720:
-      return 1280;
-
-    case 1080:
-      return 1920;
-
-    default:
-      return 1920;
-
-  }
-
-}
-
-function getQualityHeight(
-  qualityValue
-) {
-
-  switch (
-    Number(
-      qualityValue
-    )
-  ) {
-
-    case 360:
-      return 360;
-
-    case 480:
-      return 480;
-
-    case 720:
-      return 720;
-
-    case 1080:
-      return 1080;
-
-    default:
-      return 1080;
-
-  }
-
 }
 
 /* ========================================
@@ -1360,58 +1536,43 @@ function getQualityHeight(
 ======================================== */
 
 async function startStreaming() {
-
   if (
     isStreaming ||
     startRequestPending
   ) {
-
     return;
-
   }
 
   clearError();
 
   if (!roomData) {
-
     showError(
       "Nenhuma sala foi selecionada."
     );
 
     return;
-
   }
 
   if (!localStream) {
-
     showError(
       "Primeiro escolha uma tela."
     );
 
     return;
-
   }
 
   if (
     !socket ||
     !socket.connected
   ) {
-
     showError(
       "Aguarde a conexão com o servidor."
     );
 
     return;
-
   }
 
-  /*
-   * Garante que o broadcaster esteja
-   * registrado na sala antes de iniciar.
-   */
-
   if (!roomJoined) {
-
     showError(
       "Aguarde a entrada na sala."
     );
@@ -1419,27 +1580,23 @@ async function startStreaming() {
     joinBroadcasterRoom();
 
     return;
-
   }
 
   const videoTrack =
     localStream.getVideoTracks()[0];
 
   if (!videoTrack) {
-
     showError(
       "A captura da tela não está disponível."
     );
 
     return;
-
   }
 
   if (
     videoTrack.readyState !==
     "live"
   ) {
-
     showError(
       "A captura da tela foi encerrada. Escolha a tela novamente."
     );
@@ -1447,10 +1604,14 @@ async function startStreaming() {
     clearSelectedScreen();
 
     return;
-
   }
 
   try {
+    /*
+      Garante que a configuração selecionada
+      esteja aplicada antes de iniciar.
+    */
+    await queueQualityUpdate();
 
     startRequestPending =
       true;
@@ -1475,11 +1636,7 @@ async function startStreaming() {
           roomData.accessToken
       }
     );
-
-  }
-
-  catch (error) {
-
+  } catch (error) {
     console.error(
       "HUNT BROADCASTER: erro iniciando transmissão:",
       error
@@ -1498,9 +1655,7 @@ async function startStreaming() {
     );
 
     updateButtons();
-
   }
-
 }
 
 /* ========================================
@@ -1510,25 +1665,20 @@ async function startStreaming() {
 async function createOfferForViewer(
   viewerId
 ) {
-
   if (
     !isStreaming ||
     !localStream ||
     !socket ||
     !socket.connected
   ) {
-
     return;
-
   }
 
   if (
     viewerId ===
     socket.id
   ) {
-
     return;
-
   }
 
   console.log(
@@ -1537,51 +1687,38 @@ async function createOfferForViewer(
   );
 
   /*
-   * Se já existe um Peer para esse viewer,
-   * fecha antes de criar outro.
-   */
-
+    Se já existe um peer para esse viewer,
+    fechamos antes de criar outro.
+  */
   const oldPeer =
     viewerPeers.get(
       viewerId
     );
 
   if (oldPeer) {
-
     try {
-
       oldPeer.close();
-
-    }
-
-    catch {}
+    } catch {}
 
     viewerPeers.delete(
       viewerId
     );
-
   }
 
   let peer;
 
   try {
-
     peer =
       new RTCPeerConnection(
         rtcConfig
       );
-
-  }
-
-  catch (error) {
-
+  } catch (error) {
     console.error(
       "HUNT BROADCASTER: erro criando RTCPeerConnection:",
       error
     );
 
     return;
-
   }
 
   viewerPeers.set(
@@ -1597,25 +1734,31 @@ async function createOfferForViewer(
     const track
     of localStream.getTracks()
   ) {
-
     try {
+      const sender =
+        peer.addTrack(
+          track,
+          localStream
+        );
 
-      peer.addTrack(
-        track,
-        localStream
-      );
-
-    }
-
-    catch (error) {
-
+      /*
+        Configura imediatamente o sender
+        de vídeo com a qualidade selecionada.
+      */
+      if (
+        track.kind ===
+        "video"
+      ) {
+        await configureVideoSender(
+          sender
+        );
+      }
+    } catch (error) {
       console.error(
         "HUNT BROADCASTER: erro adicionando track:",
         error
       );
-
     }
-
   }
 
   /* ======================================
@@ -1624,15 +1767,12 @@ async function createOfferForViewer(
 
   peer.onicecandidate =
     event => {
-
       if (
         !event.candidate ||
         !socket ||
         !socket.connected
       ) {
-
         return;
-
       }
 
       socket.emit(
@@ -1650,7 +1790,6 @@ async function createOfferForViewer(
         "HUNT BROADCASTER: ICE enviada:",
         viewerId
       );
-
     };
 
   /* ======================================
@@ -1659,7 +1798,6 @@ async function createOfferForViewer(
 
   peer.onconnectionstatechange =
     () => {
-
       console.log(
         "HUNT BROADCASTER:",
         viewerId,
@@ -1670,45 +1808,33 @@ async function createOfferForViewer(
         peer.connectionState ===
         "failed"
       ) {
-
         try {
-
           peer.restartIce();
-
-        }
-
-        catch {}
-
+        } catch {}
       }
 
       if (
         peer.connectionState ===
         "closed"
       ) {
-
         if (
           viewerPeers.get(
             viewerId
           ) ===
           peer
         ) {
-
           viewerPeers.delete(
             viewerId
           );
-
         }
-
       }
 
       if (
         peer.connectionState ===
         "disconnected"
       ) {
-
         setTimeout(
           () => {
-
             const currentPeer =
               viewerPeers.get(
                 viewerId
@@ -1720,27 +1846,18 @@ async function createOfferForViewer(
               peer.connectionState ===
                 "disconnected"
             ) {
-
               try {
-
                 peer.close();
-
-              }
-
-              catch {}
+              } catch {}
 
               viewerPeers.delete(
                 viewerId
               );
-
             }
-
           },
           10000
         );
-
       }
-
     };
 
   /* ======================================
@@ -1748,14 +1865,8 @@ async function createOfferForViewer(
   ====================================== */
 
   try {
-
     const offer =
       await peer.createOffer();
-
-    /*
-     * O Peer pode ter sido fechado
-     * enquanto o offer era criado.
-     */
 
     if (
       viewerPeers.get(
@@ -1763,9 +1874,7 @@ async function createOfferForViewer(
       ) !==
       peer
     ) {
-
       return;
-
     }
 
     await peer.setLocalDescription(
@@ -1776,9 +1885,7 @@ async function createOfferForViewer(
       !socket ||
       !socket.connected
     ) {
-
       return;
-
     }
 
     if (
@@ -1787,9 +1894,7 @@ async function createOfferForViewer(
       ) !==
       peer
     ) {
-
       return;
-
     }
 
     socket.emit(
@@ -1807,23 +1912,15 @@ async function createOfferForViewer(
       "HUNT BROADCASTER: OFFER enviada para:",
       viewerId
     );
-
-  }
-
-  catch (error) {
-
+  } catch (error) {
     console.error(
       "HUNT BROADCASTER: erro criando OFFER:",
       error
     );
 
     try {
-
       peer.close();
-
-    }
-
-    catch {}
+    } catch {}
 
     if (
       viewerPeers.get(
@@ -1831,15 +1928,11 @@ async function createOfferForViewer(
       ) ===
       peer
     ) {
-
       viewerPeers.delete(
         viewerId
       );
-
     }
-
   }
-
 }
 
 /* ========================================
@@ -1847,7 +1940,6 @@ async function createOfferForViewer(
 ======================================== */
 
 function closeAllViewerPeers() {
-
   for (
     const [
       viewerId,
@@ -1855,9 +1947,7 @@ function closeAllViewerPeers() {
     ]
     of viewerPeers
   ) {
-
     try {
-
       peer.onicecandidate =
         null;
 
@@ -1865,15 +1955,10 @@ function closeAllViewerPeers() {
         null;
 
       peer.close();
-
-    }
-
-    catch {}
-
+    } catch {}
   }
 
   viewerPeers.clear();
-
 }
 
 /* ========================================
@@ -1884,7 +1969,6 @@ function stopStreaming(
   notifyServer = true,
   stopCapture = true
 ) {
-
   console.log(
     "HUNT BROADCASTER: parando transmissão."
   );
@@ -1900,9 +1984,7 @@ function stopStreaming(
     socket.connected &&
     roomData
   ) {
-
     try {
-
       socket.emit(
         "stop-stream",
         {
@@ -1913,18 +1995,12 @@ function stopStreaming(
             roomData.accessToken
         }
       );
-
-    }
-
-    catch (error) {
-
+    } catch (error) {
       console.warn(
         "HUNT BROADCASTER: erro enviando stop-stream:",
         error
       );
-
     }
-
   }
 
   isStreaming =
@@ -1934,65 +2010,46 @@ function stopStreaming(
     stopCapture &&
     localStream
   ) {
-
     for (
       const track
       of localStream.getTracks()
     ) {
-
       try {
-
         track.stop();
-
-      }
-
-      catch {}
-
+      } catch {}
     }
 
     localStream =
       null;
-
   }
 
   if (
     stopCapture &&
     preview
   ) {
-
     try {
-
       preview.pause();
-
-    }
-
-    catch {}
+    } catch {}
 
     preview.srcObject =
       null;
-
   }
 
   if (
     stopCapture &&
     emptyPreview
   ) {
-
     emptyPreview.style.display =
       "flex";
-
   }
 
   updateButtons();
 
   if (stopCapture) {
-
     updateStatus(
       "● TRANSMISSÃO ENCERRADA"
     );
-
   }
-
 }
 
 /* ========================================
@@ -2000,49 +2057,32 @@ function stopStreaming(
 ======================================== */
 
 function clearSelectedScreen() {
-
   if (localStream) {
-
     for (
       const track
       of localStream.getTracks()
     ) {
-
       try {
-
         track.stop();
-
-      }
-
-      catch {}
-
+      } catch {}
     }
-
   }
 
   localStream =
     null;
 
   if (preview) {
-
     try {
-
       preview.pause();
-
-    }
-
-    catch {}
+    } catch {}
 
     preview.srcObject =
       null;
-
   }
 
   if (emptyPreview) {
-
     emptyPreview.style.display =
       "flex";
-
   }
 
   startRequestPending =
@@ -2053,7 +2093,6 @@ function clearSelectedScreen() {
   );
 
   updateButtons();
-
 }
 
 /* ========================================
@@ -2061,112 +2100,86 @@ function clearSelectedScreen() {
 ======================================== */
 
 function updateButtons() {
-
   if (!chooseButton) {
-
     return;
-
   }
 
   if (isStreaming) {
-
     chooseButton.classList.add(
       "hidden"
     );
 
     if (startButton) {
-
       startButton.classList.add(
         "hidden"
       );
 
       startButton.disabled =
         false;
-
     }
 
     if (stopButton) {
-
       stopButton.classList.remove(
         "hidden"
       );
 
       stopButton.disabled =
         false;
-
     }
 
     return;
-
   }
 
   if (stopButton) {
-
     stopButton.classList.add(
       "hidden"
     );
-
   }
 
   if (startRequestPending) {
-
     chooseButton.classList.add(
       "hidden"
     );
 
     if (startButton) {
-
       startButton.classList.remove(
         "hidden"
       );
 
       startButton.disabled =
         true;
-
     }
 
     return;
-
   }
 
   if (localStream) {
-
     chooseButton.classList.add(
       "hidden"
     );
 
     if (startButton) {
-
       startButton.classList.remove(
         "hidden"
       );
 
       startButton.disabled =
         false;
-
     }
-
-  }
-
-  else {
-
+  } else {
     chooseButton.classList.remove(
       "hidden"
     );
 
     if (startButton) {
-
       startButton.classList.add(
         "hidden"
       );
 
       startButton.disabled =
         false;
-
     }
-
   }
-
 }
 
 /* ========================================
@@ -2176,16 +2189,12 @@ function updateButtons() {
 function updateStatus(
   message
 ) {
-
   if (!statusElement) {
-
     return;
-
   }
 
   statusElement.textContent =
     message;
-
 }
 
 /* ========================================
@@ -2195,34 +2204,26 @@ function updateStatus(
 function showError(
   message
 ) {
-
   if (!errorElement) {
-
     console.error(
       "HUNT:",
       message
     );
 
     return;
-
   }
 
   errorElement.textContent =
     message;
-
 }
 
 function clearError() {
-
   if (!errorElement) {
-
     return;
-
   }
 
   errorElement.textContent =
     "";
-
 }
 
 /* ========================================
@@ -2230,57 +2231,36 @@ function clearError() {
 ======================================== */
 
 async function goBack() {
-
   if (isStreaming) {
-
     const confirmed =
       window.confirm(
         "A transmissão está ativa. Deseja realmente sair?"
       );
 
     if (!confirmed) {
-
       return;
-
     }
 
     stopStreaming(
       true,
       true
     );
-
-  }
-
-  else {
-
+  } else {
     clearSelectedScreen();
-
   }
-
-  /*
-   * Dá um pequeno tempo para o
-   * stop-stream chegar ao servidor.
-   */
 
   await wait(
     150
   );
 
   try {
-
     if (socket) {
-
       socket.disconnect();
-
     }
-
-  }
-
-  catch {}
+  } catch {}
 
   window.location.href =
     "/";
-
 }
 
 /* ========================================
@@ -2290,7 +2270,6 @@ async function goBack() {
 function wait(
   milliseconds
 ) {
-
   return new Promise(
     resolve =>
       setTimeout(
@@ -2298,7 +2277,6 @@ function wait(
         milliseconds
       )
   );
-
 }
 
 /* ========================================
@@ -2306,82 +2284,158 @@ function wait(
 ======================================== */
 
 if (chooseButton) {
-
   chooseButton.addEventListener(
     "click",
     chooseScreen
   );
-
 }
 
 if (startButton) {
-
   startButton.addEventListener(
     "click",
     startStreaming
   );
-
 }
 
 if (stopButton) {
-
   stopButton.addEventListener(
     "click",
     () => {
-
       stopStreaming(
         true,
         true
       );
-
     }
   );
-
 }
 
 if (backButton) {
-
   backButton.addEventListener(
     "click",
     goBack
   );
-
 }
 
 /* ========================================
-   SELECTS
+   ALTERAÇÃO DE QUALIDADE
 ======================================== */
 
 if (quality) {
-
   quality.addEventListener(
     "change",
     () => {
-
       console.log(
-        "HUNT: qualidade:",
+        "HUNT: qualidade selecionada:",
         quality.value
       );
 
+      if (!localStream) {
+        return;
+      }
+
+      clearError();
+
+      updateStatus(
+        isStreaming
+          ? "● ATUALIZANDO QUALIDADE..."
+          : "● ATUALIZANDO CAPTURA..."
+      );
+
+      queueQualityUpdate()
+        .then(
+          () => {
+            if (isStreaming) {
+              updateStatus(
+                "🔴 TRANSMITINDO"
+              );
+            } else {
+              updateStatus(
+                "● TELA SELECIONADA"
+              );
+            }
+          }
+        )
+        .catch(
+          error => {
+            console.warn(
+              "HUNT: erro atualizando qualidade:",
+              error
+            );
+
+            if (isStreaming) {
+              updateStatus(
+                "🔴 TRANSMITINDO"
+              );
+            } else {
+              updateStatus(
+                "● TELA SELECIONADA"
+              );
+            }
+          }
+        );
     }
   );
-
 }
 
-if (fps) {
+/* ========================================
+   ALTERAÇÃO DE FPS
+======================================== */
 
+if (fps) {
   fps.addEventListener(
     "change",
     () => {
-
       console.log(
-        "HUNT: FPS:",
+        "HUNT: FPS selecionado:",
         fps.value
       );
 
+      if (!localStream) {
+        return;
+      }
+
+      clearError();
+
+      updateStatus(
+        isStreaming
+          ? "● ATUALIZANDO FPS..."
+          : "● ATUALIZANDO CAPTURA..."
+      );
+
+      queueQualityUpdate()
+        .then(
+          () => {
+            if (isStreaming) {
+              updateStatus(
+                "🔴 TRANSMITINDO"
+              );
+            } else {
+              updateStatus(
+                "● TELA SELECIONADA"
+              );
+            }
+          }
+        )
+        .catch(
+          error => {
+            console.warn(
+              "HUNT: erro atualizando FPS:",
+              error
+            );
+
+            if (isStreaming) {
+              updateStatus(
+                "🔴 TRANSMITINDO"
+              );
+            } else {
+              updateStatus(
+                "● TELA SELECIONADA"
+              );
+            }
+          }
+        );
     }
   );
-
 }
 
 /* ========================================
@@ -2391,21 +2445,13 @@ if (fps) {
 document.addEventListener(
   "visibilitychange",
   () => {
-
     if (
       document.visibilityState ===
       "visible"
     ) {
-
       console.log(
         "HUNT BROADCASTER: página ativa."
       );
-
-      /*
-       * Se a Activity voltar a ficar visível
-       * e o socket tiver reconectado, garante
-       * que o transmissor esteja registrado.
-       */
 
       if (
         socket &&
@@ -2413,13 +2459,20 @@ document.addEventListener(
         roomData &&
         !roomJoined
       ) {
-
         joinBroadcasterRoom();
-
       }
 
+      /*
+        Quando a Activity volta para a frente,
+        garante que a configuração atual continue
+        aplicada.
+      */
+      if (
+        localStream
+      ) {
+        queueQualityUpdate();
+      }
     }
-
   }
 );
 
@@ -2430,16 +2483,13 @@ document.addEventListener(
 window.addEventListener(
   "beforeunload",
   () => {
-
     if (
       isStreaming &&
       socket &&
       socket.connected &&
       roomData
     ) {
-
       try {
-
         socket.emit(
           "stop-stream",
           {
@@ -2450,13 +2500,8 @@ window.addEventListener(
               roomData.accessToken
           }
         );
-
-      }
-
-      catch {}
-
+      } catch {}
     }
-
   }
 );
 
@@ -2465,7 +2510,6 @@ window.addEventListener(
 ======================================== */
 
 function initialize() {
-
   console.log(
     "===================================="
   );
@@ -2487,16 +2531,12 @@ function initialize() {
   );
 
   if (!loadRoomData()) {
-
     if (backButton) {
-
       backButton.textContent =
         "← VOLTAR";
-
     }
 
     return;
-
   }
 
   updateStatus(
@@ -2509,11 +2549,7 @@ function initialize() {
   updateButtons();
 
   connectSocket();
-
 }
 
-/* ========================================
-   INICIAR
-======================================== */
-
 initialize();
+
