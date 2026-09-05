@@ -880,10 +880,6 @@ select:focus-visible {
 
   width: 100%;
 
-  /*
-     Não força uma altura artificial
-     que roube espaço do vídeo.
-  */
   min-height: 100vh;
   min-height: 100dvh;
 
@@ -896,10 +892,6 @@ select:focus-visible {
   overflow-x: hidden;
   overflow-y: auto;
 
-  /*
-     Permite que conteúdo abaixo do
-     player continue gerando scroll.
-  */
   isolation: isolate;
 }
 
@@ -1048,9 +1040,6 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
 
-  /*
-     Pode crescer ou diminuir dinamicamente.
-  */
   flex: 1 1 auto;
 
   min-height: 0;
@@ -1060,25 +1049,11 @@ select:focus-visible {
    WIDE
 ======================================== */
 
-/*
-   WIDE:
-
-   O vídeo usa todo o espaço que o
-   Activity realmente possui.
-
-   Header e bottom são compactos,
-   então o vídeo ganha muito mais altura.
-*/
-
 .viewer-container.wide-mode {
   width: 100%;
 
   max-width: none;
 
-  /*
-     O tamanho é definido pelo flexbox,
-     e não por uma altura fixa.
-  */
   height: auto;
 
   min-height: 0;
@@ -1094,10 +1069,6 @@ select:focus-visible {
   background: #050505;
 }
 
-/*
-   A transmissão inteira continua visível.
-*/
-
 .viewer-container.wide-mode #remoteVideo {
   width: 100%;
   height: 100%;
@@ -1112,16 +1083,6 @@ select:focus-visible {
 /* ========================================
    NORMAL
 ======================================== */
-
-/*
-   NORMAL funciona como um player comum
-   do YouTube:
-
-   - proporção 16:9
-   - largura máxima de 1100px
-   - centralizado
-   - não ocupa a tela inteira
-*/
 
 .viewer-container.normal-mode {
   width: min(
@@ -1173,10 +1134,6 @@ select:focus-visible {
 
   object-position: center center;
 
-  /*
-     O próprio vídeo NÃO pinta as faixas.
-     O fundo vem do container.
-  */
   background: transparent;
 
   outline: none;
@@ -1224,14 +1181,30 @@ select:focus-visible {
    FULLSCREEN PLAYER BUTTON
 ======================================== */
 
+/*
+   IMPORTANTE:
+
+   É O MESMO BOTÃO QUE JÁ EXISTE NO MAIN.JS.
+
+   Agora ele:
+   - fica no centro horizontal;
+   - fica na parte inferior do player;
+   - fica invisível normalmente;
+   - aparece somente quando o mouse chega
+     perto da parte inferior;
+   - não ocupa espaço no layout.
+*/
+
 .hunt-fullscreen-button,
 .hunt-exit-fullscreen-button {
   position: absolute;
 
   z-index: 20;
 
-  right: 15px;
-  bottom: 15px;
+  left: 50%;
+  right: auto;
+
+  bottom: 18px;
 
   width: 42px;
   height: 42px;
@@ -1241,10 +1214,10 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
 
-  border-radius: 7px;
+  border-radius: 8px;
 
   background:
-    rgba(10, 10, 10, 0.85);
+    rgba(10, 10, 10, 0.88);
 
   border:
     1px solid #292929;
@@ -1255,10 +1228,46 @@ select:focus-visible {
 
   cursor: pointer;
 
+  /*
+     O JS controla opacity/visibility.
+     Aqui deixamos a transição suave.
+  */
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  pointer-events: none;
+
+  transform:
+    translateX(-50%)
+    translateY(8px);
+
   transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease,
+    transform 0.2s ease,
     background 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s ease;
+    border-color 0.15s ease;
+}
+
+/*
+   Quando o main.js detectar o mouse
+   perto da parte inferior, ele pode
+   tornar o botão visível.
+*/
+
+.hunt-fullscreen-button.hunt-floating-visible,
+.hunt-exit-fullscreen-button.hunt-floating-visible {
+  opacity: 1;
+
+  visibility: visible;
+
+  pointer-events: auto;
+
+  transform:
+    translateX(-50%)
+    translateY(0);
 }
 
 .hunt-fullscreen-button:hover,
@@ -1270,11 +1279,17 @@ select:focus-visible {
     var(--hunt-orange);
 
   transform:
+    translateX(-50%)
     scale(1.05);
 }
 
+/*
+   O botão de sair não aparece
+   enquanto não estivermos em fullscreen.
+*/
+
 .hunt-exit-fullscreen-button {
-  display: none;
+  display: flex;
 }
 
 /* ========================================
@@ -1328,16 +1343,6 @@ select:focus-visible {
    FULLSCREEN
 ======================================== */
 
-/*
-   Quando fullscreen é ativado:
-
-   - ocupa toda a viewport
-   - título desaparece
-   - botões inferiores desaparecem
-   - sobra somente o vídeo
-   - fundo continua sendo o fundo do site
-*/
-
 .hunt-player-fullscreen {
   position: fixed !important;
 
@@ -1376,8 +1381,7 @@ select:focus-visible {
 }
 
 /*
-   ESCONDE O TÍTULO / HEADER
-   NO FULLSCREEN.
+   ESCONDE O HEADER NO FULLSCREEN
 */
 
 .hunt-player-fullscreen .viewer-header {
@@ -1385,8 +1389,7 @@ select:focus-visible {
 }
 
 /*
-   ESCONDE A BARRA DE BOTÕES
-   NO FULLSCREEN.
+   ESCONDE A BARRA INFERIOR NO FULLSCREEN
 */
 
 .hunt-player-fullscreen .viewer-bottom {
@@ -1394,8 +1397,7 @@ select:focus-visible {
 }
 
 /*
-   O player passa a ocupar 100%
-   da tela disponível.
+   PLAYER FULLSCREEN
 */
 
 .hunt-player-fullscreen .viewer-container,
@@ -1429,16 +1431,7 @@ select:focus-visible {
 }
 
 /*
-   =====================================
-   VÍDEO EM FULLSCREEN
-   =====================================
-
-   CONTAIN:
-
-   - não corta a transmissão
-   - não deforma
-   - mantém a proporção
-   - faixas recebem o fundo do site
+   VÍDEO FULLSCREEN
 */
 
 .hunt-player-fullscreen #remoteVideo {
@@ -1454,17 +1447,35 @@ select:focus-visible {
 }
 
 /*
-   Quando o fullscreen estiver ativo,
-   o botão de sair continua disponível.
+   =====================================
+   BOTÃO DE SAIR DO FULLSCREEN
+   =====================================
+
+   Continua no centro inferior.
 */
 
 .hunt-player-fullscreen .hunt-exit-fullscreen-button {
+  left: 50% !important;
+
+  right: auto !important;
+
+  bottom: 18px !important;
+
+  /*
+     Não forçamos opacity aqui.
+
+     O JS é responsável por mostrar
+     somente quando o mouse estiver
+     próximo da parte inferior.
+  */
+
   display: flex !important;
 }
 
 /*
-   O botão de fullscreen normal
-   fica escondido.
+   O botão de entrar fullscreen
+   fica escondido enquanto já estamos
+   em fullscreen.
 */
 
 .hunt-player-fullscreen .hunt-fullscreen-button {
@@ -1735,9 +1746,6 @@ select:focus-visible {
 
     gap: 6px;
 
-    /*
-       Mantém compacto no celular.
-    */
     flex-direction: row;
 
     align-items: center;
@@ -1761,14 +1769,34 @@ select:focus-visible {
     font-size: 9px;
   }
 
+  /*
+     O botão inferior normal continua
+     sendo escondido no celular.
+  */
+
   .fullscreen-control-button {
     display: none;
   }
 
+  /*
+     BOTÃO FLUTUANTE
+
+     Continua exatamente no centro
+     inferior do player.
+  */
+
   .hunt-fullscreen-button,
   .hunt-exit-fullscreen-button {
-    right: 10px;
-    bottom: 10px;
+    left: 50%;
+
+    right: auto;
+
+    bottom: 12px;
+
+    width: 40px;
+    height: 40px;
+
+    font-size: 18px;
   }
 
   /*
@@ -1804,6 +1832,14 @@ select:focus-visible {
     object-position: center center !important;
 
     background: transparent !important;
+  }
+
+  .hunt-player-fullscreen .hunt-exit-fullscreen-button {
+    left: 50% !important;
+
+    right: auto !important;
+
+    bottom: 12px !important;
   }
 }
 
@@ -1885,6 +1921,16 @@ select:focus-visible {
     padding:
       0
       6px;
+  }
+
+  .hunt-fullscreen-button,
+  .hunt-exit-fullscreen-button {
+    width: 38px;
+    height: 38px;
+
+    bottom: 10px;
+
+    font-size: 17px;
   }
 }
 

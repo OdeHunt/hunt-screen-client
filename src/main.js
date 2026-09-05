@@ -11,21 +11,6 @@ const SERVER_URL =
 const SOCKET_PATH =
   "/hunt-socket";
 
-/*
- * Discord Activity não permite que o
- * aplicativo faça requisições diretamente
- * para domínios externos.
- *
- * Dentro da Activity usamos os caminhos
- * relativos configurados nos URL Mappings:
- *
- * /api
- * /hunt-socket
- *
- * No site normal continuamos usando
- * SERVER_URL normalmente.
- */
-
 const isLocalHost =
   window.location.hostname ===
     "localhost" ||
@@ -39,25 +24,6 @@ const isNormalHuntSite =
 const IS_DISCORD_ACTIVITY =
   !isLocalHost &&
   !isNormalHuntSite;
-
-/*
- * Na Activity:
- *
- * API_BASE = ""
- *
- * Resultado:
- *
- * /api/rooms
- *
- * No site normal:
- *
- * API_BASE =
- * https://hunt-screen-server.onrender.com
- *
- * Resultado:
- *
- * https://hunt-screen-server.onrender.com/api/rooms
- */
 
 const API_BASE =
   IS_DISCORD_ACTIVITY
@@ -170,14 +136,6 @@ let viewerJoinPending =
 let viewerJoinedRoomId =
   null;
 
-/*
- * Controla se o usuário está executando
- * uma atualização manual da transmissão.
- *
- * Isso permite diferenciar uma reconexão
- * normal de um RESET manual do WebRTC.
- */
-
 let viewerRefreshInProgress =
   false;
 
@@ -231,17 +189,22 @@ let currentPlayerMode =
 let huntFullscreen =
   false;
 
+let nativeFullscreenActive =
+  false;
+
 /*
- * Indica se o navegador realmente
- * entrou no Fullscreen API.
+ * Controle do botão flutuante de fullscreen.
  *
- * É separado de huntFullscreen porque
- * a Activity pode bloquear a API nativa,
- * mas ainda podemos usar o fullscreen
- * visual através do CSS.
+ * O CSS fará a parte visual:
+ *
+ * - invisível normalmente;
+ * - aparece quando o mouse chega perto
+ *   da região inferior central do player.
+ *
+ * Aqui controlamos apenas o estado.
  */
 
-let nativeFullscreenActive =
+let fullscreenMouseNearBottom =
   false;
 
 /* ========================================
@@ -258,12 +221,6 @@ socket.on(
 
     updateGlobalStatus();
     updateRoomStatus();
-
-    /*
-     * Se o viewer estava dentro de uma sala
-     * e o Socket.IO reconectou, precisamos
-     * registrar o novo socket novamente.
-     */
 
     if (
       currentScreen ===
@@ -335,11 +292,6 @@ socket.on(
 ======================================== */
 
 function showHome() {
-  /*
-   * Se estiver em uma sala,
-   * avisa o servidor antes de sair.
-   */
-
   leaveCurrentRoom();
 
   currentScreen =
@@ -371,6 +323,9 @@ function showHome() {
     false;
 
   nativeFullscreenActive =
+    false;
+
+  fullscreenMouseNearBottom =
     false;
 
   document.body.classList.remove(
@@ -515,6 +470,9 @@ async function openRooms(
     false;
 
   nativeFullscreenActive =
+    false;
+
+  fullscreenMouseNearBottom =
     false;
 
   document.body.classList.remove(
@@ -1651,10 +1609,6 @@ async function joinRoom(
     viewerRefreshInProgress =
       false;
 
-    /* ================================
-       TRANSMISSOR
-    ================================= */
-
     if (
       currentRole ===
       "broadcaster"
@@ -1681,10 +1635,6 @@ async function joinRoom(
 
       return;
     }
-
-    /* ================================
-       VIEWER
-    ================================= */
 
     startViewer(
       currentRoom,
@@ -1770,6 +1720,9 @@ function startViewer(
   nativeFullscreenActive =
     false;
 
+  fullscreenMouseNearBottom =
+    false;
+
   document.body.classList.remove(
     "hunt-fullscreen-active"
   );
@@ -1844,6 +1797,16 @@ function startViewer(
           controls
           preload="none">
         </video>
+
+        <!--
+          Botão flutuante de fullscreen.
+
+          O CSS posicionará este botão no
+          centro inferior do player.
+
+          O JavaScript apenas controla sua
+          visibilidade/estado.
+        -->
 
         <button
           id="huntFullscreenButton"
@@ -1950,12 +1913,20 @@ function startViewer(
       "huntExitFullscreenButton"
     );
 
+  /* ======================================
+     REFRESH
+  ====================================== */
+
   if (refreshButton) {
     refreshButton.addEventListener(
       "click",
       refreshViewer
     );
   }
+
+  /* ======================================
+     BACK
+  ====================================== */
 
   if (backButton) {
     backButton.addEventListener(
@@ -1996,6 +1967,10 @@ function startViewer(
     );
   }
 
+  /* ======================================
+     PLAYER MODE
+  ====================================== */
+
   if (wideButton) {
     wideButton.addEventListener(
       "click",
@@ -2018,12 +1993,20 @@ function startViewer(
     );
   }
 
+  /* ======================================
+     FULLSCREEN BUTTON
+  ====================================== */
+
   if (fullscreenButton) {
     fullscreenButton.addEventListener(
       "click",
       toggleHuntFullscreen
     );
   }
+
+  /* ======================================
+     FLOATING FULLSCREEN BUTTON
+  ====================================== */
 
   if (huntFullscreenButton) {
     huntFullscreenButton.addEventListener(
@@ -2032,12 +2015,20 @@ function startViewer(
     );
   }
 
+  /* ======================================
+     FLOATING EXIT BUTTON
+  ====================================== */
+
   if (huntExitFullscreenButton) {
     huntExitFullscreenButton.addEventListener(
       "click",
       exitHuntFullscreen
     );
   }
+
+  /* ======================================
+     CONFIGURAÇÃO INICIAL DO VÍDEO
+  ====================================== */
 
   const video =
     document.getElementById(
@@ -2052,6 +2043,12 @@ function startViewer(
       false;
   }
 
+  /* ======================================
+     MOUSE DO PLAYER
+  ====================================== */
+
+  setupFullscreenHover();
+
   setPlayerMode(
     currentPlayerMode
   );
@@ -2064,18 +2061,161 @@ function startViewer(
 }
 
 /* ========================================
-   ENTRAR NO VIEWER PELO SOCKET
+   FULLSCREEN HOVER
 ======================================== */
 
 /*
- * forceJoin = true
+ * Prepara o botão flutuante para aparecer
+ * quando o mouse estiver próximo da parte
+ * inferior central do player.
  *
- * Quando true, ignoramos o fato de o viewer
- * já estar registrado na sala.
- *
- * Isso é utilizado pelo botão ATUALIZAR
- * para forçar uma nova negociação WebRTC.
+ * A posição e a animação ficam no CSS.
  */
+
+function setupFullscreenHover() {
+  const container =
+    document.getElementById(
+      "viewerContainer"
+    );
+
+  const fullscreenButton =
+    document.getElementById(
+      "huntFullscreenButton"
+    );
+
+  if (
+    !container ||
+    !fullscreenButton
+  ) {
+    return;
+  }
+
+  /*
+   * Inicialmente escondido.
+   */
+
+  container.classList.remove(
+    "fullscreen-hover-active"
+  );
+
+  fullscreenButton.classList.remove(
+    "fullscreen-hover-visible"
+  );
+
+  const updateHoverPosition =
+    event => {
+
+      if (
+        huntFullscreen &&
+        !nativeFullscreenActive
+      ) {
+        /*
+         * Continua funcionando no
+         * fullscreen visual.
+         */
+      }
+
+      const rect =
+        container.getBoundingClientRect();
+
+      if (
+        !rect.width ||
+        !rect.height
+      ) {
+        return;
+      }
+
+      const mouseX =
+        event.clientX -
+        rect.left;
+
+      const mouseY =
+        event.clientY -
+        rect.top;
+
+      /*
+       * Região de ativação:
+       *
+       * - centro horizontal;
+       * - aproximadamente os últimos
+       *   130px inferiores.
+       *
+       * O botão em si pode ficar menor.
+       */
+
+      const horizontalDistance =
+        Math.abs(
+          mouseX -
+          rect.width / 2
+        );
+
+      const nearCenter =
+        horizontalDistance <=
+        Math.min(
+          180,
+          rect.width * 0.25
+        );
+
+      const nearBottom =
+        mouseY >=
+        rect.height -
+        150;
+
+      fullscreenMouseNearBottom =
+        nearCenter &&
+        nearBottom;
+
+      if (
+        fullscreenMouseNearBottom
+      ) {
+        container.classList.add(
+          "fullscreen-hover-active"
+        );
+
+        fullscreenButton.classList.add(
+          "fullscreen-hover-visible"
+        );
+      }
+    };
+
+  const hideHover =
+    () => {
+
+      fullscreenMouseNearBottom =
+        false;
+
+      container.classList.remove(
+        "fullscreen-hover-active"
+      );
+
+      fullscreenButton.classList.remove(
+        "fullscreen-hover-visible"
+      );
+    };
+
+  container.addEventListener(
+    "mousemove",
+    updateHoverPosition
+  );
+
+  container.addEventListener(
+    "mouseleave",
+    hideHover
+  );
+
+  container.addEventListener(
+    "mouseenter",
+    event => {
+      updateHoverPosition(
+        event
+      );
+    }
+  );
+}
+
+/* ========================================
+   ENTRAR NO VIEWER
+======================================== */
 
 function joinCurrentViewerRoom(
   forceJoin = false
@@ -2119,12 +2259,6 @@ function joinCurrentViewerRoom(
     return;
   }
 
-  /*
-   * Se não for uma atualização forçada
-   * e o viewer já estiver registrado,
-   * não precisamos enviar novamente.
-   */
-
   if (
     !forceJoin &&
     viewerJoinedRoomId ===
@@ -2139,11 +2273,6 @@ function joinCurrentViewerRoom(
 
   viewerJoinPending =
     true;
-
-  /*
-   * Marca que estamos registrando
-   * novamente nesta sala.
-   */
 
   viewerJoinedRoomId =
     null;
@@ -2200,11 +2329,6 @@ function refreshViewer() {
     return;
   }
 
-  /*
-   * Impede vários cliques simultâneos
-   * no botão enquanto o reset está ocorrendo.
-   */
-
   if (
     viewerRefreshInProgress
   ) {
@@ -2218,41 +2342,13 @@ function refreshViewer() {
     "HUNT: iniciando RESET manual da transmissão..."
   );
 
-  /*
-   * Fecha SOMENTE a conexão WebRTC.
-   *
-   * Não usamos leaveCurrentRoom().
-   *
-   * O viewer continua dentro da sala.
-   */
-
   closeViewer();
-
-  /*
-   * Limpa o identificador antigo do
-   * transmissor.
-   */
 
   broadcasterId =
     null;
 
-  /*
-   * Limpa candidatos ICE antigos.
-   */
-
   pendingCandidates =
     [];
-
-  /*
-   * MUITO IMPORTANTE:
-   *
-   * O viewer precisa ser considerado
-   * temporariamente não registrado.
-   *
-   * Caso contrário joinCurrentViewerRoom()
-   * retornaria imediatamente sem enviar
-   * outro join-room.
-   */
 
   viewerJoinedRoomId =
     null;
@@ -2283,18 +2379,6 @@ function refreshViewer() {
       "● REINICIANDO TRANSMISSÃO...";
   }
 
-  /*
-   * Se o socket está conectado,
-   * fazemos um novo join-room FORÇADO.
-   *
-   * O servidor vai detectar que existe
-   * um broadcaster ativo e enviar:
-   *
-   * stream-started
-   *
-   * para este viewer.
-   */
-
   if (
     socket.connected
   ) {
@@ -2302,13 +2386,6 @@ function refreshViewer() {
     joinCurrentViewerRoom(
       true
     );
-
-    /*
-     * Pequeno intervalo apenas para
-     * impedir spam de cliques.
-     *
-     * Não interfere no WebRTC.
-     */
 
     setTimeout(
       () => {
@@ -2392,7 +2469,7 @@ function updateViewerStatus() {
 }
 
 /* ========================================
-   SAIR DA SALA ATUAL
+   SAIR DA SALA
 ======================================== */
 
 function leaveCurrentRoom() {
@@ -2558,13 +2635,6 @@ socket.on(
       status.textContent =
         "● CONECTANDO À TRANSMISSÃO";
     }
-
-    /*
-     * A nova transmissão chegou.
-     *
-     * Agora podemos liberar o estado
-     * de atualização.
-     */
 
     viewerRefreshInProgress =
       false;
@@ -3367,6 +3437,9 @@ async function exitHuntFullscreen() {
   huntFullscreen =
     false;
 
+  fullscreenMouseNearBottom =
+    false;
+
   document.body.classList.remove(
     "hunt-fullscreen-active"
   );
@@ -3385,6 +3458,21 @@ async function exitHuntFullscreen() {
       "hunt-fullscreen-container"
     );
 
+    container.classList.remove(
+      "fullscreen-hover-active"
+    );
+
+  }
+
+  const fullscreenButton =
+    document.getElementById(
+      "huntFullscreenButton"
+    );
+
+  if (fullscreenButton) {
+    fullscreenButton.classList.remove(
+      "fullscreen-hover-visible"
+    );
   }
 
   updateFullscreenButtons();
@@ -3680,13 +3768,6 @@ socket.on(
       "HUNT: novo espectador entrou:",
       data
     );
-
-    /*
-     * O transmissor possui o
-     * broadcaster.js separado.
-     *
-     * Não fazemos nada aqui.
-     */
   }
 );
 
@@ -3785,7 +3866,7 @@ socket.on(
 
         if (message) {
           message.textContent =
-            "CONECTANDO À TRANSMISSÃO...";
+            "CONECTANDO À TRANSMISSÃO";
 
           message.style.display =
             "flex";
@@ -3800,12 +3881,6 @@ socket.on(
           status.textContent =
             "● CONECTANDO À TRANSMISSÃO";
         }
-
-        /*
-         * Se recebemos o broadcaster
-         * diretamente neste evento, também
-         * podemos iniciar o peer.
-         */
 
         if (
           document.getElementById(
