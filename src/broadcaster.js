@@ -1,4 +1,3 @@
-js
 import { io } from "socket.io-client";
 import "./broadcaster.css";
 
@@ -2552,4 +2551,3 @@ function initialize() {
 }
 
 initialize();
-
