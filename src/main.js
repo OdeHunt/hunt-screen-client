@@ -34,7 +34,7 @@ const isLocalHost =
 
 const isNormalHuntSite =
   window.location.hostname ===
-    "hunt-screen-client.onrender.com";
+  "hunt-screen-client.onrender.com";
 
 const IS_DISCORD_ACTIVITY =
   !isLocalHost &&
@@ -119,23 +119,9 @@ const socketOptions = {
 
 const socket =
   IS_DISCORD_ACTIVITY
-
-    /*
-     * Dentro da Activity NÃO usamos
-     * SERVER_URL.
-     *
-     * O Discord encaminhará
-     * /hunt-socket através do
-     * URL Mapping.
-     */
     ? io(
         socketOptions
       )
-
-    /*
-     * Fora da Activity mantém
-     * exatamente a conexão atual.
-     */
     : io(
         SERVER_URL,
         socketOptions
@@ -234,6 +220,19 @@ let currentPlayerMode =
 let huntFullscreen =
   false;
 
+/*
+ * Indica se o navegador realmente
+ * entrou no Fullscreen API.
+ *
+ * É separado de huntFullscreen porque
+ * a Activity pode bloquear a API nativa,
+ * mas ainda podemos usar o fullscreen
+ * visual através do CSS.
+ */
+
+let nativeFullscreenActive =
+  false;
+
 /* ========================================
    SOCKET STATUS
 ======================================== */
@@ -278,14 +277,6 @@ socket.on(
       "HUNT: servidor desconectado:",
       reason
     );
-
-    /*
-     * O socket antigo não está mais
-     * registrado no servidor.
-     *
-     * O novo socket será registrado
-     * novamente no evento connect.
-     */
 
     viewerJoinedRoomId =
       null;
@@ -357,6 +348,9 @@ function showHome() {
   closeViewer();
 
   huntFullscreen =
+    false;
+
+  nativeFullscreenActive =
     false;
 
   document.body.classList.remove(
@@ -472,11 +466,6 @@ function updateGlobalStatus() {
 async function openRooms(
   role
 ) {
-  /*
-   * Se já estava em uma sala,
-   * sai corretamente.
-   */
-
   leaveCurrentRoom();
 
   closeViewer();
@@ -502,6 +491,9 @@ async function openRooms(
   huntFullscreen =
     false;
 
+  nativeFullscreenActive =
+    false;
+
   document.body.classList.remove(
     "hunt-fullscreen-active"
   );
@@ -509,11 +501,6 @@ async function openRooms(
   renderRoomsScreen();
 
   await loadRooms();
-
-  /*
-   * Só mantém atualização automática
-   * enquanto estiver na tela de salas.
-   */
 
   if (
     currentScreen ===
@@ -1632,11 +1619,6 @@ async function joinRoom(
     currentAccessToken =
       data.accessToken;
 
-    /*
-     * Novo socket ainda não foi
-     * registrado como viewer.
-     */
-
     viewerJoinedRoomId =
       null;
 
@@ -1751,6 +1733,9 @@ function startViewer(
   closeViewer();
 
   huntFullscreen =
+    false;
+
+  nativeFullscreenActive =
     false;
 
   document.body.classList.remove(
@@ -1980,11 +1965,9 @@ function startViewer(
     wideButton.addEventListener(
       "click",
       () => {
-
         setPlayerMode(
           "wide"
         );
-
       }
     );
   }
@@ -1993,11 +1976,9 @@ function startViewer(
     normalButton.addEventListener(
       "click",
       () => {
-
         setPlayerMode(
           "normal"
         );
-
       }
     );
   }
@@ -2043,12 +2024,6 @@ function startViewer(
   updateFullscreenButtons();
 
   updateViewerStatus();
-
-  /*
-   * Tenta entrar imediatamente.
-   * Se ainda não estiver conectado,
-   * o evento "connect" fará isso.
-   */
 
   joinCurrentViewerRoom();
 }
@@ -2096,11 +2071,6 @@ function joinCurrentViewerRoom() {
 
     return;
   }
-
-  /*
-   * Evita mandar join-room repetidamente
-   * para o mesmo socket.
-   */
 
   if (
     viewerJoinedRoomId ===
@@ -2194,15 +2164,6 @@ function refreshViewer() {
     status.textContent =
       "● PROCURANDO...";
   }
-
-  /*
-   * O viewer continua registrado
-   * no servidor.
-   *
-   * Se a conexão foi perdida,
-   * viewerJoinedRoomId estará null
-   * e o connect fará a entrada novamente.
-   */
 
   if (
     socket.connected &&
@@ -2360,11 +2321,6 @@ socket.on(
       data
     );
 
-    /*
-     * Ignorar confirmação local do
-     * transmissor.
-     */
-
     if (
       data?.local
     ) {
@@ -2384,11 +2340,6 @@ socket.on(
     ) {
       return;
     }
-
-    /*
-     * Se o servidor informou a sala,
-     * garantir que é a sala atual.
-     */
 
     if (
       data.roomId &&
@@ -2761,11 +2712,6 @@ socket.on(
       return;
     }
 
-    /*
-     * Garantir que a oferta pertence
-     * ao transmissor atual.
-     */
-
     broadcasterId =
       data.sender;
 
@@ -2782,11 +2728,6 @@ socket.on(
       await peer.setRemoteDescription(
         data.offer
       );
-
-      /*
-       * Aplicar ICE que chegou antes
-       * da descrição remota.
-       */
 
       if (
         pendingCandidates.length >
@@ -2886,11 +2827,6 @@ socket.on(
     ) {
       return;
     }
-
-    /*
-     * Só aceitar ICE do transmissor
-     * atual.
-     */
 
     if (
       broadcasterId &&
@@ -3078,15 +3014,11 @@ async function toggleHuntFullscreen() {
   if (
     huntFullscreen
   ) {
-
     await exitHuntFullscreen();
-
   }
 
   else {
-
     await enterHuntFullscreen();
-
   }
 }
 
@@ -3112,33 +3044,77 @@ async function enterHuntFullscreen() {
     return;
   }
 
+  /*
+   * Primeiro ativamos nosso fullscreen
+   * visual. Isso garante que funcione
+   * mesmo quando o Discord Activity
+   * bloquear requestFullscreen().
+   */
+
+  huntFullscreen =
+    true;
+
+  document.body.classList.add(
+    "hunt-fullscreen-active"
+  );
+
+  viewerScreen.classList.add(
+    "hunt-player-fullscreen"
+  );
+
+  container.classList.add(
+    "hunt-fullscreen-container"
+  );
+
+  updateFullscreenButtons();
+
+  /*
+   * Depois tentamos usar o Fullscreen API.
+   *
+   * Se funcionar, ótimo.
+   *
+   * Se o Discord bloquear, o fallback
+   * visual continua funcionando.
+   */
+
   try {
 
     if (
       document.fullscreenElement !==
-      viewerScreen
+      viewerScreen &&
+      typeof viewerScreen.requestFullscreen ===
+        "function"
     ) {
 
-      if (
-        typeof viewerScreen.requestFullscreen ===
-        "function"
-      ) {
+      await viewerScreen.requestFullscreen();
 
-        await viewerScreen.requestFullscreen();
+      nativeFullscreenActive =
+        true;
 
-      }
+      console.log(
+        "HUNT: Fullscreen API ativada."
+      );
     }
 
   }
 
   catch (error) {
 
+    nativeFullscreenActive =
+      false;
+
     console.warn(
-      "HUNT: Fullscreen API não disponível:",
+      "HUNT: Fullscreen API bloqueada ou indisponível. Usando fullscreen visual.",
       error
     );
 
   }
+
+  /*
+   * Reforça as classes depois da tentativa
+   * nativa. Isso evita que a Activity remova
+   * nosso estado visual.
+   */
 
   huntFullscreen =
     true;
@@ -3173,20 +3149,20 @@ async function exitHuntFullscreen() {
       "viewerContainer"
     );
 
+  /*
+   * Primeiro tenta sair do Fullscreen API.
+   */
+
   try {
 
     if (
-      document.fullscreenElement
+      document.fullscreenElement &&
+      typeof document.exitFullscreen ===
+        "function"
     ) {
 
-      if (
-        typeof document.exitFullscreen ===
-        "function"
-      ) {
+      await document.exitFullscreen();
 
-        await document.exitFullscreen();
-
-      }
     }
 
   }
@@ -3194,11 +3170,14 @@ async function exitHuntFullscreen() {
   catch (error) {
 
     console.warn(
-      "HUNT: erro saindo do fullscreen:",
+      "HUNT: erro saindo do Fullscreen API:",
       error
     );
 
   }
+
+  nativeFullscreenActive =
+    false;
 
   huntFullscreen =
     false;
@@ -3212,6 +3191,7 @@ async function exitHuntFullscreen() {
     viewerScreen.classList.remove(
       "hunt-player-fullscreen"
     );
+
   }
 
   if (container) {
@@ -3219,6 +3199,7 @@ async function exitHuntFullscreen() {
     container.classList.remove(
       "hunt-fullscreen-container"
     );
+
   }
 
   updateFullscreenButtons();
@@ -3242,26 +3223,60 @@ document.addEventListener(
         "viewerContainer"
       );
 
+    /*
+     * Se o navegador saiu do Fullscreen API,
+     * não removemos automaticamente o fallback
+     * visual se huntFullscreen ainda estiver ativo.
+     *
+     * Isso é importante no Discord Activity.
+     */
+
     if (
       !document.fullscreenElement
     ) {
+
+      nativeFullscreenActive =
+        false;
+
+      /*
+       * Se nosso estado visual ainda está
+       * ativo, mantém o fullscreen visual.
+       */
 
       if (
         huntFullscreen
       ) {
 
-        huntFullscreen =
-          false;
+        if (viewerScreen) {
 
-        document.body.classList.remove(
+          viewerScreen.classList.add(
+            "hunt-player-fullscreen"
+          );
+
+        }
+
+        if (container) {
+
+          container.classList.add(
+            "hunt-fullscreen-container"
+          );
+
+        }
+
+        document.body.classList.add(
           "hunt-fullscreen-active"
         );
+
+      }
+
+      else {
 
         if (viewerScreen) {
 
           viewerScreen.classList.remove(
             "hunt-player-fullscreen"
           );
+
         }
 
         if (container) {
@@ -3269,39 +3284,51 @@ document.addEventListener(
           container.classList.remove(
             "hunt-fullscreen-container"
           );
+
         }
 
-        updateFullscreenButtons();
-      }
-    }
-
-    else {
-
-      huntFullscreen =
-        true;
-
-      document.body.classList.add(
-        "hunt-fullscreen-active"
-      );
-
-      if (viewerScreen) {
-
-        viewerScreen.classList.add(
-          "hunt-player-fullscreen"
-        );
-
-      }
-
-      if (container) {
-
-        container.classList.add(
-          "hunt-fullscreen-container"
+        document.body.classList.remove(
+          "hunt-fullscreen-active"
         );
 
       }
 
       updateFullscreenButtons();
+
+      return;
     }
+
+    /*
+     * Fullscreen API entrou de verdade.
+     */
+
+    nativeFullscreenActive =
+      true;
+
+    huntFullscreen =
+      true;
+
+    document.body.classList.add(
+      "hunt-fullscreen-active"
+    );
+
+    if (viewerScreen) {
+
+      viewerScreen.classList.add(
+        "hunt-player-fullscreen"
+      );
+
+    }
+
+    if (container) {
+
+      container.classList.add(
+        "hunt-fullscreen-container"
+      );
+
+    }
+
+    updateFullscreenButtons();
   }
 );
 
@@ -3377,11 +3404,15 @@ document.addEventListener(
 function setPlayerMode(
   mode
 ) {
+  /*
+   * Aceita somente os dois modos
+   * disponíveis.
+   */
+
   if (
     mode !== "wide" &&
     mode !== "normal"
   ) {
-
     mode =
       "wide";
   }
@@ -3408,14 +3439,36 @@ function setPlayerMode(
     return;
   }
 
+  /*
+   * Remove qualquer modo anterior.
+   */
+
   container.classList.remove(
     "wide-mode",
     "normal-mode"
   );
 
+  /*
+   * Aplica exatamente um modo.
+   */
+
   container.classList.add(
-    `${mode}-mode`
+    mode === "wide"
+      ? "wide-mode"
+      : "normal-mode"
   );
+
+  /*
+   * Também deixa o modo disponível
+   * como atributo para CSS/inspeção.
+   */
+
+  container.dataset.playerMode =
+    mode;
+
+  /*
+   * Atualiza botão WIDE.
+   */
 
   if (wideButton) {
 
@@ -3424,7 +3477,19 @@ function setPlayerMode(
       mode ===
         "wide"
     );
+
+    wideButton.setAttribute(
+      "aria-pressed",
+      mode ===
+        "wide"
+        ? "true"
+        : "false"
+    );
   }
+
+  /*
+   * Atualiza botão NORMAL.
+   */
 
   if (normalButton) {
 
@@ -3433,7 +3498,38 @@ function setPlayerMode(
       mode ===
         "normal"
     );
+
+    normalButton.setAttribute(
+      "aria-pressed",
+      mode ===
+        "normal"
+        ? "true"
+        : "false"
+    );
   }
+
+  /*
+   * Força o navegador a recalcular
+   * o tamanho do player depois da
+   * mudança.
+   */
+
+  requestAnimationFrame(
+    () => {
+
+      window.dispatchEvent(
+        new Event(
+          "resize"
+        )
+      );
+
+    }
+  );
+
+  console.log(
+    "HUNT: modo do player:",
+    mode
+  );
 }
 
 /* ========================================
@@ -3535,12 +3631,6 @@ socket.on(
       ) {
         return;
       }
-
-      /*
-       * Se o servidor mandar esse evento,
-       * também podemos aproveitar o ID
-       * do transmissor para preparar o peer.
-       */
 
       if (
         data?.broadcasterId
