@@ -11,38 +11,135 @@ const SERVER_URL =
 const SOCKET_PATH =
   "/hunt-socket";
 
+/*
+ * Discord Activity não permite que o
+ * aplicativo faça requisições diretamente
+ * para domínios externos.
+ *
+ * Dentro da Activity usamos os caminhos
+ * relativos configurados nos URL Mappings:
+ *
+ * /api
+ * /hunt-socket
+ *
+ * No site normal continuamos usando
+ * SERVER_URL normalmente.
+ */
+
+const isLocalHost =
+  window.location.hostname ===
+    "localhost" ||
+  window.location.hostname ===
+    "127.0.0.1";
+
+const isNormalHuntSite =
+  window.location.hostname ===
+    "hunt-screen-client.onrender.com";
+
+const IS_DISCORD_ACTIVITY =
+  !isLocalHost &&
+  !isNormalHuntSite;
+
+/*
+ * Na Activity:
+ *
+ * API_BASE = ""
+ *
+ * Resultado:
+ *
+ * /api/rooms
+ *
+ * No site normal:
+ *
+ * API_BASE =
+ * https://hunt-screen-server.onrender.com
+ *
+ * Resultado:
+ *
+ * https://hunt-screen-server.onrender.com/api/rooms
+ */
+
+const API_BASE =
+  IS_DISCORD_ACTIVITY
+    ? ""
+    : SERVER_URL;
+
+console.log(
+  "HUNT: ambiente:",
+  IS_DISCORD_ACTIVITY
+    ? "DISCORD ACTIVITY"
+    : "SITE NORMAL"
+);
+
+console.log(
+  "HUNT: API:",
+  IS_DISCORD_ACTIVITY
+    ? "/api"
+    : SERVER_URL
+);
+
+console.log(
+  "HUNT: Socket.IO:",
+  IS_DISCORD_ACTIVITY
+    ? "CAMINHO RELATIVO"
+    : SERVER_URL
+);
+
 /* ========================================
    SOCKET.IO
 ======================================== */
 
-const socket = io(
-  SERVER_URL,
-  {
-    path: SOCKET_PATH,
+const socketOptions = {
+  path:
+    SOCKET_PATH,
 
-    transports: [
-      "polling",
-      "websocket"
-    ],
+  transports: [
+    "polling",
+    "websocket"
+  ],
 
-    reconnection: true,
+  reconnection:
+    true,
 
-    reconnectionAttempts:
-      Infinity,
+  reconnectionAttempts:
+    Infinity,
 
-    reconnectionDelay:
-      1000,
+  reconnectionDelay:
+    1000,
 
-    reconnectionDelayMax:
-      5000,
+  reconnectionDelayMax:
+    5000,
 
-    timeout:
-      20000,
+  timeout:
+    20000,
 
-    autoConnect:
-      true
-  }
-);
+  autoConnect:
+    true
+};
+
+const socket =
+  IS_DISCORD_ACTIVITY
+
+    /*
+     * Dentro da Activity NÃO usamos
+     * SERVER_URL.
+     *
+     * O Discord encaminhará
+     * /hunt-socket através do
+     * URL Mapping.
+     */
+    ? io(
+        socketOptions
+      )
+
+    /*
+     * Fora da Activity mantém
+     * exatamente a conexão atual.
+     */
+    : io(
+        SERVER_URL,
+        socketOptions
+      );
 
 /* ========================================
    ELEMENTO PRINCIPAL
@@ -578,7 +675,7 @@ async function loadRooms() {
   try {
     const response =
       await fetch(
-        `${SERVER_URL}/api/rooms`,
+        `${API_BASE}/api/rooms`,
         {
           method:
             "GET",
@@ -1122,7 +1219,7 @@ async function createRoom() {
   try {
     const response =
       await fetch(
-        `${SERVER_URL}/api/rooms`,
+        `${API_BASE}/api/rooms`,
         {
           method:
             "POST",
@@ -1168,7 +1265,7 @@ async function createRoom() {
 
     const joinResponse =
       await fetch(
-        `${SERVER_URL}/api/rooms/${encodeURIComponent(data.room.id)}/join`,
+        `${API_BASE}/api/rooms/${encodeURIComponent(data.room.id)}/join`,
         {
           method:
             "POST",
@@ -1486,7 +1583,7 @@ async function joinRoom(
   try {
     const response =
       await fetch(
-        `${SERVER_URL}/api/rooms/${encodeURIComponent(room.id)}/join`,
+        `${API_BASE}/api/rooms/${encodeURIComponent(room.id)}/join`,
         {
           method:
             "POST",
@@ -1503,7 +1600,7 @@ async function joinRoom(
               role:
                 currentRole
             })
-        }
+          }
       );
 
     const data =
