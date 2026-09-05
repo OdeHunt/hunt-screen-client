@@ -77,6 +77,7 @@ select:focus-visible {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
+
   background:
     radial-gradient(
       circle at 50% 20%,
@@ -93,10 +94,12 @@ select:focus-visible {
 .home-screen {
   min-height: 100vh;
   min-height: 100dvh;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
   padding: 40px 20px;
   text-align: center;
 }
@@ -107,30 +110,39 @@ select:focus-visible {
 
 .hunt-logo {
   color: var(--hunt-orange);
+
   font-size: clamp(
     70px,
     13vw,
     150px
   );
+
   font-weight: 900;
   line-height: 0.8;
   letter-spacing: -6px;
+
   text-shadow:
     0 0 25px rgba(255, 106, 0, 0.25);
+
   user-select: none;
 }
 
 .hunt-subtitle {
   margin-top: 12px;
+
   color: #ffffff;
+
   font-size: clamp(
     18px,
     3vw,
     30px
   );
+
   font-weight: 700;
   letter-spacing: 12px;
+
   padding-left: 12px;
+
   opacity: 0.85;
 }
 
@@ -143,8 +155,10 @@ select:focus-visible {
     440px,
     100%
   );
+
   display: flex;
   flex-direction: column;
+
   gap: 14px;
   margin-top: 55px;
 }
@@ -155,14 +169,22 @@ select:focus-visible {
 
 .hunt-button {
   min-height: 52px;
-  padding: 13px 24px;
+
+  padding:
+    13px
+    24px;
+
   border-radius: 8px;
+
   background: var(--hunt-orange);
   color: #ffffff;
+
   font-size: 14px;
   font-weight: 900;
   letter-spacing: 0.7px;
+
   cursor: pointer;
+
   transition:
     transform 0.15s ease,
     background 0.15s ease,
@@ -172,39 +194,52 @@ select:focus-visible {
 
 .hunt-button:hover {
   background: #ff791d;
-  transform: translateY(-2px);
+
+  transform:
+    translateY(-2px);
+
   box-shadow:
     0 8px 25px
     rgba(255, 106, 0, 0.18);
 }
 
 .hunt-button:active {
-  transform: translateY(0);
+  transform:
+    translateY(0);
 }
 
 .hunt-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+
   transform: none;
+
   box-shadow: none;
 }
 
 .hunt-button.secondary {
   background: #171717;
-  border: 1px solid #303030;
+
+  border:
+    1px solid #303030;
+
   color: #ffffff;
 }
 
 .hunt-button.secondary:hover {
   background: #202020;
+
   border-color:
     rgba(255, 106, 0, 0.5);
 }
 
 .small-button {
   min-height: 42px;
+
   padding:
-    10px 17px;
+    10px
+    17px;
+
   font-size: 12px;
 }
 
@@ -214,7 +249,9 @@ select:focus-visible {
 
 .hunt-status {
   margin-top: 25px;
+
   color: #777777;
+
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -226,10 +263,12 @@ select:focus-visible {
 
 .rooms-screen {
   min-height: 100vh;
+
   padding:
     35px
     clamp(18px, 5vw, 80px)
     45px;
+
   display: flex;
   flex-direction: column;
 }
@@ -240,11 +279,15 @@ select:focus-visible {
 
 .rooms-header {
   width: 100%;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 20px;
+
   padding-bottom: 24px;
+
   border-bottom:
     1px solid #1d1d1d;
 }
@@ -252,27 +295,34 @@ select:focus-visible {
 .rooms-title {
   display: flex;
   align-items: center;
+
   gap: 10px;
+
   user-select: none;
 }
 
 .rooms-title-main {
   color: var(--hunt-orange);
+
   font-size: 28px;
   font-weight: 900;
+
   letter-spacing: -1px;
 }
 
 .rooms-title-divider {
   color: #444444;
+
   font-size: 25px;
   font-weight: 300;
 }
 
 .rooms-title-sub {
   color: #ffffff;
+
   font-size: 20px;
   font-weight: 800;
+
   letter-spacing: 2px;
 }
 
@@ -282,10 +332,14 @@ select:focus-visible {
 
 .rooms-role {
   margin-top: 25px;
+
   color: #888888;
+
   font-size: 11px;
   font-weight: 800;
+
   letter-spacing: 1px;
+
   text-align: center;
 }
 
@@ -298,13 +352,17 @@ select:focus-visible {
     900px,
     100%
   );
+
   margin:
     28px
     auto
     0;
+
   display: flex;
   flex-direction: column;
+
   gap: 10px;
+
   flex: 1;
 }
 
@@ -314,21 +372,32 @@ select:focus-visible {
 
 .room-card {
   width: 100%;
+
   min-height: 76px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 15px;
+
   padding:
     14px
     18px;
+
   border-radius: 10px;
+
   background: #0d0d0d;
+
   border:
     1px solid #222222;
+
   color: #ffffff;
+
   cursor: pointer;
+
   text-align: left;
+
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -337,8 +406,10 @@ select:focus-visible {
 
 .room-card:hover {
   background: #131313;
+
   border-color:
     var(--hunt-border-orange);
+
   transform:
     translateX(3px);
 }
@@ -354,20 +425,27 @@ select:focus-visible {
 
 .room-card-left {
   min-width: 0;
+
   display: flex;
   align-items: center;
+
   gap: 14px;
 }
 
 .room-card-icon {
   width: 40px;
   height: 40px;
+
   flex: 0 0 40px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   border-radius: 8px;
+
   background: #181818;
+
   font-size: 16px;
 }
 
@@ -377,28 +455,38 @@ select:focus-visible {
 
 .room-card-name {
   overflow: hidden;
+
   color: #ffffff;
+
   font-size: 15px;
   font-weight: 800;
+
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .room-card-meta {
   margin-top: 5px;
+
   overflow: hidden;
+
   color: #666666;
+
   font-size: 10px;
   font-weight: 700;
+
   white-space: nowrap;
   text-overflow: ellipsis;
+
   letter-spacing: 0.5px;
 }
 
 .room-card-arrow {
   color: var(--hunt-orange);
+
   font-size: 23px;
   font-weight: 300;
+
   flex: 0 0 auto;
 }
 
@@ -408,49 +496,71 @@ select:focus-visible {
 
 .rooms-empty {
   width: 100%;
+
   min-height: 260px;
+
   display: flex;
   flex-direction: column;
+
   align-items: center;
   justify-content: center;
+
   gap: 10px;
+
   border:
     1px dashed #242424;
+
   border-radius: 12px;
+
   background: #090909;
+
   color: #777777;
+
   text-align: center;
+
   padding: 30px;
 }
 
 .rooms-empty-icon {
   font-size: 32px;
+
   margin-bottom: 5px;
+
   opacity: 0.7;
 }
 
 .rooms-empty-title {
   color: #dddddd;
+
   font-size: 14px;
   font-weight: 900;
+
   letter-spacing: 1px;
 }
 
 .rooms-empty-text {
   color: #666666;
+
   font-size: 11px;
+
   line-height: 1.5;
 }
 
 .rooms-loading {
   width: 100%;
+
   min-height: 200px;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   color: #666666;
+
   font-size: 11px;
   font-weight: 800;
+
   letter-spacing: 1px;
 }
 
@@ -460,23 +570,35 @@ select:focus-visible {
 
 .create-room-button {
   position: fixed;
+
   right: 35px;
   bottom: 35px;
+
   width: 58px;
   height: 58px;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   border-radius: 50%;
+
   background: var(--hunt-orange);
+
   color: #ffffff;
+
   font-size: 34px;
   font-weight: 300;
+
   line-height: 1;
+
   cursor: pointer;
+
   box-shadow:
     0 8px 30px
     rgba(0, 0, 0, 0.45);
+
   transition:
     transform 0.15s ease,
     background 0.15s ease,
@@ -485,8 +607,10 @@ select:focus-visible {
 
 .create-room-button:hover {
   background: #ff791d;
+
   transform:
     scale(1.06);
+
   box-shadow:
     0 10px 35px
     rgba(255, 106, 0, 0.25);
@@ -503,9 +627,12 @@ select:focus-visible {
 
 .create-room-screen {
   min-height: 100vh;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   padding: 30px 20px;
 }
 
@@ -514,16 +641,21 @@ select:focus-visible {
     470px,
     100%
   );
+
   padding: 35px;
+
   border:
     1px solid #242424;
+
   border-radius: 14px;
+
   background:
     linear-gradient(
       180deg,
       #101010,
       #090909
     );
+
   box-shadow:
     0 20px 70px
     rgba(0, 0, 0, 0.45);
@@ -531,28 +663,40 @@ select:focus-visible {
 
 .create-room-logo {
   color: var(--hunt-orange);
+
   font-size: 42px;
   font-weight: 900;
+
   letter-spacing: -2px;
+
   text-align: center;
 }
 
 .create-room-title {
   margin-top: 12px;
+
   color: #ffffff;
+
   font-size: 21px;
   font-weight: 900;
+
   letter-spacing: 1px;
+
   text-align: center;
 }
 
 .create-room-subtitle {
   margin-top: 8px;
+
   color: #666666;
+
   font-size: 10px;
   font-weight: 700;
+
   letter-spacing: 0.8px;
+
   text-align: center;
+
   line-height: 1.5;
 }
 
@@ -562,27 +706,39 @@ select:focus-visible {
 
 .room-form-label {
   display: block;
+
   margin-top: 25px;
   margin-bottom: 8px;
+
   color: #aaaaaa;
+
   font-size: 10px;
   font-weight: 900;
+
   letter-spacing: 1px;
 }
 
 .room-form-input {
   width: 100%;
   height: 48px;
+
   padding:
     0
     14px;
+
   border:
     1px solid #292929;
+
   border-radius: 7px;
+
   background: #070707;
+
   color: #ffffff;
+
   font-size: 13px;
+
   outline: none;
+
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -595,6 +751,7 @@ select:focus-visible {
 .room-form-input:focus {
   border-color:
     var(--hunt-orange);
+
   box-shadow:
     0 0 0 3px
     rgba(255, 106, 0, 0.08);
@@ -606,10 +763,14 @@ select:focus-visible {
 
 .room-form-error {
   min-height: 18px;
+
   margin-top: 10px;
+
   color: #ff4a4a;
+
   font-size: 11px;
   font-weight: 700;
+
   line-height: 1.5;
 }
 
@@ -619,7 +780,9 @@ select:focus-visible {
 
 .create-room-actions {
   display: flex;
+
   gap: 10px;
+
   margin-top: 20px;
 }
 
@@ -633,9 +796,12 @@ select:focus-visible {
 
 .password-screen {
   min-height: 100vh;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   padding: 30px 20px;
 }
 
@@ -644,41 +810,54 @@ select:focus-visible {
     450px,
     100%
   );
+
   padding: 35px;
+
   border:
     1px solid #242424;
+
   border-radius: 14px;
+
   background:
     linear-gradient(
       180deg,
       #101010,
       #090909
     );
+
   box-shadow:
     0 20px 70px
     rgba(0, 0, 0, 0.45);
+
   text-align: center;
 }
 
 .password-room-icon {
   font-size: 35px;
+
   margin-bottom: 15px;
 }
 
 .password-title {
   overflow: hidden;
+
   color: #ffffff;
+
   font-size: 21px;
   font-weight: 900;
+
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .password-subtitle {
   margin-top: 7px;
+
   color: #666666;
+
   font-size: 10px;
   font-weight: 700;
+
   letter-spacing: 0.7px;
 }
 
@@ -692,12 +871,16 @@ select:focus-visible {
 
 .viewer-screen {
   width: 100%;
+
   min-height: 100vh;
   min-height: 100dvh;
+
   display: flex;
   flex-direction: column;
 
-  /* Fundo REAL do site */
+  /*
+     Fundo do HUNT SCREEN.
+  */
   background: #050505;
 
   overflow-x: hidden;
@@ -710,43 +893,59 @@ select:focus-visible {
 
 .viewer-header {
   min-height: 62px;
+
   display: flex;
+
   align-items: center;
   justify-content: space-between;
+
   gap: 15px;
+
   padding:
     10px
     18px;
+
   background: #080808;
+
   border-bottom:
     1px solid #191919;
+
   z-index: 10;
+
   flex: 0 0 auto;
 }
 
 .viewer-brand {
   display: flex;
+
   align-items: center;
+
   gap: 8px;
+
   min-width: 0;
 }
 
 .viewer-logo {
   color: var(--hunt-orange);
+
   font-size: 21px;
   font-weight: 900;
+
   letter-spacing: -1px;
 }
 
 .viewer-brand-divider {
   color: #3d3d3d;
+
   font-size: 17px;
 }
 
 .viewer-brand-screen {
   color: #aaaaaa;
+
   font-size: 12px;
   font-weight: 800;
+
   letter-spacing: 2px;
 }
 
@@ -756,29 +955,45 @@ select:focus-visible {
 
 .viewer-mode-selector {
   display: flex;
+
   align-items: center;
+
   gap: 5px;
+
   padding: 4px;
+
   background: #111111;
+
   border:
     1px solid #222222;
+
   border-radius: 7px;
+
   flex: 0 0 auto;
 }
 
 .mode-button {
   min-width: 65px;
+
   height: 30px;
+
   padding:
     0
     10px;
+
   border-radius: 5px;
+
   background: transparent;
+
   color: #555555;
+
   font-size: 9px;
   font-weight: 900;
+
   letter-spacing: 0.5px;
+
   cursor: pointer;
+
   transition:
     background 0.15s ease,
     color 0.15s ease;
@@ -790,6 +1005,7 @@ select:focus-visible {
 
 .mode-button.active {
   background: var(--hunt-orange);
+
   color: #ffffff;
 }
 
@@ -799,15 +1015,18 @@ select:focus-visible {
 
 .viewer-container {
   position: relative;
+
   width: 100%;
 
-  /* Fundo do site, não preto do player */
   background: #050505;
 
   overflow: hidden;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   flex: 0 0 auto;
 }
 
@@ -816,49 +1035,129 @@ select:focus-visible {
 ======================================== */
 
 /*
-   WIDE ocupa toda a área disponível
-   entre o header e a barra inferior.
-   Não usamos aspect-ratio aqui,
-   pois ele limitaria a altura.
+   WIDE É O MODO EXPANDIDO.
+
+   Ele não deve reservar espaço para
+   header nem para os controles inferiores.
+
+   O vídeo ocupa toda a área do Activity.
 */
 
 .viewer-container.wide-mode {
   width: 100%;
-  max-width: none;
-  height: calc(
-    100dvh - 62px - 68px
-  );
-  min-height: 0;
-  max-height: none;
-  margin: 0;
-  flex: 1 1 auto;
-}
 
-/*
-   Fallback para navegadores sem dvh.
-*/
+  max-width: none;
+
+  height: 100dvh;
+
+  min-height: 0;
+
+  max-height: none;
+
+  margin: 0;
+
+  flex: 1 1 auto;
+
+  background: #050505;
+}
 
 @supports not (height: 100dvh) {
   .viewer-container.wide-mode {
-    height: calc(
-      100vh - 62px - 68px
-    );
+    height: 100vh;
   }
 }
 
 /*
-   WIDE normal:
-   A transmissão inteira continua
-   visível, podendo existir faixa
-   quando a proporção da tela
-   for diferente da transmissão.
+   WIDE mantém a proporção original
+   da transmissão.
+
+   NÃO estica.
+   NÃO corta.
 */
 
 .viewer-container.wide-mode #remoteVideo {
   width: 100%;
   height: 100%;
+
   object-fit: contain;
+
   object-position: center center;
+
+  background: transparent;
+}
+
+/* ========================================
+   ESCONDER HEADER NO WIDE
+======================================== */
+
+/*
+   Quando existir um player WIDE dentro
+   do viewer, o cabeçalho do site some.
+
+   O :has() permite fazer isso sem
+   alterar o JavaScript.
+*/
+
+.viewer-screen:has(.viewer-container.wide-mode)
+  .viewer-header {
+  display: none !important;
+}
+
+/* ========================================
+   ESCONDER BARRA INFERIOR NO WIDE
+======================================== */
+
+.viewer-screen:has(.viewer-container.wide-mode)
+  .viewer-bottom {
+  display: none !important;
+}
+
+/*
+   Com header e bottom escondidos,
+   o player realmente ganha toda
+   a área disponível.
+*/
+
+.viewer-screen:has(.viewer-container.wide-mode) {
+  min-height: 100dvh;
+
+  height: 100dvh;
+
+  overflow: hidden;
+}
+
+@supports not (height: 100dvh) {
+  .viewer-screen:has(.viewer-container.wide-mode) {
+    min-height: 100vh;
+    height: 100vh;
+  }
+}
+
+/*
+   O WIDE passa a ser o único elemento
+   ocupando a tela.
+*/
+
+.viewer-screen:has(.viewer-container.wide-mode)
+  .viewer-container.wide-mode {
+  width: 100% !important;
+
+  height: 100dvh !important;
+
+  min-height: 0 !important;
+
+  margin: 0 !important;
+
+  flex: 1 1 auto !important;
+
+  background: #050505 !important;
+}
+
+@supports not (height: 100dvh) {
+  .viewer-screen:has(.viewer-container.wide-mode)
+    .viewer-container.wide-mode {
+    height: 100vh !important;
+  }
 }
 
 /* ========================================
@@ -870,22 +1169,35 @@ select:focus-visible {
     1100px,
     100%
   );
+
   max-width: 1100px;
+
   height: auto;
+
   aspect-ratio: 16 / 9;
+
   min-height: 0;
+
   max-height: none;
+
   margin:
     24px
     auto;
+
   flex: 0 0 auto;
+
+  background: #050505;
 }
 
 .viewer-container.normal-mode #remoteVideo {
   width: 100%;
   height: 100%;
+
   object-fit: contain;
+
   object-position: center center;
+
+  background: transparent;
 }
 
 /* ========================================
@@ -894,19 +1206,20 @@ select:focus-visible {
 
 #remoteVideo {
   display: block;
+
   width: 100%;
   height: 100%;
+
   object-fit: contain;
 
   /*
-     IMPORTANTE:
-     O vídeo não pinta as faixas
+     Nunca mais pintar as faixas
      de preto puro.
-     O fundo vem do container/site.
   */
   background: transparent;
 
   outline: none;
+
   vertical-align: middle;
 }
 
@@ -916,11 +1229,16 @@ select:focus-visible {
 
 .viewer-message {
   position: absolute;
+
   inset: 0;
+
   z-index: 3;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   padding: 30px;
 
   background:
@@ -932,9 +1250,12 @@ select:focus-visible {
     #050505;
 
   color: #666666;
+
   font-size: 12px;
   font-weight: 900;
+
   letter-spacing: 1px;
+
   text-align: center;
 }
 
@@ -945,22 +1266,34 @@ select:focus-visible {
 .hunt-fullscreen-button,
 .hunt-exit-fullscreen-button {
   position: absolute;
+
   z-index: 20;
+
   right: 15px;
   bottom: 15px;
+
   width: 42px;
   height: 42px;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   border-radius: 7px;
+
   background:
     rgba(10, 10, 10, 0.85);
+
   border:
     1px solid #292929;
+
   color: #ffffff;
+
   font-size: 19px;
+
   cursor: pointer;
+
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -971,8 +1304,10 @@ select:focus-visible {
 .hunt-exit-fullscreen-button:hover {
   background:
     rgba(255, 106, 0, 0.9);
+
   border-color:
     var(--hunt-orange);
+
   transform:
     scale(1.05);
 }
@@ -987,24 +1322,35 @@ select:focus-visible {
 
 .viewer-bottom {
   min-height: 68px;
+
   display: flex;
+
   align-items: center;
   justify-content: space-between;
+
   gap: 15px;
+
   padding:
     10px
     18px;
+
   background: #080808;
+
   border-top:
     1px solid #191919;
+
   z-index: 10;
+
   flex: 0 0 auto;
 }
 
 .viewer-controls {
   display: flex;
+
   align-items: center;
+
   gap: 8px;
+
   flex-wrap: wrap;
 }
 
@@ -1021,18 +1367,18 @@ select:focus-visible {
 ======================================== */
 
 /*
-   Fullscreen visual.
+   FULLSCREEN REAL.
 
-   O viewer inteiro ocupa a viewport,
-   mas o FUNDO é o mesmo fundo do site.
+   Aqui não queremos header,
+   controles ou barras.
+
+   Somente o vídeo.
 */
 
 .hunt-player-fullscreen {
   position: fixed !important;
-  top: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  left: 0 !important;
+
+  inset: 0 !important;
 
   z-index: 99999 !important;
 
@@ -1054,39 +1400,35 @@ select:focus-visible {
   margin: 0 !important;
   padding: 0 !important;
 
-  /*
-     FUNDO DO SITE.
-     NÃO usar #000000 aqui.
-  */
   background: #050505 !important;
 
   display: flex !important;
+
   flex-direction: column !important;
 
   overflow: hidden !important;
 }
 
 /*
-   Header fullscreen.
+   ESCONDE O HEADER NO FULLSCREEN.
 */
 
 .hunt-player-fullscreen .viewer-header {
-  flex: 0 0 auto !important;
+  display: none !important;
 }
 
 /*
-   Barra inferior fullscreen.
+   ESCONDE OS CONTROLES INFERIORES
+   NO FULLSCREEN.
 */
 
 .hunt-player-fullscreen .viewer-bottom {
-  flex: 0 0 auto !important;
+  display: none !important;
 }
 
 /*
-   Container fullscreen.
-
-   O espaço que sobra ao redor
-   do vídeo recebe o fundo do site.
+   O player passa a ocupar
+   absolutamente tudo.
 */
 
 .hunt-player-fullscreen .viewer-container,
@@ -1094,14 +1436,18 @@ select:focus-visible {
   position: relative !important;
 
   width: 100% !important;
-  height: auto !important;
+
+  height: 100% !important;
 
   min-height: 0 !important;
 
   max-width: none !important;
+
   max-height: none !important;
 
   margin: 0 !important;
+
+  padding: 0 !important;
 
   aspect-ratio: auto !important;
 
@@ -1109,53 +1455,48 @@ select:focus-visible {
 
   overflow: hidden !important;
 
-  /*
-     AQUI ficam as faixas.
-     Elas terão a cor do site.
-  */
   background: #050505 !important;
 
   display: flex !important;
+
   align-items: center !important;
   justify-content: center !important;
 }
 
-/*
-   =====================================
+/* ========================================
    VÍDEO EM FULLSCREEN
-   =====================================
+======================================== */
 
-   CONTINUE USANDO CONTAIN.
+/*
+   FULLSCREEN É DIFERENTE DO WIDE.
 
-   Isso mantém a transmissão inteira
-   visível e evita deformação.
+   Aqui usamos COVER.
 
-   Quando a proporção da transmissão
-   for diferente da tela, o espaço
-   restante mostra o fundo #050505
-   do site.
+   Isso faz o vídeo crescer para ocupar
+   completamente a tela.
+
+   Se a proporção da tela não for igual
+   à proporção da transmissão, apenas
+   o excesso é cortado.
+
+   A imagem NÃO é deformada.
 */
 
 .hunt-player-fullscreen #remoteVideo {
   width: 100% !important;
+
   height: 100% !important;
 
-  object-fit: contain !important;
+  object-fit: cover !important;
+
   object-position: center center !important;
 
-  /*
-     NÃO usar background: #000000.
-     O espaço restante pertence ao
-     container e usa o fundo do site.
-  */
   background: transparent !important;
 }
 
-/*
-   Fullscreen visual:
-   O body volta ao comportamento
-   normal quando o fullscreen termina.
-*/
+/* ========================================
+   FULLSCREEN ATIVO
+======================================== */
 
 .hunt-fullscreen-active {
   overflow: hidden !important;
@@ -1173,6 +1514,43 @@ select:focus-visible {
   background: #050505;
 }
 
+/*
+   Caso o fullscreen real seja aplicado
+   ao viewer inteiro.
+*/
+
+:fullscreen .viewer-header {
+  display: none !important;
+}
+
+:fullscreen .viewer-bottom {
+  display: none !important;
+}
+
+:fullscreen .viewer-container {
+  width: 100% !important;
+
+  height: 100% !important;
+
+  max-width: none !important;
+
+  margin: 0 !important;
+
+  aspect-ratio: auto !important;
+
+  background: #050505 !important;
+}
+
+:fullscreen #remoteVideo {
+  width: 100% !important;
+
+  height: 100% !important;
+
+  object-fit: cover !important;
+
+  background: transparent !important;
+}
+
 /* ========================================
    SCROLLBAR
 ======================================== */
@@ -1188,6 +1566,7 @@ select:focus-visible {
 
 ::-webkit-scrollbar-thumb {
   background: #292929;
+
   border-radius: 10px;
 }
 
@@ -1203,6 +1582,7 @@ select:focus-visible {
 ::selection {
   background:
     rgba(255, 106, 0, 0.35);
+
   color: #ffffff;
 }
 
@@ -1221,12 +1601,15 @@ select:focus-visible {
 
   .hunt-logo {
     font-size: 80px;
+
     letter-spacing: -4px;
   }
 
   .hunt-subtitle {
     font-size: 17px;
+
     letter-spacing: 8px;
+
     padding-left: 8px;
   }
 
@@ -1255,6 +1638,7 @@ select:focus-visible {
 
   .rooms-role {
     font-size: 9px;
+
     line-height: 1.5;
   }
 
@@ -1264,6 +1648,7 @@ select:focus-visible {
 
   .room-card {
     min-height: 70px;
+
     padding:
       12px;
   }
@@ -1271,6 +1656,7 @@ select:focus-visible {
   .room-card-icon {
     width: 35px;
     height: 35px;
+
     flex-basis: 35px;
   }
 
@@ -1280,14 +1666,17 @@ select:focus-visible {
 
   .room-card-meta {
     max-width: 220px;
+
     font-size: 9px;
   }
 
   .create-room-button {
     right: 20px;
     bottom: 20px;
+
     width: 54px;
     height: 54px;
+
     font-size: 30px;
   }
 
@@ -1304,6 +1693,7 @@ select:focus-visible {
 
   .viewer-header {
     min-height: 56px;
+
     padding:
       8px
       10px;
@@ -1315,53 +1705,110 @@ select:focus-visible {
 
   .viewer-brand-screen {
     font-size: 9px;
+
     letter-spacing: 1.5px;
   }
 
   .mode-button {
     min-width: 52px;
+
     height: 27px;
+
     font-size: 8px;
   }
 
-  /*
+  /* ======================================
      WIDE MOBILE
-     Continua ocupando toda a área
-     vertical disponível.
-  */
+  ====================================== */
 
   .viewer-container.wide-mode {
     width: 100%;
-    max-width: none;
-    height: auto;
+
+    height: 100dvh;
+
     min-height: 0;
-    aspect-ratio: auto;
+
+    max-width: none;
+
     margin: 0;
+
+    aspect-ratio: auto;
+
     flex: 1 1 auto;
 
     background: #050505;
   }
 
+  @supports not (height: 100dvh) {
+    .viewer-container.wide-mode {
+      height: 100vh;
+    }
+  }
+
   /*
-     NORMAL continua menor.
+     Header e controles continuam
+     escondidos no WIDE mobile.
+  */
+
+  .viewer-screen:has(.viewer-container.wide-mode)
+    .viewer-header {
+    display: none !important;
+  }
+
+  .viewer-screen:has(.viewer-container.wide-mode)
+    .viewer-bottom {
+    display: none !important;
+  }
+
+  .viewer-screen:has(.viewer-container.wide-mode) {
+    height: 100dvh;
+
+    min-height: 100dvh;
+
+    overflow: hidden;
+  }
+
+  @supports not (height: 100dvh) {
+    .viewer-screen:has(.viewer-container.wide-mode) {
+      height: 100vh;
+
+      min-height: 100vh;
+    }
+  }
+
+  /*
+     NORMAL MOBILE
+
+     Continua como player 16:9.
   */
 
   .viewer-container.normal-mode {
     width: calc(100% - 20px);
+
     max-width: 1100px;
+
     margin:
       20px
       auto;
+
     aspect-ratio: 16 / 9;
+
+    height: auto;
+
     flex: 0 0 auto;
+
+    background: #050505;
   }
 
   .viewer-bottom {
     min-height: auto;
+
     padding:
       9px
       10px;
+
     flex-direction: column;
+
     align-items: stretch;
   }
 
@@ -1374,6 +1821,7 @@ select:focus-visible {
       2px
       0
       0;
+
     text-align: center;
   }
 
@@ -1384,37 +1832,34 @@ select:focus-visible {
   .hunt-fullscreen-button,
   .hunt-exit-fullscreen-button {
     right: 10px;
+
     bottom: 10px;
-  }
-
-  /*
-     Fullscreen mobile.
-     O container continua preenchendo
-     o espaço disponível.
-  */
-
-  .hunt-player-fullscreen .viewer-container,
-  .hunt-fullscreen-container {
-    width: 100% !important;
-    height: auto !important;
-    flex: 1 1 auto !important;
-
-    background: #050505 !important;
   }
 
   /*
      FULLSCREEN MOBILE
 
-     Mantém CONTAIN.
-     As faixas recebem o fundo
-     do site (#050505), não preto puro.
+     Ocupa toda a viewport.
   */
+
+  .hunt-player-fullscreen .viewer-container,
+  .hunt-fullscreen-container {
+    width: 100% !important;
+
+    height: 100% !important;
+
+    flex: 1 1 auto !important;
+
+    background: #050505 !important;
+  }
 
   .hunt-player-fullscreen #remoteVideo {
     width: 100% !important;
+
     height: 100% !important;
 
-    object-fit: contain !important;
+    object-fit: cover !important;
+
     object-position: center center !important;
 
     background: transparent !important;
@@ -1430,17 +1875,21 @@ select:focus-visible {
 ) {
   .hunt-button {
     min-height: 48px;
+
     padding:
       11px
       15px;
+
     font-size: 11px;
   }
 
   .small-button {
     min-height: 38px;
+
     padding:
       8px
       11px;
+
     font-size: 9px;
   }
 
@@ -1486,10 +1935,13 @@ select:focus-visible {
   *::before,
   *::after {
     scroll-behavior: auto !important;
+
     transition-duration:
       0.01ms !important;
+
     animation-duration:
       0.01ms !important;
+
     animation-iteration-count:
       1 !important;
   }
