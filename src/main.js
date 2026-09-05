@@ -170,6 +170,17 @@ let viewerJoinPending =
 let viewerJoinedRoomId =
   null;
 
+/*
+ * Controla se o usuário está executando
+ * uma atualização manual da transmissão.
+ *
+ * Isso permite diferenciar uma reconexão
+ * normal de um RESET manual do WebRTC.
+ */
+
+let viewerRefreshInProgress =
+  false;
+
 /* ========================================
    WEBRTC
 ======================================== */
@@ -265,6 +276,9 @@ socket.on(
       viewerJoinedRoomId =
         null;
 
+      viewerJoinPending =
+        true;
+
       joinCurrentViewerRoom();
     }
   }
@@ -280,6 +294,9 @@ socket.on(
 
     viewerJoinedRoomId =
       null;
+
+    viewerJoinPending =
+      true;
 
     updateGlobalStatus();
     updateRoomStatus();
@@ -342,6 +359,9 @@ function showHome() {
 
   viewerJoinedRoomId =
     null;
+
+  viewerRefreshInProgress =
+    false;
 
   stopRoomsRefresh();
 
@@ -487,6 +507,9 @@ async function openRooms(
 
   viewerJoinedRoomId =
     null;
+
+  viewerRefreshInProgress =
+    false;
 
   huntFullscreen =
     false;
@@ -1622,6 +1645,12 @@ async function joinRoom(
     viewerJoinedRoomId =
       null;
 
+    viewerJoinPending =
+      false;
+
+    viewerRefreshInProgress =
+      false;
+
     /* ================================
        TRANSMISSOR
     ================================= */
@@ -1729,6 +1758,9 @@ function startViewer(
 
   viewerJoinedRoomId =
     null;
+
+  viewerRefreshInProgress =
+    false;
 
   closeViewer();
 
@@ -1954,6 +1986,9 @@ function startViewer(
         viewerJoinedRoomId =
           null;
 
+        viewerRefreshInProgress =
+          false;
+
         openRooms(
           "viewer"
         );
@@ -2032,7 +2067,19 @@ function startViewer(
    ENTRAR NO VIEWER PELO SOCKET
 ======================================== */
 
-function joinCurrentViewerRoom() {
+/*
+ * forceJoin = true
+ *
+ * Quando true, ignoramos o fato de o viewer
+ * já estar registrado na sala.
+ *
+ * Isso é utilizado pelo botão ATUALIZAR
+ * para forçar uma nova negociação WebRTC.
+ */
+
+function joinCurrentViewerRoom(
+  forceJoin = false
+) {
   if (
     currentScreen !==
     "viewer"
@@ -2072,9 +2119,16 @@ function joinCurrentViewerRoom() {
     return;
   }
 
+  /*
+   * Se não for uma atualização forçada
+   * e o viewer já estiver registrado,
+   * não precisamos enviar novamente.
+   */
+
   if (
+    !forceJoin &&
     viewerJoinedRoomId ===
-    currentRoom.id
+      currentRoom.id
   ) {
     console.log(
       "HUNT: viewer já está registrado nesta sala."
@@ -2085,6 +2139,14 @@ function joinCurrentViewerRoom() {
 
   viewerJoinPending =
     true;
+
+  /*
+   * Marca que estamos registrando
+   * novamente nesta sala.
+   */
+
+  viewerJoinedRoomId =
+    null;
 
   socket.emit(
     "join-room",
@@ -2107,7 +2169,9 @@ function joinCurrentViewerRoom() {
     false;
 
   console.log(
-    "HUNT: viewer entrou na sala:",
+    forceJoin
+      ? "HUNT: viewer forçou nova entrada na sala para resetar a transmissão:"
+      : "HUNT: viewer entrou na sala:",
     currentRoom.id
   );
 
@@ -2118,7 +2182,9 @@ function joinCurrentViewerRoom() {
 
   if (status) {
     status.textContent =
-      "● CONECTADO À SALA";
+      forceJoin
+        ? "● REINICIANDO TRANSMISSÃO..."
+        : "● CONECTADO À SALA";
   }
 }
 
@@ -2134,13 +2200,65 @@ function refreshViewer() {
     return;
   }
 
+  /*
+   * Impede vários cliques simultâneos
+   * no botão enquanto o reset está ocorrendo.
+   */
+
+  if (
+    viewerRefreshInProgress
+  ) {
+    return;
+  }
+
+  viewerRefreshInProgress =
+    true;
+
+  console.log(
+    "HUNT: iniciando RESET manual da transmissão..."
+  );
+
+  /*
+   * Fecha SOMENTE a conexão WebRTC.
+   *
+   * Não usamos leaveCurrentRoom().
+   *
+   * O viewer continua dentro da sala.
+   */
+
   closeViewer();
+
+  /*
+   * Limpa o identificador antigo do
+   * transmissor.
+   */
 
   broadcasterId =
     null;
 
+  /*
+   * Limpa candidatos ICE antigos.
+   */
+
   pendingCandidates =
     [];
+
+  /*
+   * MUITO IMPORTANTE:
+   *
+   * O viewer precisa ser considerado
+   * temporariamente não registrado.
+   *
+   * Caso contrário joinCurrentViewerRoom()
+   * retornaria imediatamente sem enviar
+   * outro join-room.
+   */
+
+  viewerJoinedRoomId =
+    null;
+
+  viewerJoinPending =
+    false;
 
   const message =
     document.getElementById(
@@ -2149,7 +2267,7 @@ function refreshViewer() {
 
   if (message) {
     message.textContent =
-      "PROCURANDO TRANSMISSÃO...";
+      "REINICIANDO TRANSMISSÃO...";
 
     message.style.display =
       "flex";
@@ -2162,15 +2280,62 @@ function refreshViewer() {
 
   if (status) {
     status.textContent =
-      "● PROCURANDO...";
+      "● REINICIANDO TRANSMISSÃO...";
   }
 
+  /*
+   * Se o socket está conectado,
+   * fazemos um novo join-room FORÇADO.
+   *
+   * O servidor vai detectar que existe
+   * um broadcaster ativo e enviar:
+   *
+   * stream-started
+   *
+   * para este viewer.
+   */
+
   if (
-    socket.connected &&
-    viewerJoinedRoomId !==
-      currentRoom.id
+    socket.connected
   ) {
-    joinCurrentViewerRoom();
+
+    joinCurrentViewerRoom(
+      true
+    );
+
+    /*
+     * Pequeno intervalo apenas para
+     * impedir spam de cliques.
+     *
+     * Não interfere no WebRTC.
+     */
+
+    setTimeout(
+      () => {
+
+        viewerRefreshInProgress =
+          false;
+
+      },
+      1000
+    );
+
+  }
+
+  else {
+
+    viewerJoinPending =
+      true;
+
+    viewerRefreshInProgress =
+      false;
+
+    if (status) {
+      status.textContent =
+        "● AGUARDANDO CONEXÃO...";
+    }
+
+    updateViewerStatus();
   }
 }
 
@@ -2197,11 +2362,26 @@ function updateViewerStatus() {
       currentScreen ===
         "viewer"
     ) {
-      status.textContent =
-        viewerJoinedRoomId ===
-        currentRoom?.id
-          ? "● CONECTADO À SALA"
-          : "● CONECTANDO À SALA";
+
+      if (
+        viewerRefreshInProgress
+      ) {
+
+        status.textContent =
+          "● REINICIANDO TRANSMISSÃO...";
+
+      }
+
+      else {
+
+        status.textContent =
+          viewerJoinedRoomId ===
+          currentRoom?.id
+            ? "● CONECTADO À SALA"
+            : "● CONECTANDO À SALA";
+
+      }
+
     }
 
   } else {
@@ -2243,6 +2423,9 @@ function leaveCurrentRoom() {
     null;
 
   viewerJoinPending =
+    false;
+
+  viewerRefreshInProgress =
     false;
 }
 
@@ -2375,6 +2558,16 @@ socket.on(
       status.textContent =
         "● CONECTANDO À TRANSMISSÃO";
     }
+
+    /*
+     * A nova transmissão chegou.
+     *
+     * Agora podemos liberar o estado
+     * de atualização.
+     */
+
+    viewerRefreshInProgress =
+      false;
 
     if (
       document.getElementById(
@@ -2559,6 +2752,9 @@ function createViewerPeer() {
         status.textContent =
           "🔴 TRANSMISSÃO AO VIVO";
       }
+
+      viewerRefreshInProgress =
+        false;
     };
 
   /* ====================================
@@ -2623,6 +2819,9 @@ function createViewerPeer() {
           status.textContent =
             "🔴 TRANSMISSÃO AO VIVO";
         }
+
+        viewerRefreshInProgress =
+          false;
       }
 
       if (
@@ -2641,6 +2840,9 @@ function createViewerPeer() {
         "failed"
       ) {
 
+        viewerRefreshInProgress =
+          false;
+
         showViewerMessage(
           "FALHA NA CONEXÃO COM A TRANSMISSÃO"
         );
@@ -2650,6 +2852,9 @@ function createViewerPeer() {
         peer.connectionState ===
         "disconnected"
       ) {
+
+        viewerRefreshInProgress =
+          false;
 
         showViewerMessage(
           "TRANSMISSÃO DESCONECTADA"
@@ -2906,6 +3111,9 @@ socket.on(
 
     closeViewer();
 
+    viewerRefreshInProgress =
+      false;
+
     showViewerMessage(
       "NENHUMA TRANSMISSÃO ATIVA"
     );
@@ -2964,6 +3172,9 @@ socket.on(
 
     viewerJoinedRoomId =
       null;
+
+    viewerRefreshInProgress =
+      false;
 
     showViewerMessage(
       "ESTA SALA FOI ENCERRADA"
@@ -3044,13 +3255,6 @@ async function enterHuntFullscreen() {
     return;
   }
 
-  /*
-   * Primeiro ativamos nosso fullscreen
-   * visual. Isso garante que funcione
-   * mesmo quando o Discord Activity
-   * bloquear requestFullscreen().
-   */
-
   huntFullscreen =
     true;
 
@@ -3067,15 +3271,6 @@ async function enterHuntFullscreen() {
   );
 
   updateFullscreenButtons();
-
-  /*
-   * Depois tentamos usar o Fullscreen API.
-   *
-   * Se funcionar, ótimo.
-   *
-   * Se o Discord bloquear, o fallback
-   * visual continua funcionando.
-   */
 
   try {
 
@@ -3110,12 +3305,6 @@ async function enterHuntFullscreen() {
 
   }
 
-  /*
-   * Reforça as classes depois da tentativa
-   * nativa. Isso evita que a Activity remova
-   * nosso estado visual.
-   */
-
   huntFullscreen =
     true;
 
@@ -3148,10 +3337,6 @@ async function exitHuntFullscreen() {
     document.getElementById(
       "viewerContainer"
     );
-
-  /*
-   * Primeiro tenta sair do Fullscreen API.
-   */
 
   try {
 
@@ -3223,25 +3408,12 @@ document.addEventListener(
         "viewerContainer"
       );
 
-    /*
-     * Se o navegador saiu do Fullscreen API,
-     * não removemos automaticamente o fallback
-     * visual se huntFullscreen ainda estiver ativo.
-     *
-     * Isso é importante no Discord Activity.
-     */
-
     if (
       !document.fullscreenElement
     ) {
 
       nativeFullscreenActive =
         false;
-
-      /*
-       * Se nosso estado visual ainda está
-       * ativo, mantém o fullscreen visual.
-       */
 
       if (
         huntFullscreen
@@ -3297,10 +3469,6 @@ document.addEventListener(
 
       return;
     }
-
-    /*
-     * Fullscreen API entrou de verdade.
-     */
 
     nativeFullscreenActive =
       true;
@@ -3404,11 +3572,6 @@ document.addEventListener(
 function setPlayerMode(
   mode
 ) {
-  /*
-   * Aceita somente os dois modos
-   * disponíveis.
-   */
-
   if (
     mode !== "wide" &&
     mode !== "normal"
@@ -3439,18 +3602,10 @@ function setPlayerMode(
     return;
   }
 
-  /*
-   * Remove qualquer modo anterior.
-   */
-
   container.classList.remove(
     "wide-mode",
     "normal-mode"
   );
-
-  /*
-   * Aplica exatamente um modo.
-   */
 
   container.classList.add(
     mode === "wide"
@@ -3458,17 +3613,8 @@ function setPlayerMode(
       : "normal-mode"
   );
 
-  /*
-   * Também deixa o modo disponível
-   * como atributo para CSS/inspeção.
-   */
-
   container.dataset.playerMode =
     mode;
-
-  /*
-   * Atualiza botão WIDE.
-   */
 
   if (wideButton) {
 
@@ -3487,10 +3633,6 @@ function setPlayerMode(
     );
   }
 
-  /*
-   * Atualiza botão NORMAL.
-   */
-
   if (normalButton) {
 
     normalButton.classList.toggle(
@@ -3507,12 +3649,6 @@ function setPlayerMode(
         : "false"
     );
   }
-
-  /*
-   * Força o navegador a recalcular
-   * o tamanho do player depois da
-   * mudança.
-   */
 
   requestAnimationFrame(
     () => {
@@ -3576,6 +3712,9 @@ socket.on(
 
       viewerJoinedRoomId =
         null;
+
+      viewerRefreshInProgress =
+        false;
 
       const message =
         document.getElementById(
@@ -3661,6 +3800,22 @@ socket.on(
           status.textContent =
             "● CONECTANDO À TRANSMISSÃO";
         }
+
+        /*
+         * Se recebemos o broadcaster
+         * diretamente neste evento, também
+         * podemos iniciar o peer.
+         */
+
+        if (
+          document.getElementById(
+            "remoteVideo"
+          ) &&
+          !peer
+        ) {
+          createViewerPeer();
+        }
+
       }
 
       else {
